@@ -10,6 +10,7 @@ dependencies:
     sdk: flutter
   google_fonts: ^4.0.3
   provider: ^6.1.3
+  flutter_rating_bar: ^4.0.0
 
 dev_dependencies:
   flutter_test:
@@ -26,9 +27,3 @@ flutter:
     - assets/images/kayaking.jpg
     - assets/images/mountain_biking.jpg
     - assets/images/paragliding.jpg
-
-
-
-
-
-

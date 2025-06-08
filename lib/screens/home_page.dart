@@ -1,282 +1,202 @@
 import 'package:flutter/material.dart';
+import '../utils/theme.dart';
+import '../widgets/category_card.dart';
+import '../widgets/activity_card.dart';
 
-import 'package:flutter/material.dart';
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
 
-class HomePage extends StatelessWidget {
+class _HomePageState extends State<HomePage> {
+  int _navIndex = 0;
+
+  final categories = [
+    {'label': 'Badminton',    'asset': 'assets/images/badminton.jpg'},
+    {'label': 'Bungee Jump',  'asset': 'assets/images/bungee.jpg'},
+    {'label': 'Sailing',      'asset': 'assets/images/sailing.jpg'},
+    {'label': 'Cycling',      'asset': 'assets/images/cycling.jpg'},
+  ];
+
+  final activities = [
+    {
+      'title':    'Mountain Biking',
+      'location': 'Rocky Hills',
+      'price':    50.0,
+      'rating':   4.8,
+      'reviews':  230,
+      'asset':    'assets/images/mountain_biking.jpg',
+    },
+    {
+      'title':    'Kayaking Adventure',
+      'location': 'Blue River',
+      'price':    40.0,
+      'rating':   4.6,
+      'reviews':  145,
+      'asset':    'assets/images/kayaking.jpg',
+    },
+    {
+      'title':    'Paragliding',
+      'location': 'Skyline Heights',
+      'price':    120.0,
+      'rating':   4.9,
+      'reviews':  89,
+      'asset':    'assets/images/paragliding.jpg',
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Hero Banner with Search Box and Notifications
-            Stack(
-              children: [
-                // Background Image
-                Container(
-                  height: 300,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/hero_banner.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                // Gradient Overlay
-                Container(
-                  height: 300,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withOpacity(0.6),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-                // Search Box and Notifications
-                Positioned(
-                  top: 50,
-                  left: 16,
-                  right: 16,
-                  child: Column(
-                    children: [
-                      // Search Box
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    spreadRadius: 2,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Find places and things to do',
-                                  prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Notifications Button
-                          Stack(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.notifications, color: Colors.white),
-                                onPressed: () {},
-                              ),
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Text(
-                                    '3',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      // Hero Text
-                      const Text(
-                        'Discover things to do wherever you\'re going',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      // Learn More Button
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: () {},
-                        child: const Text('Learn more'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Categories Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Categories',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 120,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
+      body: CustomScrollView(
+        slivers: [
+          // 1. Hero SliverAppBar
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 260,
+            backgroundColor: cs.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  _buildCategoryCard(context, 'Badminton', 'assets/images/badminton.jpg'),
-                  _buildCategoryCard(context, 'Bungee Jump', 'assets/images/bungee.jpg'),
-                  _buildCategoryCard(context, 'Sailing', 'assets/images/sailing.jpg'),
-                  _buildCategoryCard(context, 'Cycling', 'assets/images/cycling.jpg'),
+                  Image.asset('assets/images/hero_banner.jpg',
+                      fit: BoxFit.cover),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.black45, Colors.transparent],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            // Nearby Activities Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Nearby Activities',
-                style: Theme.of(context).textTheme.titleLarge,
+            title: TextField(
+              decoration: InputDecoration(
+                hintText: 'Find places and things to do',
+                prefixIcon: Icon(Icons.search),
+                suffixIcon: Icon(Icons.tune),
               ),
             ),
-            const SizedBox(height: 16),
-            _buildActivityCard(
-              context,
-              'Mountain Biking',
-              'Rocky Hills',
-              '\$50',
-              'assets/images/mountain_biking.jpg',
-            ),
-            _buildActivityCard(
-              context,
-              'Kayaking Adventure',
-              'Blue River',
-              '\$40',
-              'assets/images/kayaking.jpg',
-            ),
-            _buildActivityCard(
-              context,
-              'Paragliding',
-              'Skyline Heights',
-              '\$120',
-              'assets/images/paragliding.jpg',
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(BuildContext context, String title, String imagePath) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0),
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              imagePath,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityCard(BuildContext context, String title, String location, String price, String imagePath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                imagePath,
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
+            actions: [
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.notifications),
+                    onPressed: () {},
+                  ),
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: CircleAvatar(
+                      radius: 8,
+                      backgroundColor: Colors.red,
+                      child: Text('3',
+                          style: TextStyle(fontSize: 10, color: Colors.white)),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+            ],
+          ),
+
+          // 2. Discover 文案 + 按钮
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    'Discover things to do wherever you’re going',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
-                  Text(
-                    location,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    price,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
+                  SizedBox(height: 12),
+                  ElevatedButton(onPressed: () {}, child: Text('Learn more')),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // 3. Categories
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(left: 16, top: 12, bottom: 8),
+              child: Text('Categories',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 120,
+              child: ListView.separated(
+                padding: EdgeInsets.only(left: 16, right: 8),
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => SizedBox(width: 16),
+                itemBuilder: (ctx, i) => CategoryCard(
+                  title: categories[i]['label']!,
+                  imageAsset: categories[i]['asset']!,
+                  onTap: () {},
+                ),
+              ),
+            ),
+          ),
+
+          // 4. Nearby Activities
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(left: 16, top: 24, bottom: 8),
+              child: Text('Nearby Activities',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate((_, idx) {
+              final a = activities[idx];
+              return ActivityCard(
+                title:      a['title']! as String,
+                location:   a['location']! as String,
+                price:      (a['price'] as num).toDouble(),
+                rating:     (a['rating'] as num).toDouble(),
+                reviews:    (a['reviews'] as num).toInt(),
+                imageAsset: a['asset']! as String,
+                onTap:      () {},
+              );
+            }, childCount: activities.length),
+          ),
+
+          // 底部留空，防止被遮挡
+          SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _navIndex,
+        onTap: (i) => setState(() => _navIndex = i),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: 'Favorites'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.schedule), label: 'Bookings'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
     );
   }
 }
-
