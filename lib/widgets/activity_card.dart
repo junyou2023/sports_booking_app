@@ -1,3 +1,4 @@
+// ========== lib/widgets/activity_card.dart ==========
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -7,81 +8,78 @@ class ActivityCard extends StatelessWidget {
   final double price;
   final double rating;
   final int reviews;
-  final String imageAsset;
+  final String asset;
   final VoidCallback onTap;
 
   const ActivityCard({
+    super.key,
     required this.title,
     required this.location,
     required this.price,
     required this.rating,
     required this.reviews,
-    required this.imageAsset,
+    required this.asset,
     required this.onTap,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
-          ],
-        ),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              child: Image.asset(imageAsset, height: 180, width: double.infinity, fit: BoxFit.cover),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, size: 16, color: Colors.grey),
-                      SizedBox(width: 4),
-                      Text(location, style: TextStyle(color: Colors.grey.shade600)),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      RatingBarIndicator(
-                        rating: rating,
-                        itemCount: 5,
-                        itemSize: 18,
-                        direction: Axis.horizontal,
-                        itemBuilder: (_, __) => Icon(Icons.star, color: Colors.amber),
-                      ),
-                      SizedBox(width: 6),
-                      Text('$rating', style: TextStyle(fontSize: 13)),
-                      SizedBox(width: 6),
-                      Text('($reviews reviews)',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Text('\$$price',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold, color: cs.primary)),
-                ],
+      child: SizedBox(
+        width: 260,
+        child: Card(
+          clipBehavior: Clip.hardEdge,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Hero(
+                tag: asset,
+                child: Image.asset(
+                  asset,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(location,
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        RatingBarIndicator(
+                          rating: rating,
+                          itemCount: 5,
+                          itemSize: 16,
+                          unratedColor: Colors.grey.shade300,
+                          itemBuilder: (_, __) =>
+                          const Icon(Icons.star_rounded, color: Colors.amber),
+                        ),
+                        const SizedBox(width: 4),
+                        Text('($reviews)',
+                            style: Theme.of(context).textTheme.bodySmall),
+                        const Spacer(),
+                        Text('\$${price.toStringAsFixed(0)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

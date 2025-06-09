@@ -1,3 +1,5 @@
+# pubspec.yaml
+# ──────────────────────────────────────────────
 name: sports_booking_app
 description: A sports booking application with a modern design.
 version: 1.0.0+1
@@ -8,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_fonts: ^4.0.3
-  provider: ^6.1.3
-  flutter_rating_bar: ^4.0.0
+  google_fonts: ^6.2.0        # ⬅️ 更新：由 4.x 升级到 6.2.0（与 Material-3 更兼容）
+  flutter_rating_bar: ^4.0.1  # ⬅️ 更新：锁定最新版，修复旧版警告
+  # provider: ^6.1.3          # ⬅️ 移除：当前项目未使用 Provider，可随时再添加
 
 dev_dependencies:
   flutter_test:
@@ -18,12 +20,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # ———— 资源 ————
   assets:
-    - assets/images/badminton.jpg
-    - assets/images/bungee.jpg
-    - assets/images/cycling.jpg
-    - assets/images/sailing.jpg
-    - assets/images/hero_banner.jpg
-    - assets/images/kayaking.jpg
-    - assets/images/mountain_biking.jpg
-    - assets/images/paragliding.jpg
+    - assets/images/           # ⬅️ 新写法：直接加载整个文件夹，省去一张张枚举
+    # 如果想显式列出，也请把 ↓ 这 2 张新图补上。
+    # - assets/images/stadium.jpg   # ⬅️ 新增：AppBar Hero 图
+    # - assets/images/dolphin.jpg   # ⬅️ 新增：Continue planning 卡片
