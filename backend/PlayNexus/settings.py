@@ -19,8 +19,12 @@ from datetime import timedelta
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-96yhj!xqg!ou@-@yzn&c3!su9+*@2&a8&47i4nt1n_2u1u9xs%"
-DEBUG = True                   # ⚠ switch to False in production
-ALLOWED_HOSTS: list[str] = []  # add your domain / IP here in production
+DEBUG = True                   # switch to False in production
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '10.0.2.2',       # Android Emulator
+]
 
 # ──────────────────────────────
 # Application definition

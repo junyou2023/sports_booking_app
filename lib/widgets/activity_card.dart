@@ -1,4 +1,5 @@
-// ========== lib/widgets/activity_card.dart ==========
+// lib/widgets/activity_card.dart
+// -- 既支持本地 asset，又支持网络 URL 的卡片 ---------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -8,7 +9,7 @@ class ActivityCard extends StatelessWidget {
   final double price;
   final double rating;
   final int reviews;
-  final String asset;
+  final String asset;            // 本地或网络路径
   final VoidCallback onTap;
 
   const ActivityCard({
@@ -22,6 +23,28 @@ class ActivityCard extends StatelessWidget {
     required this.onTap,
   });
 
+  // ----- 私有：生成图片组件，自动判断网络 / 本地 -------------------------
+  Widget _buildHeroImage() {
+    if (asset.startsWith('http')) {
+      return Image.network(
+        asset,
+        height: 140,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const ColoredBox(
+          color: Colors.black12,
+          child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+        ),
+      );
+    }
+    return Image.asset(
+      asset,
+      height: 140,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -33,49 +56,40 @@ class ActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Hero(
-                tag: asset,
-                child: Image.asset(
-                  asset,
-                  height: 140,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(location,
-                        style: Theme.of(context).textTheme.bodySmall),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        RatingBarIndicator(
-                          rating: rating,
-                          itemCount: 5,
-                          itemSize: 16,
-                          unratedColor: Colors.grey.shade300,
-                          itemBuilder: (_, __) =>
-                          const Icon(Icons.star_rounded, color: Colors.amber),
-                        ),
-                        const SizedBox(width: 4),
-                        Text('($reviews)',
-                            style: Theme.of(context).textTheme.bodySmall),
-                        const Spacer(),
-                        Text('\$${price.toStringAsFixed(0)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ],
+              Hero(tag: asset, child: _buildHeroImage()),     // ← 关键
+              Expanded(                                     // 防止溢出
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(location, style: Theme.of(context).textTheme.bodySmall),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          RatingBarIndicator(
+                            rating: rating,
+                            itemCount: 5,
+                            itemSize: 16,
+                            unratedColor: Colors.grey.shade300,
+                            itemBuilder: (_, __) =>
+                            const Icon(Icons.star_rounded, color: Colors.amber),
+                          ),
+                          const SizedBox(width: 4),
+                          Text('($reviews)',
+                              style: Theme.of(context).textTheme.bodySmall),
+                          const Spacer(),
+                          Text('\$${price.toStringAsFixed(0)}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
