@@ -1,7 +1,7 @@
 // ========= lib/screens/home_page.dart =========
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';        // ← new
-// ───────── 你原来的 import 保留 ─────────
+import 'package:flutter_riverpod/flutter_riverpod.dart';        // new
+import 'package:sports_booking_app/screens/slots_page.dart';
 import '../utils/theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_card.dart';
@@ -195,49 +195,74 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
-          // ================= Nearby Activities（改为真数据） =================
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 0, 0),
-            sliver: SliverToBoxAdapter(
-              child: Text('Nearby Activities',
-                  style: Theme.of(context).textTheme.titleLarge),
+          // ─────────────────── Nearby Activities ───────────────────
+
+// section title
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Text(
+                'Nearby Activities',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ),
+
+// async list of sports → horizontal ActivityCard carousel
           sportsAsync.when(
+            // ❶ loading state
             loading: () => const SliverToBoxAdapter(
-              child: Center(heightFactor: 4, child: CircularProgressIndicator()),
+              child: SizedBox(
+                height: 250,
+                child: Center(child: CircularProgressIndicator()),
+              ),
             ),
+
+            // ❷ error state
             error: (err, _) => SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(err.toString(),
-                    style: const TextStyle(color: Colors.red)),
+                child: Text(
+                  'Failed to load activities: $err',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.red),
+                ),
               ),
             ),
+
+            // ❸ data state
             data: (sports) => SliverToBoxAdapter(
               child: SizedBox(
                 height: 310,
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   scrollDirection: Axis.horizontal,
-                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: sports.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (_, i) {
-                    final s = sports[i];
+                    final sport = sports[i];
                     return ActivityCard(
-                      title: s.name,
-                      location: 'City Center',   // placeholder
-                      price: 39.9,               // placeholder
-                      rating: 4.7,               // placeholder
-                      reviews: 120,              // placeholder
-                      asset: s.banner,
-                      onTap: () {},
+                      title: sport.name,
+                      location: 'City Center',
+                      price: 40.0,
+                      rating: 4.7,
+                      reviews: 120,
+                      asset: sport.banner,             // network image URL
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SlotsPage(sport: sport),
+                        ),
+                      ),
                     );
                   },
                 ),
               ),
             ),
           ),
+
 
           // ================= Continue planning（保持不变） =================
           SliverPadding(

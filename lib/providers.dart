@@ -1,9 +1,16 @@
-// Central place holding all Riverpod providers.
-
+// lib/providers.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/sport.dart';
+import 'models/slot.dart';
 import 'services/sports_service.dart';
+import 'services/slot_service.dart';
 
+// ───────── Sports list ─────────
 final sportsProvider = FutureProvider<List<Sport>>((ref) async {
-  return SportsService().fetchSports();
+  return sportsService.fetchSports();
+});
+
+// ───────── Slots for one sport ─────────
+final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
+  return slotService.fetchBySport(sportId);
 });

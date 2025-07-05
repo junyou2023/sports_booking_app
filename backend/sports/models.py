@@ -1,64 +1,80 @@
+# sports/models.py
+# Domain models for the sports-booking backend.  Comments in EN only.
+
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.core.validators import (
+    MinValueValidator,
+    MaxValueValidator,
+)
 
-User = get_user_model()
-
-
+# ───────────────────────────────── Sport ──────────────────────────────────
 class Sport(models.Model):
-    """
-    Sport category (badminton, sailing, …).
-    """
-    name = models.CharField(max_length=32, unique=True)
-    banner = models.URLField(blank=True)           # hero/banner image
+    name        = models.CharField(max_length=30, unique=True)
+    banner      = models.URLField(blank=True)
     description = models.TextField(blank=True)
 
     class Meta:
-        ordering = ["id"]
+        ordering = ("name",)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:                # pragma: no cover
         return self.name
 
 
+# ───────────────────────────────── Slot ───────────────────────────────────
 class Slot(models.Model):
-    """
-    Bookable time block published by a vendor.
-    """
-    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    start_at = models.DateTimeField()
-    end_at = models.DateTimeField()
-    capacity = models.PositiveSmallIntegerField(default=1)
-    booked = models.PositiveSmallIntegerField(default=0)
+    """A single bookable time-window for one sport."""
+
+    sport     = models.ForeignKey(
+        Sport, related_name="slots", on_delete=models.CASCADE
+    )
+    title     = models.CharField(max_length=60)
+    location  = models.CharField(max_length=80)
+    begins_at = models.DateTimeField()
+    ends_at   = models.DateTimeField()
+
+    capacity  = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)]
+    )
+    price     = models.DecimalField(          # 0.00 ⇒ free
+        max_digits=7, decimal_places=2, default=0
+    )
+    rating    = models.DecimalField(          # NEW: matches serializer / seed
+        max_digits=3, decimal_places=1, default=0,
+        help_text="Average rating 0–5"
+    )
 
     class Meta:
-        ordering = ["start_at"]
-        unique_together = ("sport", "start_at", "end_at")
+        ordering        = ("begins_at",)
+        unique_together = ("sport", "begins_at")
 
-    def __str__(self) -> str:
-        return f"{self.sport.name} — {self.start_at:%Y-%m-%d %H:%M}"
+    @property
+    def seats_left(self) -> int:
+        booked = self.bookings.aggregate(models.Sum("pax"))["pax__sum"] or 0
+        return max(self.capacity - booked, 0)
+
+    def __str__(self) -> str:                # pragma: no cover
+        return f"{self.title} @ {self.begins_at:%Y-%m-%d %H:%M}"
 
 
+# ──────────────────────────────── Booking ─────────────────────────────────
 class Booking(models.Model):
-    """
-    User reservation (state machine: pending → confirmed / canceled).
-    """
-    PENDING = "P"
-    CONFIRMED = "C"
-    CANCELED = "X"
+    """User reservation of a slot (unique per user+slot)."""
 
-    STATUS_CHOICES = [
-        (PENDING, "Pending"),
-        (CONFIRMED, "Confirmed"),
-        (CANCELED, "Canceled"),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    slot = models.ForeignKey(Slot, on_delete=models.PROTECT)
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default=PENDING)
-    created_at = models.DateTimeField(auto_now_add=True)
+    slot = models.ForeignKey(
+        Slot, related_name="bookings", on_delete=models.PROTECT
+    )
+    user      = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+    booked_at = models.DateTimeField(default=timezone.now)
+    pax       = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
+        help_text="Number of people booked",
+    )
 
     class Meta:
-        ordering = ["-created_at"]
-        unique_together = ("user", "slot")
+        ordering        = ("-booked_at",)
+        unique_together = ("slot", "user")
 
-    def __str__(self) -> str:
-        return f"{self.user} · {self.slot} · {self.get_status_display()}"
+    def __str__(self) -> str:                # pragma: no cover
+        return f"{self.user} → {self.slot} ({self.pax})"

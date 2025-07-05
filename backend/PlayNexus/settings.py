@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "corsheaders",             # CORS
     # Local apps
     "sports",
+    # filtering backend for DRF
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,13 @@ REST_FRAMEWORK = {
     # Enable browsable API pagination if needed in future
     # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     # "PAGE_SIZE": 20,
+
+    # enable query-parameter filtering on all ViewSets
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+
+    "COERCE_DECIMAL_TO_STRING": False,          # return numbers instead of strings
 }
 
 # SimpleJWT configuration

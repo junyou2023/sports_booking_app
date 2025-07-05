@@ -1,59 +1,55 @@
-from django.db import transaction
+# sports/views.py
+from django.db import models, transaction
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 
-from . import serializers
-from .models import Sport, Slot, Booking
+from .models      import Sport, Slot, Booking
 from .serializers import SportSerializer, SlotSerializer, BookingSerializer
 
 
 class SportViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    GET /api/sports/  and  /api/sports/{id}/
-    """
-    queryset = Sport.objects.all()
-    serializer_class = SportSerializer
+    queryset           = Sport.objects.all()
+    serializer_class   = SportSerializer
     permission_classes = [permissions.AllowAny]
 
 
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    GET /api/slots/  — returns all upcoming slots.
-    """
-    queryset = Slot.objects.select_related("sport")
-    serializer_class = SlotSerializer
+    serializer_class   = SlotSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs       = Slot.objects.select_related("sport")
+        sport_id = self.request.query_params.get("sport")
+        return qs.filter(sport_id=sport_id) if sport_id else qs
 
 
 class BookingViewSet(viewsets.ModelViewSet):
-    """
-    POST /api/bookings/  — create reservation
-    GET  /api/bookings/  — list current user's reservations
-    """
-    serializer_class = BookingSerializer
+    serializer_class   = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return (
-            Booking.objects
-            .filter(user=self.request.user)
-            .select_related("slot", "slot__sport")
+        return Booking.objects.filter(user=self.request.user).select_related(
+            "slot", "slot__sport"
         )
 
-    def perform_create(self, serializer):
-        slot = serializer.validated_data["slot"]
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
 
-        # Atomic row-level lock to prevent over-booking
-        with transaction.atomic():
-            slot = (
-                Slot.objects
-                .select_for_update()
-                .get(pk=slot.pk)
+        slot: Slot = ser.validated_data["slot"]
+        pax        = ser.validated_data["pax"]
+
+        slot = Slot.objects.select_for_update().get(pk=slot.pk)
+        taken = slot.bookings.aggregate(t=models.Sum("pax"))["t"] or 0
+        if taken + pax > slot.capacity:
+            return Response(
+                {"detail": "Not enough seats left"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            if slot.booked >= slot.capacity:
-                raise serializers.ValidationError("Slot is fully booked.")
 
-            slot.booked += 1
-            slot.save(update_fields=["booked"])
-
-            serializer.save(user=self.request.user, status=Booking.PENDING)
+        booking = Booking.objects.create(slot=slot, user=request.user, pax=pax)
+        return Response(
+            self.get_serializer(booking).data,
+            status=status.HTTP_201_CREATED,
+        )
