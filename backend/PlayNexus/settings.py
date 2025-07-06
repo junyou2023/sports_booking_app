@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from datetime import timedelta
 
@@ -18,8 +18,9 @@ from datetime import timedelta
 # ──────────────────────────────
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-96yhj!xqg!ou@-@yzn&c3!su9+*@2&a8&47i4nt1n_2u1u9xs%"
-DEBUG = True                   # switch to False in production
+DEBUG = os.getenv("DEBUG", "False") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
+
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
@@ -38,13 +39,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # Third-party
-    "rest_framework",          # Django REST framework
-    "corsheaders",             # CORS
-    # Local apps
-    "sports",
-    # filtering backend for DRF
+    # 3rd-party
+    "rest_framework",
+    "corsheaders",
     "django_filters",
+
+    # Local apps
+    "sports.apps.SportsConfig",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,52 @@
+stages:
+  - lint
+  - test
+
+variables:
+  # 让 Django 连接到服务里的 Postgres
+  DB_NAME: sportsdb
+  DB_USER: sportsuser
+  DB_PASS: sportspwd
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  SECRET_KEY: dummy
+
+#######################
+# 1) flake8 代码风格   #
+#######################
+lint:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install flake8
+  script: flake8 backend
+  tags: []          # 如果学校要求 runner tag，就写在这里
+  except:
+    - tags
+
+#######################
+# 2) pytest 单元测试  #
+#######################
+test:
+  stage: test
+  image: python:3.11
+  services:
+    - name: postgres:15
+      alias: postgres
+      variables:
+        POSTGRES_DB: $DB_NAME
+        POSTGRES_USER: $DB_USER
+        POSTGRES_PASSWORD: $DB_PASS
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    # 迁移数据库
+    - python backend/manage.py migrate --noinput
+  script: pytest
+  tags: []          # 如需要 runner tag
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - tests/        # 保存测试结果/覆盖率 html 可自行配置

@@ -1,0 +1,81 @@
+# ── docker-compose.yml ──
+# 单文件即可一键起整个后端栈：PostgreSQL + Redis + Django(Gunicorn)
+# ---------------------------------------------------------------
+
+version: "3.9"
+
+###############################################################################
+# 共享网络 & 卷
+###############################################################################
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  dbdata:          # PostgreSQL 持久化
+  # 如果以后想把用户上传图片持久化，可加：
+  # media:
+  # static:
+
+###############################################################################
+# 服务定义
+###############################################################################
+services:
+  # ────────────────────────────────────────────────────────────── PostgreSQL ──
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:      sportsdb
+      POSTGRES_USER:    sportsuser
+      POSTGRES_PASSWORD: sportspwd
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports: ["5432:5432"]      # 仅本机调试需要，服务器部署可删
+    networks: [app-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────────────────────── Redis ─────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]      # 同上，生产可删
+    networks: [app-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────────────────────── Django ────
+  web:
+    build:
+      context: .              # 根目录含 Dockerfile
+      dockerfile: Dockerfile
+    command: >
+      gunicorn backend.PlayNexus.wsgi:application
+              --bind 0.0.0.0:8000
+              --workers 3
+              --timeout 120
+    restart: unless-stopped
+    env_file: .env            # 秘钥、邮箱、Stripe 等都放这里
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.PlayNexus.settings
+      # 仅开发机需要；部署到云服务器可在 .env 设置
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      API_BASE_URL: http://0.0.0.0:8000/api
+    volumes:
+      - .:/app                # 代码热更新；生产可改成只挂 static/media
+      # - media:/app/media
+      # - static:/app/static
+    ports: ["8000:8000"]
+    networks: [app-net]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

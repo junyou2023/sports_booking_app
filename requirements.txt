@@ -1,0 +1,12 @@
+# ── requirements.txt ──
+Django==5.2.3
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.1
+tzdata==2025.2
+
+# 新增：容器/CI 运行必备
+psycopg2-binary==2.9.9      # Postgres 驱动
+gunicorn==21.2.0            # 生产 WSGI
+flake8==6.1.0               # 代码规范检查
