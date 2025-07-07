@@ -1,0 +1,8 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.flake8]  # 只想维持一个文件时用，和 .flake8 二选一
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", ".venv", "build", "dist", "backend/sports/migrations"]

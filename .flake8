@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 120
+
+exclude =
+    # Git / 生成物
+    .git,
+    build,
+    dist,
+    # 虚拟环境（根目录下和 backend 目录下各一个）
+    .venv,
+    backend/.venv,
+    # Django 迁移脚本
+    */migrations/*,
+
+extend-ignore = E203, W503

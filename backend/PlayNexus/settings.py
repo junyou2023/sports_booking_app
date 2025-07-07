@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -22,9 +23,9 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '10.0.2.2',       # Android Emulator
+    "localhost",
+    "127.0.0.1",
+    "10.0.2.2",  # Android Emulator
 ]
 
 # ──────────────────────────────
@@ -38,18 +39,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # 3rd-party
     "rest_framework",
     "corsheaders",
     "django_filters",
-
     # Local apps
-    "sports.apps.SportsConfig",
+    "backend.sports.apps.SportsConfig",
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",       # must be first
+    "corsheaders.middleware.CorsMiddleware",  # must be first
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -59,7 +58,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "PlayNexus.urls"
+ROOT_URLCONF = "backend.PlayNexus.urls"
 
 TEMPLATES = [
     {
@@ -76,7 +75,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "PlayNexus.wsgi.application"
+WSGI_APPLICATION = "backend.PlayNexus.wsgi.application"
 
 # ──────────────────────────────
 # Database (SQLite for dev)
@@ -92,7 +91,9 @@ DATABASES = {
 # Password validators
 # ──────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -116,7 +117,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ──────────────────────────────
 # CORS (allow everything in dev)
 # ──────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True      # ⚠ tighten in production
+CORS_ALLOW_ALL_ORIGINS = True  # ⚠ tighten in production
 
 # ──────────────────────────────
 # Django REST framework + JWT
@@ -131,13 +132,11 @@ REST_FRAMEWORK = {
     # Enable browsable API pagination if needed in future
     # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     # "PAGE_SIZE": 20,
-
     # enable query-parameter filtering on all ViewSets
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
-
-    "COERCE_DECIMAL_TO_STRING": False,          # return numbers instead of strings
+    "COERCE_DECIMAL_TO_STRING": False,  # return numbers instead of strings
 }
 
 # SimpleJWT configuration
