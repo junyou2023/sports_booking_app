@@ -3,6 +3,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final Dio apiClient = Dio(
   BaseOptions(
@@ -12,3 +13,18 @@ final Dio apiClient = Dio(
     responseType: ResponseType.json,
   ),
 );
+
+final _storage = const FlutterSecureStorage();
+
+/// Attach Authorization header if token is stored.
+void initAuthInterceptor() {
+  apiClient.interceptors.add(
+    InterceptorsWrapper(onRequest: (options, handler) async {
+      final token = await _storage.read(key: 'access');
+      if (token != null) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+      handler.next(options);
+    }),
+  );
+}

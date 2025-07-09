@@ -18,6 +18,7 @@ dependencies:
   dio: ^5.4.0                # HTTP client
   flutter_dotenv: ^5.0.2     # load .env
   flutter_riverpod: ^2.5.1   # state-management / DI
+  flutter_secure_storage: ^9.0.0  # secure token storage
 
 dev_dependencies:
   flutter_test:

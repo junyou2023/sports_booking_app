@@ -7,29 +7,51 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from sports.models import Sport, Slot, Booking
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 pytestmark = pytest.mark.django_db
 
 
 def test_sports_list():
+    Sport.objects.create(name="Tennis")
     client = APIClient()
     response = client.get("/api/sports/")
     assert response.status_code == 200
 
 
 def test_slots_filter():
-    sport = Sport.objects.first()
+    sport = Sport.objects.create(name="Biking")
+    Slot.objects.create(
+        sport=sport,
+        title="Morning Ride",
+        location="Park",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=10,
+        price=0,
+        rating=4.5,
+    )
     client = APIClient()
     response = client.get("/api/slots/", {"sport": sport.id})
     assert response.status_code == 200
     for slot in response.data:
-        assert slot["sport"]["id"] == sport.id
+        assert slot["sport"] == sport.id
 
 
 def test_booking_creation():
     user = User.objects.create_user("demo", password="demo123")
-    slot = Slot.objects.first()
+    sport = Sport.objects.create(name="Kayak")
+    slot = Slot.objects.create(
+        sport=sport,
+        title="Evening Ride",
+        location="Lake",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=5,
+        price=10,
+        rating=4.0,
+    )
     client = APIClient()
     client.force_authenticate(user)
     response = client.post("/api/bookings/", {"slot_id": slot.id, "pax": 2})
