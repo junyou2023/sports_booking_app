@@ -37,7 +37,7 @@ class SportsBookingApp extends StatelessWidget {
       title: 'Sports Booking',
       theme: AppTheme.light,                    // centralised light theme
       debugShowCheckedModeBanner: false,
-      home: const LoginPage(),                  // first screen
+      home: const HomePage(),                   // start on home page
     );
   }
 }
