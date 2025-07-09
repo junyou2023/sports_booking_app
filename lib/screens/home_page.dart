@@ -12,6 +12,7 @@ import '../widgets/search_bar.dart';
 import 'categories_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
+import 'login_page.dart';                                     // for login navigation
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -85,6 +86,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                           children: [
                             const Expanded(child: RoundedSearchBar()),
                             const SizedBox(width: 12),
+                            IconButton(
+                              icon: const Icon(Icons.person_outline),
+                              color: Colors.white,
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
+                                ),
+                              ),
+                            ),
                             const _NotificationBell(count: 6),
                           ],
                         ),
@@ -298,7 +309,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       bottomNavigationBar: AppBottomNav(
         index: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: (i) {
+          if (i == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+            );
+          } else {
+            setState(() => _navIndex = i);
+          }
+        },
       ),
     );
   }
