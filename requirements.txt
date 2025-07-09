@@ -5,6 +5,8 @@ djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
 django-filter==24.1
 tzdata==2025.2
+dj-rest-auth==5.0.1
+django-allauth==0.61.1
 
 # 新增：容器/CI 运行必备
 psycopg2-binary==2.9.9      # Postgres 驱动

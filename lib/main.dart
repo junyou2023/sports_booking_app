@@ -4,6 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'utils/theme.dart';
 import 'screens/home_page.dart';
+import 'screens/login_page.dart';
+import 'services/api_client.dart';
 
 /// Application entry-point.
 /// ---------------------------------------------------------------------------
@@ -16,6 +18,7 @@ import 'screens/home_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');          // <-- load .env variables
+  initAuthInterceptor();
 
   runApp(
     const ProviderScope(                        // <-- Riverpod root scope
@@ -34,7 +37,7 @@ class SportsBookingApp extends StatelessWidget {
       title: 'Sports Booking',
       theme: AppTheme.light,                    // centralised light theme
       debugShowCheckedModeBanner: false,
-      home: const HomePage(),                   // first screen
+      home: const LoginPage(),                  // first screen
     );
   }
 }
