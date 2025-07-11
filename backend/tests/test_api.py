@@ -3,6 +3,8 @@ Very light smoke-tests proving that all endpoints work.
 Run:  pytest backend
 """
 import pytest
+import django
+django.setup()
 from django.urls import reverse
 from rest_framework.test import APIClient
 from sports.models import Sport, Slot, Booking
@@ -14,14 +16,14 @@ pytestmark = pytest.mark.django_db
 
 
 def test_sports_list():
-    Sport.objects.create(name="Tennis")
+    Sport.objects.create(name="Tennis1")
     client = APIClient()
     response = client.get("/api/sports/")
     assert response.status_code == 200
 
 
 def test_slots_filter():
-    sport = Sport.objects.create(name="Biking")
+    sport = Sport.objects.create(name="Biking1")
     Slot.objects.create(
         sport=sport,
         title="Morning Ride",
@@ -40,8 +42,8 @@ def test_slots_filter():
 
 
 def test_booking_creation():
-    user = User.objects.create_user("demo", password="demo123")
-    sport = Sport.objects.create(name="Kayak")
+    user = User.objects.create_user("demo_api", password="demo123")
+    sport = Sport.objects.create(name="Kayak1")
     slot = Slot.objects.create(
         sport=sport,
         title="Evening Ride",
