@@ -1,14 +1,15 @@
 import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
-from backend.sports.models import Sport, Slot
 
 @pytest.fixture
 def sport(db):
+    from backend.sports.models import Sport
     return Sport.objects.create(name="Tennis")
 
 @pytest.fixture
 def slot(db, sport):
+    from backend.sports.models import Slot
     return Slot.objects.create(
         sport=sport,
         title="Morning session",

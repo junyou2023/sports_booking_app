@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '10.0.2.2',       # Android Emulator
+    'testserver',
 ]
 SITE_ID = 1
 
@@ -161,13 +162,19 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),}
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 # dj-rest-auth configuration
-REST_USE_JWT = True
+REST_AUTH = {
+    "USE_JWT": True,
+    "SESSION_LOGIN": False,
+}
+SESSION_COOKIE_SECURE = False
 
 # django-allauth settings
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-
+ACCOUNT_EMAIL_VERIFICATION = "none"  # disable SMTP during tests
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
