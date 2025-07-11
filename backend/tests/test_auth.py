@@ -49,5 +49,3 @@ def test_token_refresh(client):
     resp2 = client.post("/api/token/refresh/", {"refresh": refresh})
     assert resp2.status_code == 200
     assert "access" in resp2.data
-
-
