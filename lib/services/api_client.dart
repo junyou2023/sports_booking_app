@@ -19,12 +19,30 @@ final _storage = const FlutterSecureStorage();
 /// Attach Authorization header if token is stored.
 void initAuthInterceptor() {
   apiClient.interceptors.add(
-    InterceptorsWrapper(onRequest: (options, handler) async {
-      final token = await _storage.read(key: 'access');
-      if (token != null) {
-        options.headers['Authorization'] = 'Bearer $token';
-      }
-      handler.next(options);
-    }),
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await _storage.read(key: 'access');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        handler.next(options);
+      },
+      onError: (err, handler) async {
+        if (err.response?.statusCode == 401) {
+          final refresh = await _storage.read(key: 'refresh');
+          if (refresh != null) {
+            try {
+              final res = await apiClient.post('/token/refresh/', data: {'refresh': refresh});
+              final access = res.data['access'];
+              await _storage.write(key: 'access', value: access);
+              err.requestOptions.headers['Authorization'] = 'Bearer $access';
+              final cloneReq = await apiClient.fetch(err.requestOptions);
+              return handler.resolve(cloneReq);
+            } catch (_) {}
+          }
+        }
+        handler.next(err);
+      },
+    ),
   );
 }

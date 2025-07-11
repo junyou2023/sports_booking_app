@@ -23,3 +23,31 @@ def test_registration_creates_profiles():
     assert VendorProfile.objects.filter(user=user).exists()
     assert CustomerProfile.objects.filter(user=user).exists()
     assert "access" in resp.data and "refresh" in resp.data
+
+def test_profile_endpoint(client):
+    user = User.objects.create_user("demo2", email="demo2@example.com", password="Pass12345")
+    # profiles automatically created via signal
+    user.vendorprofile.company_name = "ACME"
+    user.vendorprofile.save()
+    user.customerprofile.phone = "123456"
+    user.customerprofile.save()
+    client.force_authenticate(user)
+    resp = client.get("/api/profile/")
+    assert resp.status_code == 200
+    assert resp.data["email"] == "demo2@example.com"
+    assert resp.data["company_name"] == "ACME"
+    assert resp.data["phone"] == "123456"
+
+def test_token_refresh(client):
+    user = User.objects.create_user("demo3", email="demo3@example.com", password="Pass12345")
+    resp = client.post(
+        "/api/token/",
+        {"username": "demo3", "password": "Pass12345"},
+    )
+    assert resp.status_code == 200
+    refresh = resp.data["refresh"]
+    resp2 = client.post("/api/token/refresh/", {"refresh": refresh})
+    assert resp2.status_code == 200
+    assert "access" in resp2.data
+
+
