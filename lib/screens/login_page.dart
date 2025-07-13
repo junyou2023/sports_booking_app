@@ -28,19 +28,15 @@ class LoginPage extends ConsumerWidget {
                   await ref
                       .read(authNotifierProvider.notifier)
                       .login(emailCtrl.text, passCtrl.text);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Logged in')),
-                    );
-                    Navigator.of(context).pop();
-                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Logged in')),
+                  );
+                  Navigator.of(context).pop();
                 } on DioException catch (e) {
-                  if (context.mounted) {
-                    final msg = e.response?.data.toString() ?? e.message;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Login failed: ' + msg)),
-                    );
-                  }
+                  final msg = e.response?.data.toString() ?? e.message;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Login failed: $msg')),
+                  );
                 }
               },
               child: const Text('Login'),
