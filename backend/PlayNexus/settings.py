@@ -171,6 +171,9 @@ REST_AUTH = {
     "USE_JWT": True,
     "SESSION_LOGIN": False,
 }
+# dj-rest-auth expects REST_USE_JWT to be set globally so that login and
+# registration endpoints return JWTs instead of session cookies.
+REST_USE_JWT = True
 SESSION_COOKIE_SECURE = False
 
 # django-allauth settings

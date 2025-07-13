@@ -36,7 +36,8 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await apiClient.post('/auth/logout/');
+      final refresh = await _storage.read(key: 'refresh');
+      await apiClient.post('/auth/logout/', data: {'refresh': refresh});
     } finally {
       await _storage.delete(key: 'access');
       await _storage.delete(key: 'refresh');
