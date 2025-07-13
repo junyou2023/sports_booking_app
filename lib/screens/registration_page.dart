@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
+import 'package:dio/dio.dart';
 
 class RegistrationPage extends ConsumerWidget {
   const RegistrationPage({super.key});
@@ -24,10 +25,24 @@ class RegistrationPage extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await ref
-                    .read(authNotifierProvider.notifier)
-                    .register(emailCtrl.text, passCtrl.text, pass2Ctrl.text);
-                if (context.mounted) Navigator.of(context).pop();
+                try {
+                  await ref
+                      .read(authNotifierProvider.notifier)
+                      .register(emailCtrl.text, passCtrl.text, pass2Ctrl.text);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Registration successful')),
+                    );
+                    Navigator.of(context).pop();
+                  }
+                } on DioException catch (e) {
+                  if (context.mounted) {
+                    final msg = e.response?.data.toString() ?? e.message;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Registration failed: ' + msg)),
+                    );
+                  }
+                }
               },
               child: const Text('Create account'),
             ),

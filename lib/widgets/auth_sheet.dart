@@ -14,13 +14,21 @@ class AuthSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Google sign-in not implemented')),
+              );
+            },
             icon: const Icon(Icons.g_mobiledata),
             label: const Text('Continue with Google'),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Facebook sign-in not implemented')),
+              );
+            },
             icon: const Icon(Icons.facebook),
             label: const Text('Continue with Facebook'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
