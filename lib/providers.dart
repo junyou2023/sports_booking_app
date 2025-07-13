@@ -5,6 +5,8 @@ import 'models/slot.dart';
 import 'services/sports_service.dart';
 import 'services/slot_service.dart';
 import 'services/auth_service.dart';
+import 'services/api_client.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models/profile.dart';
 import 'services/profile_service.dart';
 
@@ -18,7 +20,44 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
   return slotService.fetchBySport(sportId);
 });
 
-final authProvider = Provider<AuthService>((ref) => authService);
+
+enum AuthStatus { unauthenticated, authenticating, authenticated }
+
+class AuthNotifier extends StateNotifier<AuthStatus> {
+  AuthNotifier() : super(AuthStatus.unauthenticated) {
+    _load();
+  }
+
+  final _storage = const FlutterSecureStorage();
+
+  Future<void> _load() async {
+    final token = await _storage.read(key: 'access');
+    if (token != null) {
+      apiClient.options.headers['Authorization'] = 'Bearer $token';
+      state = AuthStatus.authenticated;
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    state = AuthStatus.authenticating;
+    await authService.login(email, password);
+    state = AuthStatus.authenticated;
+  }
+
+  Future<void> register(String email, String p1, String p2) async {
+    state = AuthStatus.authenticating;
+    await authService.register(email, p1, p2);
+    state = AuthStatus.authenticated;
+  }
+
+  Future<void> logout() async {
+    await authService.logout();
+    state = AuthStatus.unauthenticated;
+  }
+}
+
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AuthStatus>((ref) => AuthNotifier());
 
 final profileProvider = FutureProvider<Profile>((ref) async {
   return profileService.fetch();

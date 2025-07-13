@@ -24,7 +24,9 @@ class RegistrationPage extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await ref.read(authProvider).register(emailCtrl.text, passCtrl.text, pass2Ctrl.text);
+                await ref
+                    .read(authNotifierProvider.notifier)
+                    .register(emailCtrl.text, passCtrl.text, pass2Ctrl.text);
                 if (context.mounted) Navigator.of(context).pop();
               },
               child: const Text('Create account'),

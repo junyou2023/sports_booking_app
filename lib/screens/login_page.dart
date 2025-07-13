@@ -23,7 +23,9 @@ class LoginPage extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await ref.read(authProvider).login(emailCtrl.text, passCtrl.text);
+                await ref
+                    .read(authNotifierProvider.notifier)
+                    .login(emailCtrl.text, passCtrl.text);
                 if (context.mounted) Navigator.of(context).pop();
               },
               child: const Text('Login'),

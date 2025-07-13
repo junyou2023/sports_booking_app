@@ -2,6 +2,8 @@ import django
 import pytest
 django.setup()
 from rest_framework.test import APIClient
+import jwt
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from django.contrib.auth.models import User
 from accounts.models import VendorProfile, CustomerProfile
 pytestmark = pytest.mark.django_db
@@ -49,5 +51,41 @@ def test_token_refresh(client):
     resp2 = client.post("/api/token/refresh/", {"refresh": refresh})
     assert resp2.status_code == 200
     assert "access" in resp2.data
+
+
+def test_logout_blacklists_token(client):
+    resp = client.post(
+        "/api/auth/registration/",
+        {
+            "email": "logout@example.com",
+            "password1": "StrongPass123",
+            "password2": "StrongPass123",
+        },
+        format="json",
+    )
+    refresh = resp.data["refresh"]
+    access = resp.data["access"]
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    resp2 = client.post("/api/auth/logout/", {"refresh": refresh})
+    assert resp2.status_code == 200
+    jti = jwt.decode(refresh, options={"verify_signature": False})["jti"]
+    assert BlacklistedToken.objects.filter(token__jti=jti).exists()
+
+
+def test_vendor_permission(client):
+    user = User.objects.create_user("v1", email="v1@e.com", password="Pass12345")
+    user.vendorprofile.company_name = "ACME"
+    user.vendorprofile.save()
+    client.force_authenticate(user)
+    resp = client.get("/api/vendor-area/")
+    assert resp.status_code == 200
+    client.force_authenticate(None)
+
+    user2 = User.objects.create_user("c1", email="c1@e.com", password="Pass12345")
+    user2.vendorprofile.delete()
+    user2 = User.objects.get(pk=user2.pk)
+    client.force_authenticate(user2)
+    resp2 = client.get("/api/vendor-area/")
+    assert resp2.status_code == 403
 
 
