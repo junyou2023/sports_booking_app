@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 import 'registration_page.dart';
+import 'package:dio/dio.dart';
+import '../utils/snackbar.dart';
 
 class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
@@ -23,10 +25,27 @@ class LoginPage extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await ref
-                    .read(authNotifierProvider.notifier)
-                    .login(emailCtrl.text, passCtrl.text);
-                if (context.mounted) Navigator.of(context).pop();
+                try {
+                  await ref
+                      .read(authNotifierProvider.notifier)
+                      .login(emailCtrl.text, passCtrl.text);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Logged in')),
+                    );
+                    Navigator.of(context).pop();
+                  }
+                } on DioException catch (e) {
+                  if (context.mounted) {
+                    showApiError(context, e, 'Login');
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Login failed: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Login'),
             ),
