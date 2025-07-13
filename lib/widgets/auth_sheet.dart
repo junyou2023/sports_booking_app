@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../screens/login_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
 /// Modal bottom sheet used for login or registration actions.
-class AuthSheet extends StatelessWidget {
+class AuthSheet extends ConsumerWidget {
   const AuthSheet({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final emailCtrl = TextEditingController();
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
@@ -14,10 +16,19 @@ class AuthSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Google sign-in not implemented')),
-              );
+            onPressed: () async {
+              try {
+                await ref
+                    .read(authNotifierProvider.notifier)
+                    .loginWithGoogle();
+                if (context.mounted) Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Google sign-in failed: $e')),
+                  );
+                }
+              }
             },
             icon: const Icon(Icons.g_mobiledata),
             label: const Text('Continue with Google'),

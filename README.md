@@ -1,16 +1,18 @@
-# sports_booking_app
+# Sports Booking App
 
-A new Flutter project.
+This repository contains a Flutter client and a Django backend.
+The quickest way to try it is with Docker and Flutter:
 
-## Getting Started
+```bash
+# 1. start backend services
+docker compose up -d
 
-This project is a starting point for a Flutter application.
+# 2. get Flutter packages
+flutter pub get
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# 3. run the app on an emulator/device
+flutter run
+```
+The backend exposes a simple auth API supporting email/password and Google login.
+After signing up or using Google the app stores JWT tokens securely and the
+profile page shows your account email.
