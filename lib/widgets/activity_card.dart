@@ -11,6 +11,8 @@ class ActivityCard extends StatelessWidget {
   final int reviews;
   final String asset;            // 本地或网络路径
   final VoidCallback onTap;
+  final VoidCallback onFavorite;
+  final bool isFavorite;
 
   const ActivityCard({
     super.key,
@@ -21,6 +23,8 @@ class ActivityCard extends StatelessWidget {
     required this.reviews,
     required this.asset,
     required this.onTap,
+    required this.onFavorite,
+    required this.isFavorite,
   });
 
   // ----- 私有：生成图片组件，自动判断网络 / 本地 -------------------------
@@ -56,7 +60,22 @@ class ActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Hero(tag: asset, child: _buildHeroImage()),     // ← 关键
+              Stack(
+                children: [
+                  Hero(tag: asset, child: _buildHeroImage()),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_outline,
+                        color: Colors.red,
+                      ),
+                      onPressed: onFavorite,
+                    ),
+                  ),
+                ],
+              ),
               Expanded(                                     // 防止溢出
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

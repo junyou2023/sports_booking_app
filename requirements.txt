@@ -12,3 +12,4 @@ django-allauth==0.61.1
 psycopg2-binary==2.9.9      # Postgres 驱动
 gunicorn==21.2.0            # 生产 WSGI
 flake8==6.1.0               # 代码规范检查
+pytest-django==4.8.0

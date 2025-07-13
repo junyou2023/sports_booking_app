@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/sport.dart';
 import '../providers.dart';
 import '../widgets/slot_card.dart';
+import '../services/auth_service.dart';
+import '../widgets/auth_sheet.dart';
 
 class SlotsPage extends ConsumerWidget {
   const SlotsPage({super.key, required this.sport});
@@ -26,8 +28,15 @@ class SlotsPage extends ConsumerWidget {
           itemCount: slots.length,
           itemBuilder: (_, i) => SlotCard(
             slot: slots[i],
-            onTap: () {
-              // TODO: open booking bottom-sheet or details page
+            onTap: () async {
+              final token = await authService.getToken();
+              if (token == null) {
+                showAuthSheet(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Proceed to checkout...')),
+                );
+              }
             },
           ),
         ),

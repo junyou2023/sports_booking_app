@@ -13,6 +13,9 @@ import 'categories_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
 import 'login_page.dart';                                     // for login navigation
+import 'profile_page.dart';
+import '../widgets/auth_sheet.dart';
+import '../services/auth_service.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -92,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
+                                  builder: (_) => const ProfilePage(),
                                 ),
                               ),
                             ),
@@ -254,6 +257,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (_, i) {
                     final sport = sports[i];
+                    final favIds = ref.watch(wishlistProvider);
+                    final bool fav = favIds.contains(sport.id);
                     return ActivityCard(
                       title: sport.name,
                       location: 'City Center',
@@ -261,6 +266,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                       rating: 4.7,
                       reviews: 120,
                       asset: sport.banner,             // network image URL
+                      isFavorite: fav,
+                      onFavorite: () async {
+                        final token = await authService.getToken();
+                        if (token == null) {
+                          showAuthSheet(context);
+                        } else {
+                          ref.read(wishlistProvider.notifier).toggle(sport.id);
+                        }
+                      },
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -313,7 +327,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           if (i == 3) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
             );
           } else {
             setState(() => _navIndex = i);

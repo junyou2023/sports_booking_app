@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 
+
 class IsVendor(BasePermission):
     """Allows access only to users with a VendorProfile."""
 

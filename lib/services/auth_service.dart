@@ -18,6 +18,44 @@ class AuthService {
     apiClient.options.headers['Authorization'] = 'Bearer $access';
   }
 
+  Future<void> register(String email, String password1, String password2) async {
+    final Response res = await apiClient.post(
+      '/auth/registration/',
+      data: {
+        'email': email,
+        'password1': password1,
+        'password2': password2,
+      },
+    );
+    final access = res.data['access'];
+    final refresh = res.data['refresh'];
+    await _storage.write(key: 'access', value: access);
+    await _storage.write(key: 'refresh', value: refresh);
+    apiClient.options.headers['Authorization'] = 'Bearer $access';
+  }
+
+  Future<void> logout() async {
+    try {
+      await apiClient.post('/auth/logout/');
+    } finally {
+      await _storage.delete(key: 'access');
+      await _storage.delete(key: 'refresh');
+      apiClient.options.headers.remove('Authorization');
+    }
+  }
+
+  Future<void> refresh() async {
+    final refresh = await _storage.read(key: 'refresh');
+    if (refresh == null) return;
+    final Response res = await apiClient.post(
+      '/token/refresh/',
+      data: {'refresh': refresh},
+    );
+    final access = res.data['access'];
+    await _storage.write(key: 'access', value: access);
+    apiClient.options.headers['Authorization'] = 'Bearer $access';
+  }
+
   Future<String?> getToken() => _storage.read(key: 'access');
 }
 
