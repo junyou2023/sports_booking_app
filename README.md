@@ -8,7 +8,8 @@ The quickest way to try it is with Docker and Flutter:
 docker compose up -d
 
 # 2. apply migrations (first run only)
-docker compose exec web python manage.py migrate --noinput
+# note manage.py lives in the backend folder inside the container
+docker compose exec web python backend/manage.py migrate --noinput
 
 # 3. get Flutter packages
 flutter pub get
