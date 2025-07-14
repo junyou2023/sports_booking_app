@@ -66,7 +66,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: backend.PlayNexus.settings
       # 仅开发机需要；部署到云服务器可在 .env 设置
-      ALLOWED_HOSTS: localhost,127.0.0.1
+      ALLOWED_HOSTS: localhost,127.0.0.1,10.0.2.2
       API_BASE_URL: http://0.0.0.0:8000/api
     volumes:
       - .:/app                # 代码热更新；生产可改成只挂 static/media
