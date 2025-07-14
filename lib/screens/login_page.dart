@@ -23,6 +23,25 @@ class LoginPage extends ConsumerWidget {
             TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
             TextField(controller: passCtrl, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
             const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await ref.read(authNotifierProvider.notifier).loginWithGoogle();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Google sign-in failed: $e')),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.g_mobiledata),
+              label: const Text('Sign in with Google'),
+            ),
+            const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () async {
                 try {

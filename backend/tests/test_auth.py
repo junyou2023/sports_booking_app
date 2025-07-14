@@ -89,3 +89,22 @@ def test_vendor_permission(client):
     assert resp2.status_code == 403
 
 
+def test_google_login(client, monkeypatch):
+    def fake_verify(token, request):
+        return {"email": "g@example.com", "sub": "123"}
+
+    from accounts import views as account_views
+
+    monkeypatch.setattr(
+        account_views.google_id_token, "verify_oauth2_token", fake_verify
+    )
+
+    resp = client.post("/api/auth/google/", {"id_token": "dummy"})
+    assert resp.status_code == 200
+    assert "access" in resp.data and "refresh" in resp.data
+    user = User.objects.get(email="g@example.com")
+    from allauth.socialaccount.models import SocialAccount
+
+    assert SocialAccount.objects.filter(user=user, provider="google").exists()
+
+

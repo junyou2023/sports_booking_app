@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'api_client.dart';
 
 class AuthService {
   final _storage = const FlutterSecureStorage();
+  final _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   Future<void> login(String email, String password) async {
     final Response res = await apiClient.post(
@@ -26,6 +28,21 @@ class AuthService {
         'password1': password1,
         'password2': password2,
       },
+    );
+    final access = res.data['access'];
+    final refresh = res.data['refresh'];
+    await _storage.write(key: 'access', value: access);
+    await _storage.write(key: 'refresh', value: refresh);
+    apiClient.options.headers['Authorization'] = 'Bearer $access';
+  }
+
+  Future<void> loginWithGoogle() async {
+    final account = await _googleSignIn.signIn();
+    if (account == null) return;
+    final auth = await account.authentication;
+    final Response res = await apiClient.post(
+      '/auth/google/',
+      data: {'id_token': auth.idToken},
     );
     final access = res.data['access'];
     final refresh = res.data['refresh'];

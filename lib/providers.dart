@@ -50,6 +50,12 @@ class AuthNotifier extends StateNotifier<AuthStatus> {
     state = AuthStatus.authenticated;
   }
 
+  Future<void> loginWithGoogle() async {
+    state = AuthStatus.authenticating;
+    await authService.loginWithGoogle();
+    state = AuthStatus.authenticated;
+  }
+
   Future<void> logout() async {
     await authService.logout();
     state = AuthStatus.unauthenticated;

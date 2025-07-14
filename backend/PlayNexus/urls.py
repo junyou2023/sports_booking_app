@@ -16,16 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from dj_rest_auth.registration.views import RegisterView
 
 urlpatterns = [
+    path("healthz", lambda r: JsonResponse({"status": "ok"})),
     path("admin/", admin.site.urls),
     path("api/", include("sports.urls")),          # ← REST entrance
     path("api/", include("accounts.urls")),        # profile endpoint
     path("api/auth/", include("dj_rest_auth.urls")),
+    path("api/auth/register/", RegisterView.as_view()),
     path(
         "api/auth/registration/",
         include("dj_rest_auth.registration.urls"),
@@ -39,5 +43,9 @@ urlpatterns = [
         "api/token/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh",
+    ),
+    path(
+        "api/auth/token/refresh/",
+        TokenRefreshView.as_view(),
     ),
 ]
