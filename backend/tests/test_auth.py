@@ -1,12 +1,14 @@
 import django
 import pytest
-django.setup()
 from rest_framework.test import APIClient
 import jwt
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from django.contrib.auth.models import User
 from accounts.models import VendorProfile, CustomerProfile
+
+django.setup()
 pytestmark = pytest.mark.django_db
+
 
 def test_registration_creates_profiles():
     client = APIClient()
@@ -14,7 +16,7 @@ def test_registration_creates_profiles():
     resp = client.post(
         "/api/auth/registration/",
         {
-        "email": "demo_auth@example.com",
+            "email": "demo_auth@example.com",
             "password1": "StrongPass123",
             "password2": "StrongPass123",
         },
@@ -26,8 +28,13 @@ def test_registration_creates_profiles():
     assert CustomerProfile.objects.filter(user=user).exists()
     assert "access" in resp.data and "refresh" in resp.data
 
+
 def test_profile_endpoint(client):
-    user = User.objects.create_user("demo2", email="demo2@example.com", password="Pass12345")
+    user = User.objects.create_user(
+        "demo2",
+        email="demo2@example.com",
+        password="Pass12345",
+    )
     # profiles automatically created via signal
     user.vendorprofile.company_name = "ACME"
     user.vendorprofile.save()
@@ -40,8 +47,13 @@ def test_profile_endpoint(client):
     assert resp.data["company_name"] == "ACME"
     assert resp.data["phone"] == "123456"
 
+
 def test_token_refresh(client):
-    user = User.objects.create_user("demo3", email="demo3@example.com", password="Pass12345")
+    User.objects.create_user(
+        "demo3",
+        email="demo3@example.com",
+        password="Pass12345",
+    )
     resp = client.post(
         "/api/token/",
         {"username": "demo3", "password": "Pass12345"},
@@ -68,12 +80,19 @@ def test_logout_blacklists_token(client):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     resp2 = client.post("/api/auth/logout/", {"refresh": refresh})
     assert resp2.status_code == 200
-    jti = jwt.decode(refresh, options={"verify_signature": False})["jti"]
+    jti = jwt.decode(
+        refresh,
+        options={"verify_signature": False},
+    )["jti"]
     assert BlacklistedToken.objects.filter(token__jti=jti).exists()
 
 
 def test_vendor_permission(client):
-    user = User.objects.create_user("v1", email="v1@e.com", password="Pass12345")
+    user = User.objects.create_user(
+        "v1",
+        email="v1@e.com",
+        password="Pass12345",
+    )
     user.vendorprofile.company_name = "ACME"
     user.vendorprofile.save()
     client.force_authenticate(user)
@@ -81,7 +100,11 @@ def test_vendor_permission(client):
     assert resp.status_code == 200
     client.force_authenticate(None)
 
-    user2 = User.objects.create_user("c1", email="c1@e.com", password="Pass12345")
+    user2 = User.objects.create_user(
+        "c1",
+        email="c1@e.com",
+        password="Pass12345",
+    )
     user2.vendorprofile.delete()
     user2 = User.objects.get(pk=user2.pk)
     client.force_authenticate(user2)
@@ -106,5 +129,3 @@ def test_google_login(client, monkeypatch):
     from allauth.socialaccount.models import SocialAccount
 
     assert SocialAccount.objects.filter(user=user, provider="google").exists()
-
-

@@ -4,12 +4,12 @@ Run:  pytest backend
 """
 import pytest
 import django
-django.setup()
-from django.urls import reverse
 from rest_framework.test import APIClient
 from sports.models import Sport, Slot, Booking
 from django.contrib.auth.models import User
 from django.utils import timezone
+
+django.setup()
 
 
 pytestmark = pytest.mark.django_db

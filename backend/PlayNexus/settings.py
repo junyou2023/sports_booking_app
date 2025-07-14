@@ -109,10 +109,27 @@ DATABASES = {
 # Password validators
 # ──────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation.MinimumLengthValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation.CommonPasswordValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation.NumericPasswordValidator"
+        )
+    },
 ]
 
 # ──────────────────────────────
@@ -146,7 +163,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
     # Enable browsable API pagination if needed in future
-    # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # "DEFAULT_PAGINATION_CLASS":
+    #     "rest_framework.pagination.PageNumberPagination",
     # "PAGE_SIZE": 20,
 
     # enable query-parameter filtering on all ViewSets
@@ -154,7 +172,8 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
 
-    "COERCE_DECIMAL_TO_STRING": False,          # return numbers instead of strings
+    "COERCE_DECIMAL_TO_STRING": False,
+    # return numbers instead of strings
 }
 
 # SimpleJWT configuration
