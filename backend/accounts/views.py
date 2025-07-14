@@ -50,10 +50,17 @@ class GoogleLoginView(APIView):
         if not email:
             return Response({"detail": "email not provided"}, status=400)
 
-        user, _ = User.objects.get_or_create(username=email, defaults={"email": email})
+        user, _ = User.objects.get_or_create(
+            username=email,
+            defaults={"email": email},
+        )
         SocialAccount.objects.get_or_create(
-            user=user, provider="google", uid=info.get("sub")
+            user=user,
+            provider="google",
+            uid=info.get("sub"),
         )
 
         refresh = RefreshToken.for_user(user)
-        return Response({"access": str(refresh.access_token), "refresh": str(refresh)})
+        return Response(
+            {"access": str(refresh.access_token), "refresh": str(refresh)}
+        )

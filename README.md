@@ -4,17 +4,20 @@ This repository contains a Flutter client and a Django backend.
 The quickest way to try it is with Docker and Flutter:
 
 ```bash
-# 1. start backend services
-docker compose up -d
+# 1. build and start backend services
+docker compose up -d --build
 
 # 2. apply migrations (first run only)
 # note manage.py lives in the backend folder inside the container
 docker compose exec web python backend/manage.py migrate --noinput
 
-# 3. get Flutter packages
+# 3. verify the backend is running
+curl -f http://localhost:8000/healthz
+
+# 4. get Flutter packages
 flutter pub get
 
-# 4. run the app on an emulator/device
+# 5. run the app on an emulator/device
 flutter run
 ```
 The backend exposes a simple auth API supporting email/password and Google login.
