@@ -22,3 +22,5 @@ class BookingService {
     return Booking.fromJson(res.data as Map<String, dynamic>);
   }
 }
+
+final bookingService = BookingService();

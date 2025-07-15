@@ -129,3 +129,35 @@ def test_google_login(client, monkeypatch):
     from allauth.socialaccount.models import SocialAccount
 
     assert SocialAccount.objects.filter(user=user, provider="google").exists()
+
+
+def test_registration_sends_email():
+    from django.core import mail
+    client = APIClient()
+    client.post(
+        "/api/auth/registration/",
+        {
+            "email": "verify@example.com",
+            "password1": "StrongPass123",
+            "password2": "StrongPass123",
+        },
+        format="json",
+    )
+    assert len(mail.outbox) == 1
+
+
+def test_password_reset_sends_email():
+    from django.core import mail
+    User.objects.create_user(
+        "u1",
+        email="u1@example.com",
+        password="pass12345",
+    )
+    client = APIClient()
+    resp = client.post(
+        "/api/auth/password/reset/",
+        {"email": "u1@example.com"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert len(mail.outbox) == 1

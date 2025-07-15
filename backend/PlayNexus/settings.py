@@ -189,6 +189,8 @@ SIMPLE_JWT = {
 REST_AUTH = {
     "USE_JWT": True,
     "SESSION_LOGIN": False,
+    # return refresh token in response body instead of HttpOnly cookie
+    "JWT_AUTH_HTTPONLY": False,
 }
 # dj-rest-auth expects REST_USE_JWT to be set globally so that login and
 # registration endpoints return JWTs instead of session cookies.
@@ -199,5 +201,6 @@ SESSION_COOKIE_SECURE = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = "none"  # disable SMTP during tests
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # send verification emails
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
