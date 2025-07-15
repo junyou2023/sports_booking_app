@@ -5,6 +5,7 @@ from django.urls import reverse
 
 django.setup()
 
+
 @pytest.mark.django_db
 def test_sports_list(client):
     url = reverse("sport-list")   # ensure router basename is sport

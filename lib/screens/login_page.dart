@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 import 'registration_page.dart';
+import 'profile_page.dart';
+import 'reset_password_page.dart';
 import 'package:dio/dio.dart';
 import '../utils/snackbar.dart';
 
@@ -52,7 +54,9 @@ class LoginPage extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Logged in')),
                     );
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const ProfilePage()),
+                    );
                   }
                 } on DioException catch (e) {
                   if (context.mounted) {
@@ -76,6 +80,15 @@ class LoginPage extends ConsumerWidget {
                 );
               },
               child: const Text('Create an account'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ResetPasswordPage()),
+                );
+              },
+              child: const Text('Forgot password?'),
             ),
           ],
         ),

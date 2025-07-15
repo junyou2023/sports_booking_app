@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/profile.dart';
 import '../services/profile_service.dart';
 import '../services/auth_service.dart';
+import '../services/booking_service.dart';
+import '../models/booking.dart';
 import '../widgets/auth_sheet.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -31,21 +33,28 @@ class _ProfileBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: FutureBuilder<Profile>(
-        future: profileService.fetch(),
+      body: FutureBuilder<List<Object>>(
+        future: Future.wait([
+          profileService.fetch(),
+          bookingService.fetchMine(),
+        ]),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final p = snapshot.data!;
+          final profile = snapshot.data![0] as Profile;
+          final bookings = snapshot.data![1] as List<Booking>;
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Email: ${p.email}'),
-                Text('Company: ${p.companyName}'),
-                Text('Phone: ${p.phone}'),
+                Text('Email: \${profile.email}'),
+                Text('Company: \${profile.companyName}'),
+                Text('Phone: \${profile.phone}'),
+                const SizedBox(height: 20),
+                Text('My bookings:', style: Theme.of(context).textTheme.titleMedium),
+                ...bookings.map((b) => Text(b.slot.title)),
               ],
             ),
           );

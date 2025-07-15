@@ -13,6 +13,10 @@ class ProfileSerializer(serializers.Serializer):
     def to_representation(self, instance: User):
         return {
             "email": instance.email,
-            "company_name": getattr(instance.vendorprofile, "company_name", ""),
+            "company_name": getattr(
+                instance.vendorprofile,
+                "company_name",
+                "",
+            ),
             "phone": getattr(instance.customerprofile, "phone", ""),
         }

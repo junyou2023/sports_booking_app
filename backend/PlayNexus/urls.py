@@ -22,6 +22,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from dj_rest_auth.registration.views import RegisterView
+from django.http import HttpResponse
 
 urlpatterns = [
     path("healthz", lambda r: JsonResponse({"status": "ok"})),
@@ -47,5 +48,10 @@ urlpatterns = [
     path(
         "api/auth/token/refresh/",
         TokenRefreshView.as_view(),
+    ),
+    path(
+        "password-reset-confirm/<uidb64>/<token>/",
+        lambda r, uidb64, token: HttpResponse(""),
+        name="password_reset_confirm",
     ),
 ]

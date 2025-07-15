@@ -62,6 +62,10 @@ class AuthService {
     }
   }
 
+  Future<void> requestPasswordReset(String email) async {
+    await apiClient.post('/auth/password/reset/', data: {'email': email});
+  }
+
   Future<void> refresh() async {
     final refresh = await _storage.read(key: 'refresh');
     if (refresh == null) return;

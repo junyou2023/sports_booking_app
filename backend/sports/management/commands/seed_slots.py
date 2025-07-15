@@ -23,13 +23,13 @@ class Command(BaseCommand):
                 start = now + timedelta(days=day, hours=9)
                 for idx in range(6):                     # 6 slots / day
                     Slot.objects.create(
-                        sport     = sport,
-                        title     = f"{sport.name} Session {idx + 1}",
-                        location  = "City Center",
-                        begins_at = start + timedelta(hours=idx),
-                        ends_at   = start + timedelta(hours=idx + 1),
-                        capacity  = random.randint(6, 20),
-                        price     = round(random.uniform(20, 80), 2),
-                        rating    = round(random.uniform(3.5, 5.0), 1),
+                        sport=sport,
+                        title=f"{sport.name} Session {idx + 1}",
+                        location="City Center",
+                        begins_at=start + timedelta(hours=idx),
+                        ends_at=start + timedelta(hours=idx + 1),
+                        capacity=random.randint(6, 20),
+                        price=round(random.uniform(20, 80), 2),
+                        rating=round(random.uniform(3.5, 5.0), 1),
                     )
         self.stdout.write(self.style.SUCCESS("▶  Demo slots seeded"))

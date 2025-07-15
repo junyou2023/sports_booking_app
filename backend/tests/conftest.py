@@ -2,10 +2,12 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+
 @pytest.fixture
 def sport(db):
     from backend.sports.models import Sport
     return Sport.objects.create(name="Tennis")
+
 
 @pytest.fixture
 def slot(db, sport):
