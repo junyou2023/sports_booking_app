@@ -5,8 +5,19 @@ void showApiError(BuildContext context, DioException e, String action) {
   final status = e.response?.statusCode;
   String message;
   final data = e.response?.data;
-  if (data is Map && data['detail'] != null) {
-    message = data['detail'].toString();
+  if (data is Map) {
+    if (data['detail'] != null) {
+      message = data['detail'].toString();
+    } else if (data.isNotEmpty) {
+      final first = data.values.first;
+      if (first is List && first.isNotEmpty) {
+        message = first.first.toString();
+      } else {
+        message = first.toString();
+      }
+    } else {
+      message = e.message ?? '';
+    }
   } else if (data is String && data.isNotEmpty) {
     message = data;
   } else {
