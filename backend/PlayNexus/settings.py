@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "django_filters",
+    "rest_framework_gis",
     "rest_framework.authtoken",
     "rest_framework_simplejwt.token_blacklist",
     "dj_rest_auth",
@@ -98,12 +99,25 @@ WSGI_APPLICATION = "PlayNexus.wsgi.application"
 # ──────────────────────────────
 # Database (SQLite for dev)
 # ──────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if os.getenv("DB_HOST"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.getenv("DB_NAME", "sportsdb"),
+            "USER": os.getenv("DB_USER", "sportsuser"),
+            "PASSWORD": os.getenv("DB_PASS", "sportspwd"),
+            "HOST": os.getenv("DB_HOST"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.spatialite",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+    SPATIALITE_LIBRARY_PATH = "mod_spatialite"
 
 # ──────────────────────────────
 # Password validators

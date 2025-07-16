@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sport, Slot, Booking
+from .models import Sport, Slot, Booking, Category, Facility
 
 
 @admin.register(Sport)
@@ -10,9 +10,21 @@ class SportAdmin(admin.ModelAdmin):
 
 @admin.register(Slot)
 class SlotAdmin(admin.ModelAdmin):
-    list_display = ("title", "sport", "begins_at", "capacity", "price")
-    list_filter = ("sport", "begins_at")
+    list_display = ("title", "facility", "begins_at", "capacity", "price")
+    list_filter = ("facility", "begins_at")
     search_fields = ("title", "location")
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+
+
+@admin.register(Facility)
+class FacilityAdmin(admin.ModelAdmin):
+    list_display = ("name", "radius")
+    search_fields = ("name",)
 
 
 @admin.register(Booking)

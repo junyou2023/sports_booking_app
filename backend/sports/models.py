@@ -7,6 +7,8 @@ from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
 )
+from django.contrib.gis.db import models as gis_models
+from django.contrib.postgres.indexes import GistIndex
 
 
 # ───────────────────────────────── Sport ──────────────────────────────────
@@ -22,12 +24,43 @@ class Sport(models.Model):
         return self.name
 
 
+# ───────────────────────────────── Category ───────────────────────────────
+class Category(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+    icon = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.name
+
+
+# ───────────────────────────────── Facility ───────────────────────────────
+class Facility(models.Model):
+    name = models.CharField(max_length=100)
+    location = gis_models.PointField()
+    categories = models.ManyToManyField(Category, related_name="facilities")
+    radius = models.PositiveIntegerField(default=1000)
+
+    class Meta:
+        indexes = [
+            GistIndex(fields=["location"]),
+        ]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.name
+
+
 # ───────────────────────────────── Slot ───────────────────────────────────
 class Slot(models.Model):
     """A single bookable time-window for one sport."""
 
+    facility = models.ForeignKey(
+        Facility, related_name="slots", on_delete=models.CASCADE, null=True, blank=True
+    )
     sport = models.ForeignKey(
-        Sport, related_name="slots", on_delete=models.CASCADE
+        Sport, related_name="slots", on_delete=models.CASCADE, null=True, blank=True
     )
     title = models.CharField(max_length=60)
     location = models.CharField(max_length=80)
@@ -47,7 +80,7 @@ class Slot(models.Model):
 
     class Meta:
         ordering = ("begins_at",)
-        unique_together = ("sport", "begins_at")
+        unique_together = ("facility", "begins_at")
 
     @property
     def seats_left(self) -> int:

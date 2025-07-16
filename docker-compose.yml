@@ -23,7 +23,7 @@ volumes:
 services:
   # ────────────────────────────────────────────────────────────── PostgreSQL ──
   db:
-    image: postgres:15
+    image: postgis/postgis:15
     restart: unless-stopped
     environment:
       POSTGRES_DB:      sportsdb
