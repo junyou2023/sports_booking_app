@@ -38,4 +38,5 @@ If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `.env` includes
 `10.0.2.2` so Django accepts requests from the emulator.
 The backend exposes a simple auth API supporting email/password and Google login.
 After signing up or using Google the app stores JWT tokens securely and the
-profile page shows your account email.
+profile page shows your account email. Use the **Logout** button on that page to
+clear the stored token and log in with a different account.
