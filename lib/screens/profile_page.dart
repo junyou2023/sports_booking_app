@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/booking_service.dart';
 import '../models/booking.dart';
 import '../widgets/auth_sheet.dart';
+import 'home_page.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -55,6 +56,19 @@ class _ProfileBody extends ConsumerWidget {
                 const SizedBox(height: 20),
                 Text('My bookings:', style: Theme.of(context).textTheme.titleMedium),
                 ...bookings.map((b) => Text(b.slot.title)),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () async {
+                    await ref.read(authNotifierProvider.notifier).logout();
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const HomePage()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  child: const Text('Logout'),
+                ),
               ],
             ),
           );

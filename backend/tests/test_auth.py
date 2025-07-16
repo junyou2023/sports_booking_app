@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 import jwt
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from django.contrib.auth.models import User
-from backend.accounts.models import VendorProfile, CustomerProfile
+from accounts.models import VendorProfile, CustomerProfile
 
 django.setup()
 pytestmark = pytest.mark.django_db
