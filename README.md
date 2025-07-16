@@ -40,3 +40,14 @@ The backend exposes a simple auth API supporting email/password and Google login
 After signing up or using Google the app stores JWT tokens securely and the
 profile page shows your account email. Use the **Logout** button on that page to
 clear the stored token and log in with a different account.
+
+## Geo setup
+
+PostGIS is required for the new facility search API. When using Docker the
+database image already includes PostGIS. If running locally install PostGIS and
+set `ENGINE=django.contrib.gis.db.backends.postgis` in `PlayNexus/settings.py`.
+Seed demo data with:
+
+```bash
+docker compose exec web python backend/manage.py seed_facilities
+```

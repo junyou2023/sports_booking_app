@@ -1,6 +1,7 @@
 # sports/serializers.py
 from rest_framework import serializers
-from .models import Sport, Slot, Booking
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from .models import Sport, Slot, Booking, Category, Facility
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -20,6 +21,19 @@ class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Slot
         fields = "__all__"
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "name", "icon")
+
+
+class FacilitySerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = Facility
+        geo_field = "location"
+        fields = ("id", "name", "radius", "location", "categories")
 
 
 class BookingSerializer(serializers.ModelSerializer):

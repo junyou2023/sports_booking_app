@@ -1,7 +1,17 @@
 # sports/views.py
 from django.db import models, transaction
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
+from .models import Sport, Slot, Booking, Category, Facility
+from .serializers import (
+    SportSerializer,
+    SlotSerializer,
+    BookingSerializer,
+    CategorySerializer,
+    FacilitySerializer,
+)
 
 from .models import Sport, Slot, Booking
 from .serializers import SportSerializer, SlotSerializer, BookingSerializer
@@ -13,14 +23,45 @@ class SportViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class FacilityViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = FacilitySerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs = Facility.objects.prefetch_related("categories")
+        categories = self.request.query_params.get("categories")
+        if categories:
+            names = categories.split(",")
+            qs = qs.filter(categories__name__in=names).distinct()
+
+        near = self.request.query_params.get("near")
+        if near:
+            try:
+                lat, lng = map(float, near.split(","))
+                radius = float(self.request.query_params.get("radius", 5000))
+                point = Point(lng, lat, srid=4326)
+                qs = qs.filter(location__distance_lte=(point, radius)).annotate(
+                    distance=Distance("location", point)
+                ).order_by("distance")
+            except ValueError:
+                pass
+        return qs
+
+
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SlotSerializer
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        qs = Slot.objects.select_related("sport")
-        sport_id = self.request.query_params.get("sport")
-        return qs.filter(sport_id=sport_id) if sport_id else qs
+        qs = Slot.objects.select_related("facility")
+        facility_id = self.request.query_params.get("facility_id")
+        return qs.filter(facility_id=facility_id) if facility_id else qs
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -30,7 +71,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Booking.objects.filter(user=self.request.user).select_related(
             "slot",
-            "slot__sport",
+            "slot__facility",
         )
 
     @transaction.atomic

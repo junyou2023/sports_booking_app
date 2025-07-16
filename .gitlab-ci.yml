@@ -1,6 +1,7 @@
 stages:
   - lint
   - test
+  - e2e
 
 variables:
   # 让 Django 连接到服务里的 Postgres
@@ -32,7 +33,7 @@ test:
   stage: test
   image: python:3.11
   services:
-    - name: postgres:15
+    - name: postgis/postgis:15
       alias: postgres
       variables:
         POSTGRES_DB: $DB_NAME
@@ -41,8 +42,8 @@ test:
   before_script:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
-    # 迁移数据库
     - python backend/manage.py migrate --noinput
+    - python backend/manage.py seed_facilities
   script: pytest
   tags: []          # 如需要 runner tag
   artifacts:
@@ -50,3 +51,10 @@ test:
     expire_in: 1 week
     paths:
       - tests/        # 保存测试结果/覆盖率 html 可自行配置
+
+e2e:
+  stage: e2e
+  image: cirrusci/flutter:3.19.6
+  before_script:
+    - flutter pub get
+  script: flutter test
