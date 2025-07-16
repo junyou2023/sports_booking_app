@@ -21,6 +21,19 @@ flutter pub get
 # 5. run the app on an emulator/device
 flutter run
 ```
+
+The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
+backend is. When testing on the Android emulator the correct value is
+`http://10.0.2.2:8000/api`.
+
+If running the backend without Docker, install dependencies with
+`pip install -r requirements.txt` and apply migrations using `python manage.py migrate`.
+
+To run the backend tests:
+
+```bash
+DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
+```
 If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `.env` includes
 `10.0.2.2` so Django accepts requests from the emulator.
 The backend exposes a simple auth API supporting email/password and Google login.

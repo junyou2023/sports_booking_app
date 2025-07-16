@@ -5,14 +5,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-final Dio apiClient = Dio(
-  BaseOptions(
-    baseUrl: dotenv.env['API_BASE_URL']!, // e.g. http://10.0.2.2:8000/api
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 5),
-    responseType: ResponseType.json,
-  ),
-);
+late Dio apiClient;
+
+/// Call after dotenv.load to construct the client with the base URL.
+void initApiClient() {
+  apiClient = Dio(
+    BaseOptions(
+      baseUrl: dotenv.env['API_BASE_URL']!, // e.g. http://10.0.2.2:8000/api
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 5),
+      responseType: ResponseType.json,
+    ),
+  );
+}
 
 final _storage = const FlutterSecureStorage();
 

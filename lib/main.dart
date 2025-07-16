@@ -17,7 +17,9 @@ import 'services/api_client.dart';
 ///    its providers (e.g. `sportsProvider`, `slotsProvider`, …).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');          // <-- load .env variables
+  await dotenv.load(fileName: '.env');
+  // <-- load .env variables
+  initApiClient();
   initAuthInterceptor();
 
   runApp(

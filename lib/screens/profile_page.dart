@@ -22,7 +22,7 @@ class ProfilePage extends ConsumerWidget {
         if (snapshot.data == null) {
           return const _GuestProfile();
         }
-        return const _ProfileBody();
+        return _ProfileBody();
       },
     );
   }
