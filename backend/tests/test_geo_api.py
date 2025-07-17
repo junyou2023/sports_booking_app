@@ -1,12 +1,11 @@
 import django
+django.setup()
 import pytest
 from django.contrib.gis.geos import Point
+from django.utils import timezone
 from rest_framework.test import APIClient
 from sports.models import Category, Facility, Slot
-from django.utils import timezone
 
-
-django.setup()
 pytestmark = pytest.mark.django_db
 
 

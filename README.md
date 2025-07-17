@@ -43,9 +43,10 @@ clear the stored token and log in with a different account.
 
 ## Geo setup
 
-PostGIS is required for the new facility search API. When using Docker the
-database image already includes PostGIS. If running locally install PostGIS and
-set `ENGINE=django.contrib.gis.db.backends.postgis` in `PlayNexus/settings.py`.
+PostGIS is required for the new facility search API. Docker uses
+`postgis/postgis:15-3.4` for the database so no extra setup is needed.
+If running locally install PostGIS and set `ENGINE=django.contrib.gis.db.backends.postgis`
+in `PlayNexus/settings.py`.
 Seed demo data with:
 
 ```bash

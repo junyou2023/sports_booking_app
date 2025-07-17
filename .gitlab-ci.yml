@@ -33,7 +33,7 @@ test:
   stage: test
   image: python:3.11
   services:
-    - name: postgis/postgis:15
+    - name: postgis/postgis:15-3.4
       alias: postgres
       variables:
         POSTGRES_DB: $DB_NAME
