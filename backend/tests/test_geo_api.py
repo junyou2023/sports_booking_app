@@ -1,12 +1,22 @@
 import django
-django.setup()
 import pytest
+from django.core.exceptions import ImproperlyConfigured
+try:
+    from django.contrib.gis import gdal
+    HAS_GDAL = gdal.HAS_GDAL
+except ImproperlyConfigured:
+    HAS_GDAL = False
+
+if not HAS_GDAL:
+    pytest.skip("GDAL not available", allow_module_level=True)
+
+django.setup()
 from django.contrib.gis.geos import Point
 from django.utils import timezone
 from rest_framework.test import APIClient
-from sports.models import Category, Facility, Slot
+from backend.sports.models import Category, Facility, Slot
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def setup_data():

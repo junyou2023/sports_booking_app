@@ -25,9 +25,14 @@ flutter run
 The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
 backend is. When testing on the Android emulator the correct value is
 `http://10.0.2.2:8000/api`.
+`initApiClient` automatically appends a trailing slash so either form
+(`http://10.0.2.2:8000/api` or `http://10.0.2.2:8000/api/`) works.
 
 If running the backend without Docker, install dependencies with
 `pip install -r requirements.txt` and apply migrations using `python manage.py migrate`.
+GeoDjango requires the GDAL library. On most systems it is easiest to use the
+Docker environment above. If you want to run locally ensure `gdal` and
+`spatialite` are installed and set `GDAL_LIBRARY_PATH` if needed.
 
 To run the backend tests:
 

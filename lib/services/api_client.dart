@@ -9,11 +9,13 @@ late Dio apiClient;
 
 /// Call after dotenv.load to construct the client with the base URL.
 void initApiClient() {
+  var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
+  if (!base.endsWith('/')) base += '/';
   apiClient = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['API_BASE_URL']!, // e.g. http://10.0.2.2:8000/api
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
+      baseUrl: base,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
     ),
   );

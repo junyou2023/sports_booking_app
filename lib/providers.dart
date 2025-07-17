@@ -57,6 +57,7 @@ class AuthNotifier extends StateNotifier<AuthStatus> {
   }
 
   Future<void> logout() async {
+
     await authService.logout();
     state = AuthStatus.unauthenticated;
   }
