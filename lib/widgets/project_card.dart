@@ -16,18 +16,19 @@ class ProjectCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Expanded(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.asset(imageUrl,
-                  width: 180, height: 180, fit: BoxFit.cover),
+              child: Image.asset(imageUrl, fit: BoxFit.cover),
             ),
-            const SizedBox(height: 8),
-            Text(title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyLarge),
+          ),
+          const SizedBox(height: 18),
+          Text(title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyLarge),
           ],
         ),
       ),
