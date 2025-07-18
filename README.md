@@ -13,13 +13,14 @@ docker compose up -d --build
 docker compose exec web python backend/manage.py migrate --noinput
 
 # 3. verify the backend is running
-curl -f http://localhost:8000/healthz
+curl http://localhost:8000/healthz
 
 # 4. get Flutter packages
 flutter pub get
 
 # 5. run the app on an emulator/device
 flutter run
+
 ```
 
 The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
