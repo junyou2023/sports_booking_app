@@ -10,6 +10,30 @@ class ActivityService {
         .map(Activity.fromJson)
         .toList();
   }
+
+  Future<void> createActivity(
+    int sport,
+    int discipline,
+    int? variant,
+    String title,
+    String description,
+    int difficulty,
+    int duration,
+    double basePrice,
+    String image,
+  ) async {
+    await apiClient.post('/activities/', data: {
+      'sport': sport,
+      'discipline': discipline,
+      if (variant != null) 'variant': variant,
+      'title': title,
+      'description': description,
+      'difficulty': difficulty,
+      'duration': duration,
+      'base_price': basePrice,
+      'image': image,
+    });
+  }
 }
 
 final activityService = ActivityService();

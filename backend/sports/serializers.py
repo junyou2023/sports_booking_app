@@ -52,6 +52,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "sport",
             "discipline",
             "variant",
+            "image",
             "owner",
             "title",
             "description",

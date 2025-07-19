@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../models/sport.dart';
 import '../models/slot.dart';
+import '../models/category.dart';
+import '../models/variant.dart';
 import 'api_client.dart';
 
 class SportsService {
@@ -32,6 +34,22 @@ class SportsService {
         .map(Slot.fromJson)
         .toList(growable: false);
     return list;
+  }
+
+  Future<List<Category>> fetchCategories() async {
+    final res = await apiClient.get('/categories/');
+    return (res.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(Category.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<Variant>> fetchVariants() async {
+    final res = await apiClient.get('/variants/');
+    return (res.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(Variant.fromJson)
+        .toList(growable: false);
   }
 }
 

@@ -4,6 +4,7 @@ class Activity {
     required this.sport,
     required this.discipline,
     required this.variant,
+    required this.image,
     required this.title,
     required this.description,
     required this.difficulty,
@@ -15,6 +16,7 @@ class Activity {
   final int sport;
   final int discipline;
   final int? variant;
+  final String image;
   final String title;
   final String description;
   final int difficulty;
@@ -26,6 +28,7 @@ class Activity {
         sport: j['sport'] as int,
         discipline: j['discipline'] as int,
         variant: j['variant'] as int?,
+        image: j['image'] as String? ?? '',
         title: j['title'] as String,
         description: j['description'] as String? ?? '',
         difficulty: j['difficulty'] as int? ?? 1,

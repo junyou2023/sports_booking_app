@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/activity_provider.dart';
-import '../services/auth_service.dart';
 import 'add_activity_page.dart';
 
 class ProviderDashboardPage extends ConsumerWidget {
@@ -18,6 +17,9 @@ class ProviderDashboardPage extends ConsumerWidget {
         data: (list) => ListView.builder(
           itemCount: list.length,
           itemBuilder: (_, i) => ListTile(
+            leading: list[i].image.isNotEmpty
+                ? Image.network(list[i].image, width: 50, fit: BoxFit.cover)
+                : null,
             title: Text(list[i].title),
           ),
         ),
