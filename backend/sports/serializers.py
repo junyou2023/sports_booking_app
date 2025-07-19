@@ -52,12 +52,14 @@ class ActivitySerializer(serializers.ModelSerializer):
             "sport",
             "discipline",
             "variant",
+            "owner",
             "title",
             "description",
             "difficulty",
             "duration",
             "base_price",
         )
+        read_only_fields = ("id", "owner")
 
     def validate_base_price(self, value):
         if value < 0:
@@ -83,7 +85,7 @@ class ActivitySerializer(serializers.ModelSerializer):
 
 
 class FacilitySerializer(GeoFeatureModelSerializer):
-    owner = serializers.ReadOnlyField(source="owner.email")
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Facility
@@ -97,12 +99,15 @@ class FacilitySerializer(GeoFeatureModelSerializer):
             "owner",
         )
 
+    def get_owner(self, obj):
+        return getattr(obj.owner, "email", "")
+
 
 class FacilityCreateSerializer(serializers.ModelSerializer):
     lat = serializers.FloatField(write_only=True)
     lng = serializers.FloatField(write_only=True)
 
-    owner = serializers.ReadOnlyField(source="owner.email")
+    owner = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Facility
@@ -115,6 +120,9 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
             "categories",
             "owner",
         )
+
+    def get_owner(self, obj):
+        return getattr(obj.owner, "email", "")
 
     def create(self, validated_data):
         lat = validated_data.pop("lat")

@@ -12,7 +12,7 @@ class ProfileSerializer(serializers.Serializer):
         source="vendorprofile.company_name", required=False
     )
     phone = serializers.CharField(
-        source="vendorprofile.phone", required=False
+        source="customerprofile.phone", required=False
     )
     address = serializers.CharField(
         source="vendorprofile.address", required=False
@@ -33,11 +33,12 @@ class ProfileSerializer(serializers.Serializer):
 
     def to_representation(self, instance: User):
         vendor = getattr(instance, "vendorprofile", None)
+        customer = getattr(instance, "customerprofile", None)
         return {
             "email": instance.email,
             "is_provider": hasattr(instance, "vendorprofile"),
             "company_name": getattr(vendor, "company_name", ""),
-            "phone": getattr(vendor, "phone", ""),
+            "phone": getattr(customer, "phone", ""),
             "address": getattr(vendor, "address", ""),
             "logo": getattr(vendor, "logo", ""),
         }
@@ -45,13 +46,15 @@ class ProfileSerializer(serializers.Serializer):
     def update(self, instance: User, validated_data):
         vendor_data = validated_data.get("vendorprofile", {})
         vendor, _ = VendorProfile.objects.get_or_create(user=instance)
+        customer, _ = CustomerProfile.objects.get_or_create(user=instance)
         vendor.company_name = vendor_data.get(
             "company_name", vendor.company_name
         )
-        vendor.phone = vendor_data.get("phone", vendor.phone)
+        customer.phone = vendor_data.get("phone", customer.phone)
         vendor.address = vendor_data.get("address", vendor.address)
         vendor.logo = vendor_data.get("logo", vendor.logo)
         vendor.save()
+        customer.save()
         return instance
 
 

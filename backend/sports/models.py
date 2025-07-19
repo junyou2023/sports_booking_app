@@ -82,6 +82,13 @@ class Activity(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
     )
+    owner = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="activities",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ("sport", "discipline", "title")
