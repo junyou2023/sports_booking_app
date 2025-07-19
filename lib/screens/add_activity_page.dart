@@ -5,6 +5,9 @@ import '../utils/snackbar.dart';
 import 'package:dio/dio.dart';
 
 import '../models/activity.dart';
+import '../models/sport.dart';
+import '../models/category.dart';
+import '../models/variant.dart';
 
 class AddActivityPage extends StatefulWidget {
   final Activity? activity;
@@ -29,9 +32,9 @@ class _AddActivityPageState extends State<AddActivityPage> {
   bool _submitting = false;
 
   late Future<void> _loadFuture;
-  List<dynamic> sports = [];
-  List<dynamic> categories = [];
-  List<dynamic> variants = [];
+  List<Sport> sports = [];
+  List<Category> categories = [];
+  List<Variant> variants = [];
 
   @override
   void initState() {
