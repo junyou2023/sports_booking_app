@@ -2,7 +2,15 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
-from .models import Sport, Slot, Booking, Category, Facility
+from .models import (
+    Sport,
+    Slot,
+    Booking,
+    Category,
+    Facility,
+    Variant,
+    Activity,
+)
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -28,6 +36,50 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ("id", "name", "icon")
+
+
+class VariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Variant
+        fields = ("id", "discipline", "name")
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activity
+        fields = (
+            "id",
+            "sport",
+            "discipline",
+            "variant",
+            "title",
+            "description",
+            "difficulty",
+            "duration",
+            "base_price",
+        )
+
+    def validate_base_price(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Must be >= 0")
+        return value
+
+    def validate(self, attrs):
+        variant = attrs.get("variant")
+        discipline = attrs.get("discipline")
+        if variant and discipline and variant.discipline_id != discipline.id:
+            raise serializers.ValidationError(
+                {"variant": "Mismatch discipline"}
+            )
+        title = attrs.get("title", "")
+        if len(title) > 60:
+            raise serializers.ValidationError({"title": "Max 60 characters"})
+        desc = attrs.get("description", "")
+        if len(desc) > 500:
+            raise serializers.ValidationError(
+                {"description": "Max 500 characters"}
+            )
+        return attrs
 
 
 class FacilitySerializer(GeoFeatureModelSerializer):

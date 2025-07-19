@@ -3,9 +3,19 @@ from django.db import models, transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.utils import timezone
 
-from .models import Sport, Slot, Booking, Category, Facility
+from .models import (
+    Sport,
+    Slot,
+    Booking,
+    Category,
+    Facility,
+    Variant,
+    Activity,
+)
 from .serializers import (
     SportSerializer,
     SlotSerializer,
@@ -13,6 +23,8 @@ from .serializers import (
     CategorySerializer,
     FacilitySerializer,
     FacilityCreateSerializer,
+    VariantSerializer,
+    ActivitySerializer,
 )
 
 
@@ -26,6 +38,20 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+
+
+class VariantViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Variant.objects.select_related("discipline")
+    serializer_class = VariantSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class ActivityViewSet(viewsets.ModelViewSet):
+    queryset = Activity.objects.select_related(
+        "sport", "discipline", "variant"
+    )
+    serializer_class = ActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
@@ -100,3 +126,41 @@ class BookingViewSet(viewsets.ModelViewSet):
             self.get_serializer(booking).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class BulkSlotCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            facility = Facility.objects.get(pk=request.data.get("facility"))
+            sport = Sport.objects.get(pk=request.data.get("sport"))
+            start = timezone.datetime.fromisoformat(
+                request.data.get("start_time")
+            )
+            end = timezone.datetime.fromisoformat(
+                request.data.get("end_time")
+            )
+            interval = int(request.data.get("interval"))
+        except Exception:
+            return Response({"detail": "Invalid parameters"}, status=400)
+
+        slots = []
+        current = start
+        while current + timezone.timedelta(minutes=interval) <= end:
+            slots.append(
+                Slot(
+                    facility=facility,
+                    sport=sport,
+                    title=f"{sport.name} {current:%H:%M}",
+                    location=facility.name,
+                    begins_at=current,
+                    ends_at=current
+                    + timezone.timedelta(minutes=interval),
+                    capacity=request.data.get("capacity", 1),
+                    price=request.data.get("price", 0),
+                )
+            )
+            current += timezone.timedelta(minutes=interval)
+        Slot.objects.bulk_create(slots)
+        return Response({"created": len(slots)}, status=201)

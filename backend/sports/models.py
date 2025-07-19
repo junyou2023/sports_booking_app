@@ -36,6 +36,60 @@ class Category(models.Model):
         return self.name
 
 
+# ───────────────────────────────── Variant ────────────────────────────────
+class Variant(models.Model):
+    """Third level taxonomy under a Category/Discipline."""
+
+    discipline = models.ForeignKey(
+        Category, related_name="variants", on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=30)
+
+    class Meta:
+        ordering = ("name",)
+        unique_together = ("discipline", "name")
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.name
+
+
+# ───────────────────────────────── Activity ───────────────────────────────
+class Activity(models.Model):
+    """Activity offered by a provider."""
+
+    sport = models.ForeignKey(
+        Sport, related_name="activities", on_delete=models.CASCADE
+    )
+    discipline = models.ForeignKey(
+        Category, related_name="activities", on_delete=models.CASCADE
+    )
+    variant = models.ForeignKey(
+        Variant,
+        related_name="activities",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=60)
+    description = models.TextField(blank=True, max_length=500)
+    difficulty = models.PositiveSmallIntegerField(
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    duration = models.PositiveIntegerField(help_text="Minutes", default=60)
+    base_price = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+
+    class Meta:
+        ordering = ("sport", "discipline", "title")
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.title
+
+
 # ───────────────────────────────── Facility ───────────────────────────────
 class Facility(models.Model):
     name = models.CharField(max_length=100)
