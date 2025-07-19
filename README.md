@@ -58,3 +58,10 @@ Seed demo data with:
 ```bash
 docker compose exec web python backend/manage.py seed_facilities
 ```
+
+## Location permissions
+
+The client uses the device's location to show nearby activities. Android
+requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
+`AndroidManifest.xml`. iOS must include `NSLocationWhenInUseUsageDescription` in
+`Info.plist`.
