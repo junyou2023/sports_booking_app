@@ -3,8 +3,9 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 try:
     from django.contrib.gis import gdal
-    HAS_GDAL = gdal.HAS_GDAL
-except ImproperlyConfigured:
+    gdal.gdal_version()
+    HAS_GDAL = True
+except (ImproperlyConfigured, Exception):
     HAS_GDAL = False
 
 if not HAS_GDAL:
@@ -14,7 +15,7 @@ django.setup()
 from django.contrib.gis.geos import Point
 from django.utils import timezone
 from rest_framework.test import APIClient
-from backend.sports.models import Category, Facility, Slot
+from sports.models import Category, Facility, Slot
 
 pytestmark = [pytest.mark.django_db]
 
