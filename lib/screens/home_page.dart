@@ -248,6 +248,44 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // ❸ data state
+            data: (facilities) {
+              if (facilities.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No nearby activities found.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                );
+              }
+
+              return SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 310,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: facilities.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) {
+                      final facility = facilities[i];
+                      return ActivityCard(
+                        title: facility.name,
+                        location:
+                            '${facility.lat.toStringAsFixed(2)},${facility.lng.toStringAsFixed(2)}',
+                        price: 0,
+                        rating: 0,
+                        reviews: 0,
+                        asset: 'assets/images/default.jpg',
+                        isFavorite: false,
+                        onFavorite: () {},
+                        onTap: () {},
+                      );
+                    },
+                  ),
+
             data: (facilities) => SliverToBoxAdapter(
               child: SizedBox(
                 height: 310,
@@ -272,8 +310,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     );
                   },
                 ),
-              ),
-            ),
+              );
+            },
           ),
 
 
