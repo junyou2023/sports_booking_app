@@ -48,11 +48,23 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ActivityViewSet(viewsets.ModelViewSet):
-    queryset = Activity.objects.select_related(
-        "sport", "discipline", "variant"
-    )
     serializer_class = ActivitySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            perms = [permissions.IsAuthenticated, IsVendor]
+        else:
+            perms = [permissions.AllowAny]
+        return [p() if isinstance(p, type) else p for p in perms]
+
+    def get_queryset(self):
+        qs = Activity.objects.select_related("sport", "discipline", "variant")
+        mine = self.request.query_params.get("mine")
+        if mine == "1" and self.request.user.is_authenticated:
+            qs = qs.filter(owner=self.request.user)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
