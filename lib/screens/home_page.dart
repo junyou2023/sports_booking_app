@@ -12,6 +12,7 @@ import '../widgets/search_bar.dart';
 import 'categories_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
+import '../providers/facility_provider.dart';
 import 'login_page.dart';                                     // for login navigation
 import 'profile_page.dart';
 import '../widgets/auth_sheet.dart';
@@ -43,8 +44,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final double paddingTop = MediaQuery.of(context).padding.top;
 
-    // ========== 监听 sportsProvider，获取后端真实数据 ==========
-    final sportsAsync = ref.watch(sportsProvider);
+    // ========== 监听 facilitiesProvider，获取附近场馆 ==========
+    final facilitiesAsync = ref.watch(facilitiesProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
@@ -222,8 +223,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
-// async list of sports → horizontal ActivityCard carousel
-          sportsAsync.when(
+// async list of facilities → horizontal ActivityCard carousel
+          facilitiesAsync.when(
             // ❶ loading state
             loading: () => const SliverToBoxAdapter(
               child: SizedBox(
@@ -247,45 +248,46 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // ❸ data state
-            data: (sports) => SliverToBoxAdapter(
-              child: SizedBox(
-                height: 310,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sports.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) {
-                    final sport = sports[i];
-                    final favIds = ref.watch(wishlistProvider);
-                    final bool fav = favIds.contains(sport.id);
-                    return ActivityCard(
-                      title: sport.name,
-                      location: 'City Center',
-                      price: 40.0,
-                      rating: 4.7,
-                      reviews: 120,
-                      asset: sport.banner,             // network image URL
-                      isFavorite: fav,
-                      onFavorite: () async {
-                        final token = await authService.getToken();
-                        if (token == null) {
-                          showAuthSheet(context);
-                        } else {
-                          ref.read(wishlistProvider.notifier).toggle(sport.id);
-                        }
-                      },
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SlotsPage(sport: sport),
-                        ),
-                      ),
-                    );
-                  },
+            data: (facilities) {
+              if (facilities.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No nearby activities found.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                );
+              }
+
+              return SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 310,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: facilities.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) {
+                      final facility = facilities[i];
+                      return ActivityCard(
+                        title: facility.name,
+                        location:
+                            '${facility.lat.toStringAsFixed(2)},${facility.lng.toStringAsFixed(2)}',
+                        price: 0,
+                        rating: 0,
+                        reviews: 0,
+                        asset: 'assets/images/default.jpg',
+                        isFavorite: false,
+                        onFavorite: () {},
+                        onTap: () {},
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
 
 

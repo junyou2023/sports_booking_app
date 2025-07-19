@@ -3,13 +3,24 @@ import '../models/facility.dart';
 import 'api_client.dart';
 
 class FacilityService {
-  Future<List<Facility>> fetchFacilities(List<String> categories, double radius) async {
+  Future<List<Facility>> fetchFacilities(
+      List<String> categories, double radius, double lat, double lng) async {
     final res = await apiClient.get('/facilities/', queryParameters: {
       'categories': categories.join(','),
       'radius': radius.toInt(),
-      'near': '0,0', // placeholder
+      'near': '$lat,$lng',
     });
-    return (res.data as List)
+
+    dynamic data = res.data;
+    if (data is Map && data['features'] is List) {
+      data = data['features'];
+    }
+
+    if (data is! List) {
+      throw Exception('Unexpected response format');
+    }
+
+    return data
         .cast<Map<String, dynamic>>()
         .map(Facility.fromJson)
         .toList(growable: false);

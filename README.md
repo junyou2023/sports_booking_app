@@ -58,3 +58,14 @@ Seed demo data with:
 ```bash
 docker compose exec web python backend/manage.py seed_facilities
 ```
+
+The seed command creates 30 facilities around the origin (0°, 0°). If your
+device's location is far away, no nearby results will appear. Either adjust your
+emulator's location to 0,0 or modify the seeder to use coordinates near you.
+
+## Location permissions
+
+The client uses the device's location to show nearby activities. Android
+requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
+`AndroidManifest.xml`. iOS must include `NSLocationWhenInUseUsageDescription` in
+`Info.plist`.
