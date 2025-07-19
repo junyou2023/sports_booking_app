@@ -11,6 +11,12 @@ except (ImproperlyConfigured, Exception):
 if not HAS_GDAL:
     pytest.skip("GDAL not available", allow_module_level=True)
 
+
+django.setup()  # noqa: E402
+from django.contrib.gis.geos import Point  # noqa: E402
+from django.utils import timezone  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+from sports.models import Category, Facility, Slot  # noqa: E402
 django.setup()
 from django.contrib.gis.geos import Point
 from django.utils import timezone
@@ -25,7 +31,11 @@ def setup_data():
     c2 = Category.objects.create(name="冲浪")
     f1 = Facility.objects.create(name="A", location=Point(0, 0), radius=1000)
     f1.categories.add(c1, c2)
-    f2 = Facility.objects.create(name="B", location=Point(0.01, 0), radius=1000)
+    f2 = Facility.objects.create(
+        name="B",
+        location=Point(0.01, 0),
+        radius=1000,
+    )
     f2.categories.add(c1)
     Slot.objects.create(
         facility=f1,

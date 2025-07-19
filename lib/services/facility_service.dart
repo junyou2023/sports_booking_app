@@ -10,7 +10,17 @@ class FacilityService {
       'radius': radius.toInt(),
       'near': '$lat,$lng',
     });
-    return (res.data as List)
+
+    dynamic data = res.data;
+    if (data is Map && data['features'] is List) {
+      data = data['features'];
+    }
+
+    if (data is! List) {
+      throw Exception('Unexpected response format');
+    }
+
+    return data
         .cast<Map<String, dynamic>>()
         .map(Facility.fromJson)
         .toList(growable: false);
