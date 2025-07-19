@@ -31,4 +31,5 @@ class CustomerProfile(models.Model):
 def _user_is_provider(self) -> bool:
     return hasattr(self, "vendorprofile")
 
+
 User.add_to_class("is_provider", property(_user_is_provider))

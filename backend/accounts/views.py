@@ -4,9 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsVendor
 from rest_framework.response import Response
 
-from .serializers import ProfileSerializer
-from .models import VendorProfile
-from dj_rest_auth.registration.views import RegisterView
+from .serializers import ProfileSerializer, ProviderRegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
@@ -68,15 +66,19 @@ class GoogleLoginView(APIView):
         )
 
 
-class ProviderRegisterView(RegisterView):
+class ProviderRegisterView(APIView):
     """Register a new provider account."""
 
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        user = serializer.save(self.request)
-        VendorProfile.objects.get_or_create(user=user)
-        return user
+    def post(self, request):
+        ser = ProviderRegisterSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        user = ser.save()
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {"access": str(refresh.access_token), "refresh": str(refresh)}
+        )
 
 
 class ProviderProfileView(APIView):
