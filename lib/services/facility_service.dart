@@ -3,11 +3,12 @@ import '../models/facility.dart';
 import 'api_client.dart';
 
 class FacilityService {
-  Future<List<Facility>> fetchFacilities(List<String> categories, double radius) async {
+  Future<List<Facility>> fetchFacilities(
+      List<String> categories, double radius, double lat, double lng) async {
     final res = await apiClient.get('/facilities/', queryParameters: {
       'categories': categories.join(','),
       'radius': radius.toInt(),
-      'near': '0,0', // placeholder
+      'near': '$lat,$lng',
     });
     return (res.data as List)
         .cast<Map<String, dynamic>>()
