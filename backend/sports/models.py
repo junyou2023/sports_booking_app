@@ -57,10 +57,18 @@ class Slot(models.Model):
     """A single bookable time-window for one sport."""
 
     facility = models.ForeignKey(
-        Facility, related_name="slots", on_delete=models.CASCADE, null=True, blank=True
+        Facility,
+        related_name="slots",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     sport = models.ForeignKey(
-        Sport, related_name="slots", on_delete=models.CASCADE, null=True, blank=True
+        Sport,
+        related_name="slots",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     title = models.CharField(max_length=60)
     location = models.CharField(max_length=80)

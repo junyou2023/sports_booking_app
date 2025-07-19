@@ -3,18 +3,19 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 try:
     from django.contrib.gis import gdal
-    HAS_GDAL = gdal.HAS_GDAL
-except ImproperlyConfigured:
+    gdal.gdal_version()
+    HAS_GDAL = True
+except (ImproperlyConfigured, Exception):
     HAS_GDAL = False
 
 if not HAS_GDAL:
     pytest.skip("GDAL not available", allow_module_level=True)
 
-django.setup()
-from django.contrib.gis.geos import Point
-from django.utils import timezone
-from rest_framework.test import APIClient
-from backend.sports.models import Category, Facility, Slot
+django.setup()  # noqa: E402
+from django.contrib.gis.geos import Point  # noqa: E402
+from django.utils import timezone  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+from sports.models import Category, Facility, Slot  # noqa: E402
 
 pytestmark = [pytest.mark.django_db]
 
@@ -24,7 +25,11 @@ def setup_data():
     c2 = Category.objects.create(name="冲浪")
     f1 = Facility.objects.create(name="A", location=Point(0, 0), radius=1000)
     f1.categories.add(c1, c2)
-    f2 = Facility.objects.create(name="B", location=Point(0.01, 0), radius=1000)
+    f2 = Facility.objects.create(
+        name="B",
+        location=Point(0.01, 0),
+        radius=1000,
+    )
     f2.categories.add(c1)
     Slot.objects.create(
         facility=f1,
@@ -66,3 +71,27 @@ def test_slots_by_facility():
     resp = APIClient().get("/api/slots/", {"facility_id": f1.id})
     assert resp.status_code == 200
     assert resp.data[0]["id"] == slot.id
+
+
+def test_create_facility(django_user_model):
+    django_user_model.objects.create_user(
+        "m@example.com", "m@example.com", "pass"
+    )
+    client = APIClient()
+    token_res = client.post(
+        "/api/token/", {"email": "m@example.com", "password": "pass"}
+    )
+    assert token_res.status_code == 200
+    access = token_res.data["access"]
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    resp = client.post(
+        "/api/facilities/",
+        {
+            "name": "New",
+            "lat": 1,
+            "lng": 2,
+            "radius": 1000,
+            "categories": [],
+        },
+    )
+    assert resp.status_code == 201

@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
+
 from .models import Sport, Slot, Booking, Category, Facility
 from .serializers import (
     SportSerializer,
@@ -11,10 +12,8 @@ from .serializers import (
     BookingSerializer,
     CategorySerializer,
     FacilitySerializer,
+    FacilityCreateSerializer,
 )
-
-from .models import Sport, Slot, Booking
-from .serializers import SportSerializer, SlotSerializer, BookingSerializer
 
 
 class SportViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,9 +28,13 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 
-class FacilityViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = FacilitySerializer
-    permission_classes = [permissions.AllowAny]
+class FacilityViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update"):
+            return FacilityCreateSerializer
+        return FacilitySerializer
 
     def get_queryset(self):
         qs = Facility.objects.prefetch_related("categories")
@@ -46,9 +49,11 @@ class FacilityViewSet(viewsets.ReadOnlyModelViewSet):
                 lat, lng = map(float, near.split(","))
                 radius = float(self.request.query_params.get("radius", 5000))
                 point = Point(lng, lat, srid=4326)
-                qs = qs.filter(location__distance_lte=(point, radius)).annotate(
-                    distance=Distance("location", point)
-                ).order_by("distance")
+                qs = (
+                    qs.filter(location__distance_lte=(point, radius))
+                    .annotate(distance=Distance("location", point))
+                    .order_by("distance")
+                )
             except ValueError:
                 pass
         return qs

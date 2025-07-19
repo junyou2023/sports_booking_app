@@ -1,6 +1,7 @@
 # sports/serializers.py
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from django.contrib.gis.geos import Point
 from .models import Sport, Slot, Booking, Category, Facility
 
 
@@ -34,6 +35,22 @@ class FacilitySerializer(GeoFeatureModelSerializer):
         model = Facility
         geo_field = "location"
         fields = ("id", "name", "radius", "location", "categories")
+
+
+class FacilityCreateSerializer(serializers.ModelSerializer):
+    lat = serializers.FloatField(write_only=True)
+    lng = serializers.FloatField(write_only=True)
+
+    class Meta:
+        model = Facility
+        fields = ("id", "name", "lat", "lng", "radius", "categories")
+
+    def create(self, validated_data):
+        lat = validated_data.pop("lat")
+        lng = validated_data.pop("lng")
+        point = Point(lng, lat, srid=4326)
+        facility = Facility.objects.create(location=point, **validated_data)
+        return facility
 
 
 class BookingSerializer(serializers.ModelSerializer):
