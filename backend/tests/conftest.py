@@ -26,3 +26,16 @@ def slot(db, sport):
 def client():
     """DRF APIClient fixture used in tests."""
     return APIClient()
+
+
+@pytest.fixture
+def provider_user(db):
+    from django.contrib.auth.models import User
+    user = User.objects.create_user("prov", email="prov@example.com", password="pass")
+    return user
+
+
+@pytest.fixture
+def auth_client(client, provider_user):
+    client.force_authenticate(provider_user)
+    return client

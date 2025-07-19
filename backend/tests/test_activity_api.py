@@ -21,10 +21,9 @@ def setup_taxonomy():
     return sport, disc, var
 
 
-def test_create_activity_invalid_taxonomy():
+def test_create_activity_invalid_taxonomy(auth_client):
     sport, disc, var = setup_taxonomy()
-    client = APIClient()
-    resp = client.post(
+    resp = auth_client.post(
         "/api/activities/",
         {
             "sport": sport.id,
@@ -36,10 +35,9 @@ def test_create_activity_invalid_taxonomy():
     assert resp.status_code == 400
 
 
-def test_create_activity_success():
+def test_create_activity_success(auth_client):
     sport, disc, var = setup_taxonomy()
-    client = APIClient()
-    resp = client.post(
+    resp = auth_client.post(
         "/api/activities/",
         {
             "sport": sport.id,
@@ -55,13 +53,12 @@ def test_create_activity_success():
     assert resp.data["title"] == "Surf 101"
 
 
-def test_bulk_slot_create():
+def test_bulk_slot_create(auth_client):
     sport, disc, var = setup_taxonomy()
     from django.contrib.gis.geos import Point
     facility = Facility.objects.create(name="Beach", location=Point(0, 0))
     Slot.objects.all().delete()
-    client = APIClient()
-    resp = client.post(
+    resp = auth_client.post(
         "/api/slots/bulk/",
         {
             "facility": facility.id,

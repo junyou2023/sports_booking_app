@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from sports.models import Sport, Slot, Booking
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db import models
 
 django.setup()
 
@@ -59,3 +60,36 @@ def test_booking_creation():
     response = client.post("/api/bookings/", {"slot_id": slot.id, "pax": 2})
     assert response.status_code == 201
     assert Booking.objects.filter(user=user, slot=slot).exists()
+
+
+def test_concurrent_booking_capacity(db):
+    user1 = User.objects.create_user("u1")
+    user2 = User.objects.create_user("u2")
+    sport = Sport.objects.create(name="Swim")
+    slot = Slot.objects.create(
+        sport=sport,
+        title="M",
+        location="L",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=1,
+        price=0,
+        rating=0,
+    )
+
+    results = []
+
+    def book(u):
+        c = APIClient()
+        c.force_authenticate(u)
+        res = c.post("/api/bookings/", {"slot_id": slot.id, "pax": 1})
+        results.append(res.status_code)
+
+    import threading
+
+    t1 = threading.Thread(target=book, args=(user1,))
+    t2 = threading.Thread(target=book, args=(user2,))
+    t1.start(); t2.start(); t1.join(); t2.join()
+
+    assert results.count(201) == 1
+    assert Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"] <= slot.capacity
