@@ -83,25 +83,48 @@ class ActivitySerializer(serializers.ModelSerializer):
 
 
 class FacilitySerializer(GeoFeatureModelSerializer):
+    owner = serializers.ReadOnlyField(source="owner.email")
+
     class Meta:
         model = Facility
         geo_field = "location"
-        fields = ("id", "name", "radius", "location", "categories")
+        fields = (
+            "id",
+            "name",
+            "radius",
+            "location",
+            "categories",
+            "owner",
+        )
 
 
 class FacilityCreateSerializer(serializers.ModelSerializer):
     lat = serializers.FloatField(write_only=True)
     lng = serializers.FloatField(write_only=True)
 
+    owner = serializers.ReadOnlyField(source="owner.email")
+
     class Meta:
         model = Facility
-        fields = ("id", "name", "lat", "lng", "radius", "categories")
+        fields = (
+            "id",
+            "name",
+            "lat",
+            "lng",
+            "radius",
+            "categories",
+            "owner",
+        )
 
     def create(self, validated_data):
         lat = validated_data.pop("lat")
         lng = validated_data.pop("lng")
         point = Point(lng, lat, srid=4326)
-        facility = Facility.objects.create(location=point, **validated_data)
+        request = self.context.get("request")
+        owner = request.user if request else None
+        facility = Facility.objects.create(
+            location=point, owner=owner, **validated_data
+        )
         return facility
 
 

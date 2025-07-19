@@ -4,11 +4,13 @@ import 'api_client.dart';
 
 class FacilityService {
   Future<List<Facility>> fetchFacilities(
-      List<String> categories, double radius, double lat, double lng) async {
+      List<String> categories, double radius, double lat, double lng,
+      {bool mine = false}) async {
     final res = await apiClient.get('/facilities/', queryParameters: {
       'categories': categories.join(','),
-      'radius': radius.toInt(),
-      'near': '$lat,$lng',
+      if (radius > 0) 'radius': radius.toInt(),
+      if (lat != 0 || lng != 0) 'near': '$lat,$lng',
+      if (mine) 'mine': '1',
     });
 
     dynamic data = res.data;

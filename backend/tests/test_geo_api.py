@@ -74,9 +74,11 @@ def test_slots_by_facility():
 
 
 def test_create_facility(django_user_model):
-    django_user_model.objects.create_user(
+    user = django_user_model.objects.create_user(
         "m@example.com", "m@example.com", "pass"
     )
+    from accounts.models import VendorProfile
+    VendorProfile.objects.create(user=user)
     client = APIClient()
     token_res = client.post(
         "/api/token/", {"email": "m@example.com", "password": "pass"}
@@ -95,3 +97,6 @@ def test_create_facility(django_user_model):
         },
     )
     assert resp.status_code == 201
+    from sports.models import Facility
+    facility = Facility.objects.get(name="New")
+    assert facility.owner == user

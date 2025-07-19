@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/facility_service.dart';
+import '../services/location_service.dart';
 import '../utils/snackbar.dart';
 
 class AddActivityPage extends StatefulWidget {
@@ -18,6 +19,20 @@ class _AddActivityPageState extends State<AddActivityPage> {
   final radiusCtrl = TextEditingController(text: '1000');
   final categoriesCtrl = TextEditingController();
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocation();
+  }
+
+  Future<void> _loadLocation() async {
+    try {
+      final pos = await locationService.getCurrent();
+      latCtrl.text = pos.latitude.toStringAsFixed(6);
+      lngCtrl.text = pos.longitude.toStringAsFixed(6);
+    } catch (_) {}
+  }
 
   @override
   void dispose() {

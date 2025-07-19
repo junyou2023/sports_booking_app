@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/booking_service.dart';
 import '../models/booking.dart';
 import '../widgets/auth_sheet.dart';
+import 'provider_dashboard_page.dart';
 import 'home_page.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -51,9 +52,22 @@ class _ProfileBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Email: \${profile.email}'),
-                Text('Company: \${profile.companyName}'),
-                Text('Phone: \${profile.phone}'),
+                Text('Email: ${profile.email}'),
+                Text('Company: ${profile.companyName}'),
+                Text('Phone: ${profile.phone}'),
+                if (profile.isProvider) ...[
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ProviderDashboardPage()),
+                      );
+                    },
+                    child: const Text('Provider Dashboard'),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text('My bookings:', style: Theme.of(context).textTheme.titleMedium),
                 ...bookings.map((b) => Text(b.slot.title)),

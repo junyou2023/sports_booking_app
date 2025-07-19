@@ -3,6 +3,7 @@ from django.db import models, transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status
+from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
@@ -55,7 +56,12 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            perms = [permissions.IsAuthenticated, IsVendor]
+        else:
+            perms = [permissions.IsAuthenticatedOrReadOnly]
+        return [p() if isinstance(p, type) else p for p in perms]
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -64,6 +70,9 @@ class FacilityViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Facility.objects.prefetch_related("categories")
+        mine = self.request.query_params.get("mine")
+        if mine == "1" and self.request.user.is_authenticated:
+            qs = qs.filter(owner=self.request.user)
         categories = self.request.query_params.get("categories")
         if categories:
             names = categories.split(",")
@@ -83,6 +92,9 @@ class FacilityViewSet(viewsets.ModelViewSet):
             except ValueError:
                 pass
         return qs
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):

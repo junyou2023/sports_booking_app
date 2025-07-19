@@ -96,6 +96,13 @@ class Facility(models.Model):
     location = gis_models.PointField()
     categories = models.ManyToManyField(Category, related_name="facilities")
     radius = models.PositiveIntegerField(default=1000)
+    owner = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="facilities",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [

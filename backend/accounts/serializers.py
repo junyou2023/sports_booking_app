@@ -5,6 +5,9 @@ from .models import VendorProfile
 
 class ProfileSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    is_provider = serializers.BooleanField(
+        source="is_provider", read_only=True
+    )
     company_name = serializers.CharField(
         source="vendorprofile.company_name", required=False
     )
@@ -19,12 +22,20 @@ class ProfileSerializer(serializers.Serializer):
     )
 
     class Meta:
-        fields = ["email", "company_name", "phone", "address", "logo"]
+        fields = [
+            "email",
+            "is_provider",
+            "company_name",
+            "phone",
+            "address",
+            "logo",
+        ]
 
     def to_representation(self, instance: User):
         vendor = getattr(instance, "vendorprofile", None)
         return {
             "email": instance.email,
+            "is_provider": hasattr(instance, "vendorprofile"),
             "company_name": getattr(vendor, "company_name", ""),
             "phone": getattr(vendor, "phone", ""),
             "address": getattr(vendor, "address", ""),

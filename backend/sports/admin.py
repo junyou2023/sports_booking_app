@@ -31,8 +31,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Facility)
 class FacilityAdmin(admin.ModelAdmin):
-    list_display = ("name", "radius")
-    search_fields = ("name",)
+    list_display = ("name", "owner", "radius")
+    search_fields = ("name", "owner__email")
 
 
 @admin.register(Booking)
