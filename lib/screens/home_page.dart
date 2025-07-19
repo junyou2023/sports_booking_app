@@ -285,6 +285,30 @@ class _HomePageState extends ConsumerState<HomePage> {
                       );
                     },
                   ),
+
+            data: (facilities) => SliverToBoxAdapter(
+              child: SizedBox(
+                height: 310,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: facilities.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) {
+                    final facility = facilities[i];
+                    return ActivityCard(
+                      title: facility.name,
+                      location:
+                          '${facility.lat.toStringAsFixed(2)},${facility.lng.toStringAsFixed(2)}',
+                      price: 0,
+                      rating: 0,
+                      reviews: 0,
+                      asset: 'assets/images/default.jpg',
+                      isFavorite: false,
+                      onFavorite: () {},
+                      onTap: () {},
+                    );
+                  },
                 ),
               );
             },
