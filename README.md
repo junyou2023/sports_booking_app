@@ -56,6 +56,11 @@ in `PlayNexus/settings.py`.
 Seed demo data with:
 
 ```bash
+docker compose exec web python backend/manage.py seed_taxonomy
+```
+Creates a set of demo categories and variants so **Add Activity** dropdowns work.
+
+```bash
 docker compose exec web python backend/manage.py seed_facilities
 ```
 
