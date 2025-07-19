@@ -11,11 +11,17 @@ except (ImproperlyConfigured, Exception):
 if not HAS_GDAL:
     pytest.skip("GDAL not available", allow_module_level=True)
 
+
 django.setup()  # noqa: E402
 from django.contrib.gis.geos import Point  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
 from sports.models import Category, Facility, Slot  # noqa: E402
+django.setup()
+from django.contrib.gis.geos import Point
+from django.utils import timezone
+from rest_framework.test import APIClient
+from sports.models import Category, Facility, Slot
 
 pytestmark = [pytest.mark.django_db]
 
