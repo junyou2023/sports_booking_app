@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 import 'registration_page.dart';
+import 'provider_registration_page.dart';
 import 'profile_page.dart';
 import 'reset_password_page.dart';
 import 'package:dio/dio.dart';
@@ -80,6 +81,15 @@ class LoginPage extends ConsumerWidget {
                 );
               },
               child: const Text('Create an account'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProviderRegistrationPage()),
+                );
+              },
+              child: const Text('Provider sign up'),
             ),
             TextButton(
               onPressed: () {

@@ -50,6 +50,12 @@ class AuthNotifier extends StateNotifier<AuthStatus> {
     state = AuthStatus.authenticated;
   }
 
+  Future<void> registerProvider(String email, String p1, String p2, String name, String phone, String address) async {
+    state = AuthStatus.authenticating;
+    await authService.registerProvider(email, p1, p2, name, phone, address);
+    state = AuthStatus.authenticated;
+  }
+
   Future<void> loginWithGoogle() async {
     state = AuthStatus.authenticating;
     await authService.loginWithGoogle();

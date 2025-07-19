@@ -75,3 +75,10 @@ requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
 Logged-in users can publish new activities via the **Add** button on the home
 page. Enter a name, coordinates and optional category IDs. Once created the
 facility will be listed in the *Nearby Activities* section for users in range.
+
+### Provider sign-up
+
+Use `/api/provider/register/` to create a provider account. The request body
+should include `email`, `password1`, `password2`, `company_name`, `phone` and
+`address`. On success the server returns access and refresh tokens and a blank
+provider profile which can be updated via `/api/provider/profile/`.

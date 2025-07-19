@@ -9,6 +9,5 @@ from .models import VendorProfile, CustomerProfile
 def create_user_profile(sender, instance, created, **kwargs):
     if not created:
         return
-    # create profiles only if they do not exist
-    VendorProfile.objects.get_or_create(user=instance)
+    # normal users get a CustomerProfile by default
     CustomerProfile.objects.get_or_create(user=instance)
