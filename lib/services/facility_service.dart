@@ -28,8 +28,9 @@ class FacilityService {
         .toList(growable: false);
   }
 
-  Future<void> createFacility(String name, double lat, double lng, double radius,
-      List<String> categories) async {
+  Future<void> createFacility(
+      String name, double lat, double lng, List<String> categories,
+      {double radius = 1000}) async {
     await apiClient.post('/facilities/', data: {
       'name': name,
       'lat': lat,
@@ -37,6 +38,26 @@ class FacilityService {
       'radius': radius,
       'categories': categories,
     });
+  }
+
+  Future<List<Facility>> fetchMine() async {
+    return fetchFacilities([], 0, 0, 0, mine: true);
+  }
+
+  Future<void> updateFacility(
+      int id, String name, double lat, double lng, List<String> categories,
+      {double radius = 1000}) async {
+    await apiClient.patch('/facilities/$id/', data: {
+      'name': name,
+      'lat': lat,
+      'lng': lng,
+      'radius': radius,
+      'categories': categories,
+    });
+  }
+
+  Future<void> deleteFacility(int id) async {
+    await apiClient.delete('/facilities/$id/');
   }
 }
 

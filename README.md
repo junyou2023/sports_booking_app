@@ -77,9 +77,10 @@ requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
 
 ## Merchant interface
 
-Logged-in users can publish new activities via the **Add** button on the home
-page. Enter a name, coordinates and optional category IDs. Once created the
-facility will be listed in the *Nearby Activities* section for users in range.
+Logged-in providers can publish new facilities via the **Add** button on the
+dashboard. Simply choose a name and categories; the app will use the device's
+current location as the facility position. Once created the facility appears in
+the *Nearby Activities* list for customers near you.
 
 ### Provider sign-up
 
