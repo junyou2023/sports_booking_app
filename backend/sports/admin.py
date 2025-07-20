@@ -28,8 +28,15 @@ class SlotAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "icon")
+    list_display = ("name", "image_preview")
     search_fields = ("name",)
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        if obj.image:
+            from django.utils.html import format_html
+            return format_html('<img src="{}" style="height:50px"/>', obj.image.url)
+        return "-"
 
 
 @admin.register(SportCategory)
@@ -60,9 +67,16 @@ class VariantAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ("title", "sport", "discipline", "variant")
-    list_filter = ("sport", "discipline")
+    list_display = ("title", "sport", "is_nearby")
+    list_filter = ("sport", "is_nearby")
     search_fields = ("title",)
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        if obj.image:
+            from django.utils.html import format_html
+            return format_html('<img src="{}" style="height:60px"/>', obj.image.url)
+        return "-"
 
 
 @admin.register(FeaturedCategory)

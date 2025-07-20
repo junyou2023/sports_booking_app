@@ -43,9 +43,11 @@ class ProviderDashboardPage extends ConsumerWidget {
         data: (list) => ListView.builder(
           itemCount: list.length,
           itemBuilder: (_, i) => ListTile(
-            leading: list[i].image.isNotEmpty
-                ? Image.network(list[i].image, width: 50, fit: BoxFit.cover)
-                : null,
+            leading: (list[i].imageUrl != null && list[i].imageUrl!.isNotEmpty)
+                ? Image.network(list[i].imageUrl!, width: 50, fit: BoxFit.cover)
+                : list[i].image.isNotEmpty
+                    ? Image.network(list[i].image, width: 50, fit: BoxFit.cover)
+                    : null,
             title: Text(list[i].title),
             onTap: () async {
               final updated = await Navigator.push(
