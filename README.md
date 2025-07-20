@@ -110,6 +110,16 @@ provider profile which can be updated via `/api/provider/profile/`.
 - JWT authentication with email or Google
 - Flutter client using Riverpod state management
 
+## Image Upload Setup
+
+Install Pillow and mount the `media/` directory when running the app:
+
+```bash
+pip install Pillow
+docker compose up -d
+```
+Uploaded files will appear under `media/` and are served at `/media/` in development.
+
 ## Running tests
 
 Install system requirements such as `gdal` and `spatialite` then run:

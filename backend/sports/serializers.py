@@ -36,9 +36,19 @@ class SlotSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ("id", "name", "icon")
+        fields = ("id", "name", "icon", "image_url")
+        read_only_fields = ("icon",)
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        return ""
 
 
 class SportCategorySerializer(serializers.ModelSerializer):
@@ -56,6 +66,8 @@ class VariantSerializer(serializers.ModelSerializer):
 
 
 class ActivitySerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Activity
         fields = (
@@ -64,14 +76,23 @@ class ActivitySerializer(serializers.ModelSerializer):
             "discipline",
             "variant",
             "image",
+            "image_url",
             "owner",
             "title",
             "description",
             "difficulty",
             "duration",
             "base_price",
+            "is_nearby",
         )
-        read_only_fields = ("id", "owner")
+        read_only_fields = ("id", "owner", "image")
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        return ""
 
     def validate_base_price(self, value):
         if value < 0:
