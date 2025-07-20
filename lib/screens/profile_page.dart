@@ -9,6 +9,7 @@ import '../services/booking_service.dart';
 import '../models/booking.dart';
 import '../widgets/auth_sheet.dart';
 import 'provider_dashboard_page.dart';
+import 'provider_facilities_page.dart';
 import 'home_page.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -66,6 +67,17 @@ class _ProfileBody extends ConsumerWidget {
                       );
                     },
                     child: const Text('Provider Dashboard'),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ProviderFacilitiesPage()),
+                      );
+                    },
+                    child: const Text('My Facilities'),
                   ),
                 ],
                 const SizedBox(height: 20),
