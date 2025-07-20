@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/activity_provider.dart';
 import 'add_activity_page.dart';
+import 'provider_facilities_page.dart';
 
 class ProviderDashboardPage extends ConsumerWidget {
   const ProviderDashboardPage({super.key});
@@ -10,7 +11,21 @@ class ProviderDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncActivities = ref.watch(activitiesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Provider Dashboard')),
+      appBar: AppBar(
+        title: const Text('Provider Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.store),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ProviderFacilitiesPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: asyncActivities.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),

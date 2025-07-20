@@ -17,3 +17,7 @@ final facilitiesProvider = FutureProvider<List<Facility>>((ref) async {
     position.longitude,
   );
 });
+
+final myFacilitiesProvider = FutureProvider<List<Facility>>((ref) async {
+  return facilityService.fetchMine();
+});
