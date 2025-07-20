@@ -6,6 +6,7 @@ from .views import (
     SlotViewSet,
     BookingViewSet,
     CategoryViewSet,
+    SportCategoryViewSet,
     FacilityViewSet,
     VariantViewSet,
     ActivityViewSet,
@@ -15,6 +16,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r"sports",    SportViewSet,    basename="sport")
 router.register(r"categories", CategoryViewSet, basename="category")
+router.register(r"sport-categories", SportCategoryViewSet, basename="sportcategory")
 router.register(r"variants",   VariantViewSet,  basename="variant")
 router.register(r"activities", ActivityViewSet, basename="activity")
 router.register(r"facilities", FacilityViewSet, basename="facility")

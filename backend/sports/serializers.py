@@ -10,6 +10,7 @@ from .models import (
     Facility,
     Variant,
     Activity,
+    SportCategory,
 )
 
 
@@ -36,6 +37,14 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ("id", "name", "icon")
+
+
+class SportCategorySerializer(serializers.ModelSerializer):
+    full_path = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = SportCategory
+        fields = ("id", "name", "parent", "full_path")
 
 
 class VariantSerializer(serializers.ModelSerializer):

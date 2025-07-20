@@ -9,6 +9,7 @@ from django.core.validators import (
 )
 from django.contrib.gis.db import models as gis_models
 from django.contrib.postgres.indexes import GistIndex
+from django.db.models import UniqueConstraint
 
 
 # ───────────────────────────────── Sport ──────────────────────────────────
@@ -23,6 +24,35 @@ class Sport(models.Model):
     def __str__(self) -> str:                # pragma: no cover
         return self.name
 
+
+# ──────────────────────────────── SportCategory ──────────────────────────────
+class SportCategory(models.Model):
+    """Hierarchical category tree used for activity discovery."""
+
+    name = models.CharField(max_length=60)
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="children",
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        ordering = ("name",)
+        constraints = [UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.full_path
+
+    @property
+    def full_path(self) -> str:
+        parts = [self.name]
+        p = self.parent
+        while p is not None:
+            parts.append(p.name)
+            p = p.parent
+        return " / ".join(reversed(parts))
 
 # ───────────────────────────────── Category ───────────────────────────────
 class Category(models.Model):

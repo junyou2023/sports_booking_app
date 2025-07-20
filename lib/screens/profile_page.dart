@@ -10,6 +10,7 @@ import '../models/booking.dart';
 import '../widgets/auth_sheet.dart';
 import 'provider_dashboard_page.dart';
 import 'provider_facilities_page.dart';
+import 'provider_categories_page.dart';
 import 'home_page.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -78,6 +79,17 @@ class _ProfileBody extends ConsumerWidget {
                       );
                     },
                     child: const Text('My Facilities'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ProviderCategoriesPage()),
+                      );
+                    },
+                    child: const Text('Categories'),
                   ),
                 ],
                 const SizedBox(height: 20),

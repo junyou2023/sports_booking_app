@@ -2,7 +2,7 @@
 from django.db import models, transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,6 +16,7 @@ from .models import (
     Facility,
     Variant,
     Activity,
+    SportCategory,
 )
 from .serializers import (
     SportSerializer,
@@ -26,6 +27,7 @@ from .serializers import (
     FacilityCreateSerializer,
     VariantSerializer,
     ActivitySerializer,
+    SportCategorySerializer,
 )
 
 
@@ -39,6 +41,34 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+
+
+class SportCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = SportCategorySerializer
+
+    def get_queryset(self):
+        qs = SportCategory.objects.select_related("parent")
+        return qs.order_by("parent_id", "name")
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAdminUser()]
+        return [permissions.IsAuthenticatedOrReadOnly()]
+
+    def perform_create(self, serializer):
+        parent = serializer.validated_data.get("parent")
+        name = serializer.validated_data.get("name")
+        if SportCategory.objects.filter(parent=parent, name=name).exists():
+            raise serializers.ValidationError({"name": "Name exists"})
+        serializer.save()
+
+    def perform_update(self, serializer):
+        parent = serializer.validated_data.get("parent")
+        name = serializer.validated_data.get("name")
+        if SportCategory.objects.filter(parent=parent, name=name).exclude(pk=serializer.instance.pk).exists():
+            raise serializers.ValidationError({"name": "Name exists"})
+        serializer.save()
+
 
 
 class VariantViewSet(viewsets.ReadOnlyModelViewSet):

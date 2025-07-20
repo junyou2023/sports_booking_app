@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/activity_provider.dart';
 import 'add_activity_page.dart';
 import 'provider_facilities_page.dart';
+import 'provider_categories_page.dart';
 
 class ProviderDashboardPage extends ConsumerWidget {
   const ProviderDashboardPage({super.key});
@@ -21,6 +22,16 @@ class ProviderDashboardPage extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                     builder: (_) => const ProviderFacilitiesPage()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.category),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ProviderCategoriesPage()),
               );
             },
           ),
