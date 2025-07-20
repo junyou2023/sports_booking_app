@@ -57,7 +57,7 @@ INSTALLED_APPS = [
 
     # Local apps
     # use absolute path so management commands work from any cwd
-    "backend.sports.apps.SportsConfig",
+    "sports.apps.SportsConfig",
     "accounts.apps.AccountsConfig",
 ]
 
