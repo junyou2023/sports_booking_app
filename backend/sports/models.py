@@ -57,7 +57,7 @@ class SportCategory(models.Model):
 # ───────────────────────────────── Category ───────────────────────────────
 class Category(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    icon = models.CharField(max_length=100, blank=True)
+    icon = models.ImageField(upload_to="category_icons/", blank=True)
 
     class Meta:
         ordering = ("name",)
@@ -219,3 +219,32 @@ class Booking(models.Model):
 
     def __str__(self) -> str:                # pragma: no cover
         return f"{self.user} → {self.slot} ({self.pax})"
+
+
+# ————————— Homepage content —————————
+class FeaturedCategory(models.Model):
+    """Category showcased on the home page."""
+
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="home_categories/")
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order",)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.category.name
+
+
+class FeaturedActivity(models.Model):
+    """Activity highlighted on the home page carousel."""
+
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="home_activities/")
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order",)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.activity.title

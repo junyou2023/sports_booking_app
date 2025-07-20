@@ -8,6 +8,8 @@ from .models import (
     Variant,
     Activity,
     SportCategory,
+    FeaturedCategory,
+    FeaturedActivity,
 )
 
 
@@ -26,7 +28,7 @@ class SlotAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "icon")
     search_fields = ("name",)
 
 
@@ -61,3 +63,15 @@ class ActivityAdmin(admin.ModelAdmin):
     list_display = ("title", "sport", "discipline", "variant")
     list_filter = ("sport", "discipline")
     search_fields = ("title",)
+
+
+@admin.register(FeaturedCategory)
+class FeaturedCategoryAdmin(admin.ModelAdmin):
+    list_display = ("category", "order")
+    list_editable = ("order",)
+
+
+@admin.register(FeaturedActivity)
+class FeaturedActivityAdmin(admin.ModelAdmin):
+    list_display = ("activity", "order")
+    list_editable = ("order",)

@@ -10,6 +10,8 @@ from .views import (
     FacilityViewSet,
     VariantViewSet,
     ActivityViewSet,
+    FeaturedCategoryViewSet,
+    FeaturedActivityViewSet,
     BulkSlotCreateView,
 )
 
@@ -20,6 +22,8 @@ router.register(r"sport-categories", SportCategoryViewSet, basename="sportcatego
 router.register(r"variants",   VariantViewSet,  basename="variant")
 router.register(r"activities", ActivityViewSet, basename="activity")
 router.register(r"facilities", FacilityViewSet, basename="facility")
+router.register(r"featured-categories", FeaturedCategoryViewSet, basename="featuredcategory")
+router.register(r"featured-activities", FeaturedActivityViewSet, basename="featuredactivity")
 router.register(r"slots",     SlotViewSet,     basename="slot")
 router.register(r"bookings",  BookingViewSet,  basename="booking")
 urlpatterns = router.urls + [

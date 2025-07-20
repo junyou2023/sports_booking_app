@@ -17,6 +17,8 @@ from .models import (
     Variant,
     Activity,
     SportCategory,
+    FeaturedCategory,
+    FeaturedActivity,
 )
 from .serializers import (
     SportSerializer,
@@ -28,6 +30,8 @@ from .serializers import (
     VariantSerializer,
     ActivitySerializer,
     SportCategorySerializer,
+    FeaturedCategorySerializer,
+    FeaturedActivitySerializer,
 )
 
 
@@ -41,6 +45,26 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+
+
+class FeaturedCategoryViewSet(viewsets.ModelViewSet):
+    queryset = FeaturedCategory.objects.select_related("category")
+    serializer_class = FeaturedCategorySerializer
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny]
+
+
+class FeaturedActivityViewSet(viewsets.ModelViewSet):
+    queryset = FeaturedActivity.objects.select_related("activity")
+    serializer_class = FeaturedActivitySerializer
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny]
 
 
 class SportCategoryViewSet(viewsets.ModelViewSet):

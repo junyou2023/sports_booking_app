@@ -11,6 +11,8 @@ from .models import (
     Variant,
     Activity,
     SportCategory,
+    FeaturedCategory,
+    FeaturedActivity,
 )
 
 
@@ -92,6 +94,18 @@ class ActivitySerializer(serializers.ModelSerializer):
                 {"description": "Max 500 characters"}
             )
         return attrs
+
+
+class FeaturedCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeaturedCategory
+        fields = ("id", "category", "image", "order")
+
+
+class FeaturedActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeaturedActivity
+        fields = ("id", "activity", "image", "order")
 
 
 class FacilitySerializer(GeoFeatureModelSerializer):
