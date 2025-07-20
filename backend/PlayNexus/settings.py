@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
 
     # Local apps
-    "sports.apps.SportsConfig",
+    # use absolute path so management commands work from any cwd
+    "backend.sports.apps.SportsConfig",
     "accounts.apps.AccountsConfig",
 ]
 

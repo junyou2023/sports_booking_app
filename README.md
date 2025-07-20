@@ -1,6 +1,6 @@
 # Sports Booking App
 
-This repository contains a Flutter client and a Django backend.
+This project contains a Flutter client and a Django backend.
 The quickest way to try it is with Docker and Flutter:
 
 ```bash
@@ -12,16 +12,21 @@ docker compose up -d --build
 # note manage.py lives in the backend folder inside the container
 docker compose exec web python backend/manage.py migrate --noinput
 
-# 3. collect static files
+# 3. optional: load demo sports and facilities
+docker compose exec web python backend/manage.py seed_taxonomy
+docker compose exec web python backend/manage.py seed_sports
+docker compose exec web python backend/manage.py seed_facilities
+
+# 4. collect static files
 docker compose exec web python backend/manage.py collectstatic --noinput
 
-# 4. verify the backend is running
+# 5. verify the backend is running
 curl http://localhost:8000/healthz
 
-# 5. get Flutter packages
+# 6. get Flutter packages
 flutter pub get
 
-# 6. run the app on an emulator/device
+# 7. run the app on an emulator/device
 flutter run
 
 ```
@@ -96,3 +101,23 @@ Use `/api/provider/register/` to create a provider account. The request body
 should include `email`, `password1`, `password2`, `company_name`, `phone` and
 `address`. On success the server returns access and refresh tokens and a blank
 provider profile which can be updated via `/api/provider/profile/`.
+
+## Features
+
+- Provider portal for creating facilities, categories and activities
+- Image uploads for category and activity banners
+- PostGIS search API to discover nearby facilities
+- JWT authentication with email or Google
+- Flutter client using Riverpod state management
+
+## Running tests
+
+Install system requirements such as `gdal` and `spatialite` then run:
+
+```bash
+pip install -r requirements.txt
+DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
+```
+
+Some tests require SpatiaLite which may not work on every platform. Docker is the
+recommended environment for running the full test suite.
