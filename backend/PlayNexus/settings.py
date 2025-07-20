@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
 
     # Local apps
-    "backend.sports.apps.SportsConfig",
+    "sports.apps.SportsConfig",
     "accounts.apps.AccountsConfig",
 ]
 

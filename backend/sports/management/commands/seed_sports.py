@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from backend.sports.models import Sport
+from sports.models import Sport
 
 
 class Command(BaseCommand):

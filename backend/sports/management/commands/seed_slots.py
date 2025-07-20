@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 # seed_slots.py
-from backend.sports.models import Sport, Slot
+from sports.models import Sport, Slot
 
 
 class Command(BaseCommand):

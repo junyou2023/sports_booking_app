@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from backend.sports.models import Category, Variant
+from sports.models import Category, Variant
 
 class Command(BaseCommand):
     help = "Seed demo Category and Variant data"

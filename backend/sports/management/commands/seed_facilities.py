@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import Point
 from random import sample, uniform
-from backend.sports.models import Facility, Category
+from sports.models import Facility, Category
 
 
 class Command(BaseCommand):
