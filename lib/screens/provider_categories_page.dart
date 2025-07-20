@@ -13,7 +13,7 @@ class ProviderCategoriesPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Categories')),
       body: asyncCats.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: %s' % e)),
+        error: (e, _) => Center(child: Text('Error: $e')),
         data: (list) => ListView.builder(
           itemCount: list.length,
           itemBuilder: (_, i) => ListTile(

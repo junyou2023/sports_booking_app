@@ -82,7 +82,7 @@ class _EditCategoryPageState extends State<EditCategoryPage> {
                           if (context.mounted) Navigator.pop(context, true);
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: {}').format(e)),
+                            SnackBar(content: Text('Error: $e')),
                           );
                         } finally {
                           if (mounted) setState(() => _submitting = false);
