@@ -9,9 +9,14 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# collect static assets at build time
+ENV DJANGO_SETTINGS_MODULE=PlayNexus.settings
+
 # ---------------------------------------
 # 2) 把后端代码拷进去
 COPY backend ./backend
+
+RUN python backend/manage.py collectstatic --noinput
 
 # ---------------------------------------
 # 3) 关键补丁：让 /app 成为 Python 顶层包搜索路径

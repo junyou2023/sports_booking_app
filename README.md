@@ -12,16 +12,23 @@ docker compose up -d --build
 # note manage.py lives in the backend folder inside the container
 docker compose exec web python backend/manage.py migrate --noinput
 
-# 3. verify the backend is running
+# 3. collect static files
+docker compose exec web python backend/manage.py collectstatic --noinput
+
+# 4. verify the backend is running
 curl http://localhost:8000/healthz
 
-# 4. get Flutter packages
+# 5. get Flutter packages
 flutter pub get
 
-# 5. run the app on an emulator/device
+# 6. run the app on an emulator/device
 flutter run
 
 ```
+
+The Docker image runs `collectstatic` during build and serves the compiled
+assets with [WhiteNoise](https://whitenoise.evans.io/) so the Django admin loads
+its CSS correctly when deployed.
 
 The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
 backend is. When testing on the Android emulator the correct value is
