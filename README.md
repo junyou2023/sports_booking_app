@@ -57,8 +57,9 @@ Seed demo data with:
 
 ```bash
 docker compose exec web python backend/manage.py seed_taxonomy
+docker compose exec web python backend/manage.py seed_sports
 ```
-Creates a set of demo categories and variants so **Add Activity** dropdowns work.
+Creates demo sports plus category and variant data so **Add Activity** dropdowns work.
 
 ```bash
 docker compose exec web python backend/manage.py seed_facilities
