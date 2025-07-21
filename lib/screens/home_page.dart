@@ -17,6 +17,7 @@ import '../providers/activity_provider.dart';
 import 'add_activity_page.dart';
 import 'login_page.dart';                                     // for login navigation
 import 'profile_page.dart';
+import 'activity_detail_page.dart';
 import '../widgets/auth_sheet.dart';
 import '../services/auth_service.dart';
 
@@ -288,7 +289,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                         asset: act.imageUrl ?? act.image,
                         isFavorite: false,
                         onFavorite: () {},
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ActivityDetailPage(activity: act),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
