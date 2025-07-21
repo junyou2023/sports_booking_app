@@ -19,6 +19,11 @@ class ActivityService {
         .toList();
   }
 
+  Future<Activity> fetchById(int id) async {
+    final Response res = await apiClient.get('/activities/$id/');
+    return Activity.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<void> createActivity(
     int sport,
     int discipline,
