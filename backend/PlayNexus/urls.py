@@ -31,6 +31,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("sports.urls")),          # ← REST entrance
     path("api/", include("accounts.urls")),        # profile endpoint
+    path("api/", include("payments.urls")),
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/register/", RegisterView.as_view()),
     path(

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # use absolute path so management commands work from any cwd
     "sports.apps.SportsConfig",
     "accounts.apps.AccountsConfig",
+    "payments.apps.PaymentsConfig",
 ]
 
 AUTHENTICATION_BACKENDS = [

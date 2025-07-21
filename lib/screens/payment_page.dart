@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/slot.dart';
-import '../services/booking_service.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import '../services/payment_service.dart';
 import 'booking_confirmation_page.dart';
 
 class PaymentPage extends StatefulWidget {
@@ -40,7 +41,20 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _pay() async {
     setState(() => loading = true);
     try {
-      final booking = await bookingService.create(widget.slot.id);
+      final session = await paymentService.createSession(widget.slot.id);
+      final clientSecret = session['client_secret'] as String;
+      final intentId = session['intent_id'] as String;
+
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Sports Booking',
+        ),
+      );
+
+      await Stripe.instance.presentPaymentSheet();
+
+      final booking = await paymentService.confirmSession(intentId);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
