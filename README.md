@@ -6,6 +6,7 @@ The quickest way to try it is with Docker and Flutter:
 ```bash
 # 1. copy environment file and start services
 cp .env.example .env
+# add your Stripe keys in .env
 docker compose up -d --build
 
 # 2. apply migrations (first run only)
@@ -36,7 +37,8 @@ assets with [WhiteNoise](https://whitenoise.evans.io/) so the Django admin loads
 its CSS correctly when deployed.
 
 The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
-backend is. When testing on the Android emulator the correct value is
+backend is. It should also include the Stripe keys used by the payment flow.
+When testing on the Android emulator the correct value for `API_BASE_URL` is
 `http://10.0.2.2:8000/api`.
 `initApiClient` automatically appends a trailing slash so either form
 (`http://10.0.2.2:8000/api` or `http://10.0.2.2:8000/api/`) works.
@@ -109,6 +111,18 @@ provider profile which can be updated via `/api/provider/profile/`.
 - PostGIS search API to discover nearby facilities
 - JWT authentication with email or Google
 - Flutter client using Riverpod state management
+
+## Payments and Stripe
+
+The backend uses Stripe for processing payments. Set your Stripe keys in `.env`:
+
+```
+STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
+STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
+```
+
+After updating the environment file run `flutter pub get` to install the
+`flutter_stripe` dependency and rebuild the app.
 
 ## Image Upload Setup
 

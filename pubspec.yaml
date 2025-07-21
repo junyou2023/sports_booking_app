@@ -24,6 +24,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0  # secure token storage
   google_sign_in: ^6.1.5
   qr_flutter: ^4.1.0
+  flutter_stripe: ^10.0.0
 
 dev_dependencies:
   flutter_test:
