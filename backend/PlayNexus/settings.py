@@ -168,9 +168,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ──────────────────────────────
-# CORS (allow everything in dev)
+# CORS
 # ──────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True      # ⚠ tighten in production
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if cors_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",") if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = []
 
 # ──────────────────────────────
 # Django REST framework + JWT

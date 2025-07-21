@@ -41,6 +41,22 @@ backend is. When testing on the Android emulator the correct value is
 `initApiClient` automatically appends a trailing slash so either form
 (`http://10.0.2.2:8000/api` or `http://10.0.2.2:8000/api/`) works.
 
+Set `CORS_ALLOWED_ORIGINS` if the API will be accessed from a different
+origin, for example when running the Flutter web client:
+
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Create a `docker-compose.override.yml` to pass the value to the container:
+
+```yaml
+services:
+  web:
+    environment:
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+```
+
 If running the backend without Docker, install dependencies with
 `pip install -r requirements.txt` and apply migrations using `python manage.py migrate`.
 GeoDjango requires the GDAL library. On most systems it is easiest to use the
