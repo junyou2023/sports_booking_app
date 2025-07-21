@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/activity.dart';
+import 'activity_booking_page.dart';
 
 class ActivityDetailPage extends StatelessWidget {
   final Activity activity;
@@ -44,6 +45,18 @@ class ActivityDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(activity.description),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ActivityBookingPage(activity: activity),
+                  ),
+                );
+              },
+              child: const Text('Book now'),
+            ),
           ],
         ),
       ),

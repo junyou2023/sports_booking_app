@@ -29,10 +29,14 @@ class SlotSerializer(serializers.ModelSerializer):
     rating = serializers.DecimalField(
         max_digits=3, decimal_places=1, coerce_to_string=False
     )
+    seats_left = serializers.SerializerMethodField()
 
     class Meta:
         model = Slot
         fields = "__all__"
+
+    def get_seats_left(self, obj):
+        return obj.seats_left
 
 
 class CategorySerializer(serializers.ModelSerializer):

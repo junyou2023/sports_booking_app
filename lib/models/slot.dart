@@ -11,6 +11,8 @@ class Slot {
     required this.endsAt,
     required this.capacity,
     required this.price,
+    required this.rating,
+    required this.seatsLeft,
   });
 
   final int      id;
@@ -21,6 +23,8 @@ class Slot {
   final DateTime endsAt;
   final int      capacity;
   final double   price;
+  final double   rating;
+  final int      seatsLeft;
 
   /// 允许后端返回 sport=ID 或 sport=Map 两种格式
   factory Slot.fromJson(Map<String, dynamic> j) {
@@ -46,6 +50,8 @@ class Slot {
       endsAt:    DateTime.parse(j['ends_at']   as String),
       capacity:  j['capacity']         as int,
       price:     double.parse(j['price'].toString()),
+      rating:    double.parse(j['rating'].toString()),
+      seatsLeft: j['seats_left']       as int? ?? j['capacity'] as int,
     );
   }
 
@@ -59,5 +65,7 @@ class Slot {
     'ends_at'   : endsAt.toIso8601String(),
     'capacity'  : capacity,
     'price'     : price,
+    'rating'    : rating,
+    'seats_left': seatsLeft,
   };
 }

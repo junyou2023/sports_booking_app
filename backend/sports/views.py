@@ -171,9 +171,21 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        qs = Slot.objects.select_related("facility")
+        qs = Slot.objects.select_related("facility", "sport")
         facility_id = self.request.query_params.get("facility_id")
-        return qs.filter(facility_id=facility_id) if facility_id else qs
+        if facility_id:
+            qs = qs.filter(facility_id=facility_id)
+        sport_id = self.request.query_params.get("sport")
+        if sport_id:
+            qs = qs.filter(sport_id=sport_id)
+        date_str = self.request.query_params.get("date")
+        if date_str:
+            try:
+                day = timezone.datetime.fromisoformat(date_str).date()
+                qs = qs.filter(begins_at__date=day)
+            except ValueError:
+                pass
+        return qs
 
 
 class BookingViewSet(viewsets.ModelViewSet):

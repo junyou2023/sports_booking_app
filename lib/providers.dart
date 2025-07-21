@@ -20,6 +20,11 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
   return slotService.fetchBySport(sportId);
 });
 
+final slotsByDateProvider =
+    FutureProvider.family<List<Slot>, ({int sportId, String date})>((ref, params) {
+  return slotService.fetchBySportDate(params.sportId, params.date);
+});
+
 
 enum AuthStatus { unauthenticated, authenticating, authenticated }
 
