@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from .models import (
     Sport,
+    Review,
     Slot,
     Booking,
     Category,
@@ -32,6 +33,7 @@ from .serializers import (
     SportCategorySerializer,
     FeaturedCategorySerializer,
     FeaturedActivitySerializer,
+    ReviewSerializer,
 )
 
 
@@ -219,6 +221,28 @@ class BookingViewSet(viewsets.ModelViewSet):
             self.get_serializer(booking).data,
             status=status.HTTP_201_CREATED,
         )
+
+class ActivityReviewList(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, activity_id):
+        limit = request.query_params.get("limit")
+        qs = Review.objects.filter(activity_id=activity_id).select_related("user").order_by("-created_at")
+        if limit:
+            try:
+                qs = qs[: int(limit)]
+            except ValueError:
+                pass
+        ser = ReviewSerializer(qs, many=True)
+        return Response(ser.data)
+
+    def post(self, request, activity_id):
+        if not request.user.is_authenticated:
+            return Response({"detail": "Authentication required"}, status=403)
+        ser = ReviewSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        ser.save(activity_id=activity_id, user=request.user)
+        return Response(ser.data, status=201)
 
 
 class BulkSlotCreateView(APIView):

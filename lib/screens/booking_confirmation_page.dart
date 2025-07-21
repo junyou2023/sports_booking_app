@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../models/booking.dart';
 
 class BookingConfirmationPage extends StatelessWidget {
@@ -19,6 +20,13 @@ class BookingConfirmationPage extends StatelessWidget {
             const SizedBox(height: 12),
             Text('Slot: ${booking.slot.title}'),
             Text('Date: ${booking.slot.beginsAt.toLocal()}'),
+            const SizedBox(height: 24),
+            Center(
+              child: QrImageView(
+                data: booking.id.toString(),
+                size: 160,
+              ),
+            ),
           ],
         ),
       ),

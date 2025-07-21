@@ -44,6 +44,18 @@ class ActivityDetailPage extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.timer, size: 20),
+                const SizedBox(width: 4),
+                Text('${activity.duration} min'),
+                const SizedBox(width: 16),
+                const Icon(Icons.fitness_center, size: 20),
+                const SizedBox(width: 4),
+                Text('Level ${activity.difficulty}'),
+              ],
+            ),
+            const SizedBox(height: 16),
             Text(activity.description),
             const SizedBox(height: 20),
             ElevatedButton(
