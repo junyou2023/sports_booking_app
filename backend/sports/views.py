@@ -115,6 +115,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
         mine = self.request.query_params.get("mine")
         if mine == "1" and self.request.user.is_authenticated:
             qs = qs.filter(owner=self.request.user)
+        nearby = self.request.query_params.get("nearby")
+        if nearby == "1":
+            qs = qs.filter(is_nearby=True)
         return qs
 
     def perform_create(self, serializer):

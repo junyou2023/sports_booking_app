@@ -12,7 +12,8 @@ import '../widgets/search_bar.dart';
 import 'categories_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
-import '../providers/facility_provider.dart';
+import '../providers/category_provider.dart';
+import '../providers/activity_provider.dart';
 import 'add_activity_page.dart';
 import 'login_page.dart';                                     // for login navigation
 import 'profile_page.dart';
@@ -29,24 +30,14 @@ class HomePage extends ConsumerStatefulWidget {               // Stateful → Co
 class _HomePageState extends ConsumerState<HomePage> {
   int _navIndex = 0;
 
-  // --------- 原来的静态分类数据 ---------
-  final List<Map<String, String>> _allCategories = [
-    {'label': 'Badminton', 'asset': 'assets/images/badminton.jpg'},
-    {'label': 'Bungee',    'asset': 'assets/images/bungee.jpg'},
-    {'label': 'Sailing',   'asset': 'assets/images/sailing.jpg'},
-    {'label': 'Cycling',   'asset': 'assets/images/cycling.jpg'},
-    {'label': 'Hiking',    'asset': 'assets/images/hiking.jpg'},
-    {'label': 'Surfing',   'asset': 'assets/images/surfing.jpg'},
-  ];
-  List<Map<String, String>> get _topCategories =>
-      _allCategories.take(4).toList();
 
   @override
   Widget build(BuildContext context) {
     final double paddingTop = MediaQuery.of(context).padding.top;
 
-    // ========== 监听 facilitiesProvider，获取附近场馆 ==========
-    final facilitiesAsync = ref.watch(facilitiesProvider);
+    // ========== 监听 Provider ==========
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final nearbyActsAsync = ref.watch(nearbyActivitiesProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
@@ -179,36 +170,52 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Text('Categories', style: Theme.of(context).textTheme.titleLarge),
             ),
           ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 180,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                scrollDirection: Axis.horizontal,
-                itemCount: _topCategories.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, i) {
-                  if (i < _topCategories.length) {
-                    final c = _topCategories[i];
-                    return CategoryCard(
-                      title: c['label']!,
-                      asset: c['asset']!,
-                      onTap: () {},
-                    );
-                  }
-                  // “More” 卡片
-                  return MoreCategoryCard(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            CategoriesPage(allCategories: _allCategories),
-                      ),
-                    ),
-                  );
-                },
+          categoriesAsync.when(
+            loading: () => const SliverToBoxAdapter(
+              child: SizedBox(
+                height: 180,
+                child: Center(child: CircularProgressIndicator()),
               ),
             ),
+            error: (err, _) => SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Failed to load: $err'),
+              ),
+            ),
+            data: (cats) {
+              final top = cats.take(4).toList();
+              return SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 180,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: top.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) {
+                      if (i < top.length) {
+                        final c = top[i];
+                        return CategoryCard(
+                          title: c.name,
+                          asset: c.icon,
+                          imageUrl: c.imageUrl,
+                          onTap: () {},
+                        );
+                      }
+                      return MoreCategoryCard(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CategoriesPage(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
 
           // ─────────────────── Nearby Activities ───────────────────
@@ -224,8 +231,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
-// async list of facilities → horizontal ActivityCard carousel
-          facilitiesAsync.when(
+// async list of activities → horizontal ActivityCard carousel
+          nearbyActsAsync.when(
             // ❶ loading state
             loading: () => const SliverToBoxAdapter(
               child: SizedBox(
@@ -249,8 +256,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // ❸ data state
-            data: (facilities) {
-              if (facilities.isEmpty) {
+            data: (acts) {
+              if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -268,18 +275,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: facilities.length,
+                    itemCount: acts.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) {
-                      final facility = facilities[i];
+                      final act = acts[i];
                       return ActivityCard(
-                        title: facility.name,
-                        location:
-                            '${facility.lat.toStringAsFixed(2)},${facility.lng.toStringAsFixed(2)}',
-                        price: 0,
+                        title: act.title,
+                        location: '',
+                        price: act.basePrice,
                         rating: 0,
                         reviews: 0,
-                        asset: 'assets/images/default.jpg',
+                        asset: act.imageUrl ?? act.image,
                         isFavorite: false,
                         onFavorite: () {},
                         onTap: () {},
@@ -344,7 +350,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             MaterialPageRoute(builder: (_) => const AddActivityPage()),
           );
           if (created == true) {
-            ref.invalidate(facilitiesProvider);
+            ref.invalidate(nearbyActivitiesProvider);
           }
         },
         child: const Icon(Icons.add),

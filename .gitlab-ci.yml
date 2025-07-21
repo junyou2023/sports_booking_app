@@ -20,7 +20,7 @@ lint:
   image: python:3.11
   before_script:
     - python -m pip install --upgrade pip
-    - pip install flake8
+    - pip install flake8 Pillow
   script: flake8 backend
   tags: []          # 如果学校要求 runner tag，就写在这里
   except:
@@ -41,7 +41,7 @@ test:
         POSTGRES_PASSWORD: $DB_PASS
   before_script:
     - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
+    - pip install -r requirements.txt Pillow
     - python backend/manage.py migrate --noinput
     - python backend/manage.py seed_facilities
   script: pytest

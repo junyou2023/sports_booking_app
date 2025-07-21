@@ -57,7 +57,11 @@ class SportCategory(models.Model):
 # ───────────────────────────────── Category ───────────────────────────────
 class Category(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    icon = models.ImageField(upload_to="category_icons/", blank=True)
+    image = models.ImageField(upload_to="category/", blank=True)
+
+    @property
+    def icon(self) -> str:
+        return self.image.name if self.image else ""
 
     class Meta:
         ordering = ("name",)
@@ -112,7 +116,8 @@ class Activity(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
     )
-    image = models.URLField(blank=True)
+    image = models.ImageField(upload_to="activity/", blank=True)
+    is_nearby = models.BooleanField(default=False)
     owner = models.ForeignKey(
         "auth.User",
         on_delete=models.CASCADE,

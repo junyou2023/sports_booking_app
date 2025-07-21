@@ -11,6 +11,14 @@ class ActivityService {
         .toList();
   }
 
+  Future<List<Activity>> fetchNearby() async {
+    final res = await apiClient.get('/activities/', queryParameters: {'nearby': '1'});
+    return (res.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(Activity.fromJson)
+        .toList();
+  }
+
   Future<void> createActivity(
     int sport,
     int discipline,

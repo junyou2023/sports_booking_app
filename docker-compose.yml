@@ -13,8 +13,7 @@ networks:
 
 volumes:
   dbdata:          # PostgreSQL 持久化
-  # 如果以后想把用户上传图片持久化，可加：
-  # media:
+  media:
   # static:
 
 ###############################################################################
@@ -70,7 +69,7 @@ services:
       API_BASE_URL: http://0.0.0.0:8000/api
     volumes:
       - .:/app                # 代码热更新；生产可改成只挂 static/media
-      # - media:/app/media
+      - ./media:/app/media
       # - static:/app/static
     ports: ["8000:8000"]
     networks: [app-net]
