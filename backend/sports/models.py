@@ -253,3 +253,21 @@ class FeaturedActivity(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.activity.title
+
+
+class Review(models.Model):
+    activity = models.ForeignKey(
+        Activity,
+        related_name="reviews",
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.user} → {self.activity} ({self.rating})"

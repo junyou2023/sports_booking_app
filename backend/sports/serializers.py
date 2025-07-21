@@ -12,6 +12,7 @@ from .models import (
     Activity,
     SportCategory,
     FeaturedCategory,
+    Review,
     FeaturedActivity,
 )
 
@@ -195,3 +196,13 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ("id", "slot", "slot_id", "pax", "booked_at")
         read_only_fields = ("id", "booked_at")
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ("id", "user_email", "rating", "comment", "created_at")
+
+    def get_user_email(self, obj):
+        return getattr(obj.user, "email", "")

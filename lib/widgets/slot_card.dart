@@ -35,9 +35,21 @@ class SlotCard extends StatelessWidget {
                     Text(slot.location,
                         style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 8),
-                    Text('\$${slot.price.toStringAsFixed(0)}',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
+                    Row(
+                      children: [
+                        Text('\$${slot.price.toStringAsFixed(0)}',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Seats left: ${slot.seatsLeft}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
