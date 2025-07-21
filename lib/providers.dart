@@ -2,8 +2,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/sport.dart';
 import 'models/slot.dart';
+import 'models/booking.dart';
 import 'services/sports_service.dart';
 import 'services/slot_service.dart';
+import 'services/booking_service.dart';
 import 'services/auth_service.dart';
 import 'services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -102,3 +104,7 @@ class WishlistNotifier extends StateNotifier<Set<int>> {
 final wishlistProvider = StateNotifierProvider<WishlistNotifier, Set<int>>(
   (ref) => WishlistNotifier(),
 );
+
+final bookingsProvider = FutureProvider<List<Booking>>((ref) async {
+  return bookingService.fetchMine();
+});

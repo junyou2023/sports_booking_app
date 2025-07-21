@@ -20,6 +20,7 @@ import 'profile_page.dart';
 import 'activity_detail_page.dart';
 import '../widgets/auth_sheet.dart';
 import '../services/auth_service.dart';
+import 'bookings_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -40,9 +41,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final nearbyActsAsync = ref.watch(nearbyActivitiesProvider);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: CustomScrollView(
+    final Widget body = _navIndex == 2
+        ? const BookingsPage()
+        : CustomScrollView(
         slivers: [
           // ================= Hero + Search + Quick Filters（保持不变） =================
           SliverAppBar(
@@ -337,7 +338,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
         ],
-      ),
+      );
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: body,
       bottomNavigationBar: AppBottomNav(
         index: _navIndex,
         onTap: (i) {
