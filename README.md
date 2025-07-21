@@ -136,12 +136,22 @@ Uploaded files will appear under `media/` and are served at `/media/` in develop
 
 ## Running tests
 
-Install system requirements such as `gdal` and `spatialite` then run:
+To run the backend tests locally install a few system packages first (package
+names may vary by distribution):
+
+- `gdal` / `libgdal-dev`
+- `spatialite` / `libspatialite-dev`
+
+After installing the system dependencies, create a Python virtual environment
+and install the project requirements:
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
 ```
 
-Some tests require SpatiaLite which may not work on every platform. Docker is the
-recommended environment for running the full test suite.
+A helper script `scripts/run_backend_tests.sh` automates the above commands.
+Some tests require SpatiaLite which may not work on every platform. Docker is
+the recommended environment for running the full test suite.
