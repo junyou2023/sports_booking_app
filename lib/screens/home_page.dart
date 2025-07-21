@@ -14,6 +14,7 @@ import 'categories_page.dart';
 import '../providers.dart';                                   // ← new (sportsProvider)
 import '../providers/category_provider.dart';
 import '../providers/activity_provider.dart';
+import '../providers/home_provider.dart';
 import 'add_activity_page.dart';
 import 'login_page.dart';                                     // for login navigation
 import 'profile_page.dart';
@@ -40,6 +41,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     // ========== 监听 Provider ==========
     final categoriesAsync = ref.watch(categoriesProvider);
     final nearbyActsAsync = ref.watch(nearbyActivitiesProvider);
+    final featuredCatsAsync = ref.watch(featuredCategoriesProvider);
+    final featuredActsAsync = ref.watch(featuredActivitiesProvider);
 
     final Widget body = _navIndex == 2
         ? const BookingsPage()
@@ -61,8 +64,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                     PageView(
                       physics: const BouncingScrollPhysics(),
                       children: [
-                        Image.asset('assets/images/stadium.jpg', fit: BoxFit.cover),
-                        Image.asset('assets/images/mountain.jpg', fit: BoxFit.cover),
+                        if (featuredCatsAsync.hasValue)
+                          ...featuredCatsAsync.value!.map(
+                            (f) => GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CategoriesPage(),
+                                ),
+                              ),
+                              child: Image.network(f.image, fit: BoxFit.cover),
+                            ),
+                          ),
+                        if (featuredActsAsync.hasValue)
+                          ...featuredActsAsync.value!.map(
+                            (f) => GestureDetector(
+                              onTap: () async {
+                                final act = await activityService.fetchById(f.activity);
+                                if (!context.mounted) return;
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ActivityDetailPage(activity: act),
+                                  ),
+                                );
+                              },
+                              child: Image.network(f.image, fit: BoxFit.cover),
+                            ),
+                          ),
+                        if (!featuredCatsAsync.hasValue && !featuredActsAsync.hasValue) ...[
+                          Image.asset('assets/images/stadium.jpg', fit: BoxFit.cover),
+                          Image.asset('assets/images/mountain.jpg', fit: BoxFit.cover),
+                        ],
                       ],
                     ),
                     const DecoratedBox(
