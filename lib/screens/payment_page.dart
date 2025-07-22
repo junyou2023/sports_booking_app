@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../services/payment_service.dart';
+import '../providers.dart';
 import 'booking_confirmation_page.dart';
 
-class PaymentPage extends StatefulWidget {
+class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key, required this.slot});
   final Slot slot;
 
   @override
-  State<PaymentPage> createState() => _PaymentPageState();
+  ConsumerState<PaymentPage> createState() => _PaymentPageState();
 }
 
-class _PaymentPageState extends State<PaymentPage> {
+class _PaymentPageState extends ConsumerState<PaymentPage> {
   bool loading = false;
 
   @override
@@ -55,6 +57,7 @@ class _PaymentPageState extends State<PaymentPage> {
       await Stripe.instance.presentPaymentSheet();
 
       final booking = await paymentService.confirmSession(intentId);
+      ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
