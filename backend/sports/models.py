@@ -189,6 +189,14 @@ class Slot(models.Model):
         max_digits=3, decimal_places=1, default=0,
         help_text="Average rating 0–5"
     )
+    activity = models.ForeignKey(
+        "Activity",
+        related_name="slots",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    current_participants = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ("begins_at",)
@@ -196,8 +204,7 @@ class Slot(models.Model):
 
     @property
     def seats_left(self) -> int:
-        booked = self.bookings.aggregate(models.Sum("pax"))["pax__sum"] or 0
-        return max(self.capacity - booked, 0)
+        return max(self.capacity - self.current_participants, 0)
 
     def __str__(self) -> str:                # pragma: no cover
         return f"{self.title} @ {self.begins_at:%Y-%m-%d %H:%M}"
@@ -210,8 +217,17 @@ class Booking(models.Model):
     slot = models.ForeignKey(
         Slot, related_name="bookings", on_delete=models.PROTECT
     )
+    activity = models.ForeignKey(
+        "Activity",
+        related_name="bookings",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
     booked_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, default="confirmed")
+    paid = models.BooleanField(default=False)
     pax = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(20)],
