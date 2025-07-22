@@ -92,4 +92,37 @@ def test_concurrent_booking_capacity(db):
     t1.start(); t2.start(); t1.join(); t2.join()
 
     assert results.count(201) == 1
-    assert Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"] <= slot.capacity
+    assert (
+        Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"]
+        <= slot.capacity
+    )
+
+
+def test_slots_filter_by_activity():
+    sport = Sport.objects.create(name="Yoga")
+    disc = Category.objects.create(name="Flow")
+    activity = Activity.objects.create(
+        sport=sport,
+        discipline=disc,
+        title="Morning Flow",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
+    slot = Slot.objects.create(
+        sport=sport,
+        activity=activity,
+        title="Morning",
+        location="Room",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=5,
+        price=0,
+        rating=0,
+    )
+    client = APIClient()
+    resp = client.get("/api/slots/", {"activity": activity.id})
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+    assert resp.data[0]["id"] == slot.id
