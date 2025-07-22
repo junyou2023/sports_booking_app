@@ -45,6 +45,12 @@ class StripeCheckoutView(APIView):
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
 
-        booking, _ = Booking.objects.get_or_create(slot=slot, user=request.user)
+        booking, _ = Booking.objects.get_or_create(
+            slot=slot, user=request.user, defaults={"activity": slot.activity}
+        )
+        booking.paid = True
+        booking.status = "confirmed"
+        booking.activity = slot.activity
+        booking.save(update_fields=["paid", "status", "activity"])
         ser = BookingSerializer(booking)
         return Response(ser.data, status=status.HTTP_201_CREATED)
