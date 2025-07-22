@@ -83,6 +83,11 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
+                final status = ref.read(authNotifierProvider);
+                if (status != AuthStatus.authenticated) {
+                  showAuthSheet(context);
+                  return;
+                }
                 Navigator.push(
                   context,
                   MaterialPageRoute(

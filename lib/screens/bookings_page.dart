@@ -27,7 +27,11 @@ class BookingsPage extends ConsumerWidget {
               return ListTile(
                 title: Text(b.slot.title),
                 subtitle: Text(
-                  '${b.slot.beginsAt.toLocal()}'.split(' ')[0],
+                  '${b.slot.beginsAt.toLocal()} • pax ${b.pax}',
+                ),
+                trailing: Text(
+                  '${b.bookedAt.toLocal()}'.split(' ')[0],
+                  style: const TextStyle(fontSize: 12),
                 ),
               );
             },

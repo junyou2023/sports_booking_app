@@ -13,10 +13,10 @@ class BookingService {
         .toList(growable: false);
   }
 
-  Future<Booking> create(int slotId) async {
+  Future<Booking> create(int slotId, {int pax = 1}) async {
     final res = await apiClient.post(
       '/bookings/',
-      data: {'slot': slotId},
+      data: {'slot_id': slotId, 'pax': pax},
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
     return Booking.fromJson(res.data as Map<String, dynamic>);
