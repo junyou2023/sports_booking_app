@@ -36,6 +36,20 @@ class SlotSerializer(serializers.ModelSerializer):
         model = Slot
         fields = "__all__"
 
+
+class SlotCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Slot
+        fields = (
+            "activity",
+            "begins_at",
+            "ends_at",
+            "capacity",
+            "price",
+            "title",
+            "location",
+        )
+
     def get_seats_left(self, obj):
         return obj.seats_left
 
@@ -191,11 +205,21 @@ class BookingSerializer(serializers.ModelSerializer):
     slot_id = serializers.PrimaryKeyRelatedField(
         queryset=Slot.objects.all(), write_only=True, source="slot"
     )
+    status = serializers.CharField(read_only=True)
+    paid = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Booking
-        fields = ("id", "slot", "slot_id", "pax", "booked_at")
-        read_only_fields = ("id", "booked_at")
+        fields = (
+            "id",
+            "slot",
+            "slot_id",
+            "pax",
+            "booked_at",
+            "status",
+            "paid",
+        )
+        read_only_fields = ("id", "booked_at", "status", "paid")
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.SerializerMethodField()

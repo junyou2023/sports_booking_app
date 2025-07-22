@@ -4,6 +4,7 @@ import '../providers/activity_provider.dart';
 import 'add_activity_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
+import 'add_slot_page.dart';
 
 class ProviderDashboardPage extends ConsumerWidget {
   const ProviderDashboardPage({super.key});
@@ -49,6 +50,22 @@ class ProviderDashboardPage extends ConsumerWidget {
                     ? Image.network(list[i].image, width: 50, fit: BoxFit.cover)
                     : null,
             title: Text(list[i].title),
+            trailing: IconButton(
+              icon: const Icon(Icons.schedule),
+              onPressed: () async {
+                final created = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddSlotPage(activityId: list[i].id),
+                  ),
+                );
+                if (created == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Slot created')),
+                  );
+                }
+              },
+            ),
             onTap: () async {
               final updated = await Navigator.push(
                 context,

@@ -81,6 +81,8 @@ class ProviderRegisterSerializer(serializers.Serializer):
             email=validated_data["email"],
             password=validated_data["password1"],
         )
+        user.is_staff = True
+        user.save()
         VendorProfile.objects.create(
             user=user,
             company_name=company,

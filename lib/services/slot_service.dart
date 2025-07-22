@@ -37,6 +37,25 @@ class SlotService {
         .map((e) => Slot.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
   }
+
+  Future<void> createSlot(
+      int activityId,
+      DateTime start,
+      DateTime end,
+      int capacity,
+      double price,
+      String title,
+      String location,) async {
+    await apiClient.post('/merchant/slots/', data: {
+      'activity': activityId,
+      'begins_at': start.toIso8601String(),
+      'ends_at': end.toIso8601String(),
+      'capacity': capacity,
+      'price': price,
+      'title': title,
+      'location': location,
+    });
+  }
 }
 
 /// Global singleton – keep existing usage unchanged

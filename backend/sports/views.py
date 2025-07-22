@@ -34,6 +34,7 @@ from .serializers import (
     FeaturedCategorySerializer,
     FeaturedActivitySerializer,
     ReviewSerializer,
+    SlotCreateSerializer,
 )
 
 
@@ -209,14 +210,22 @@ class BookingViewSet(viewsets.ModelViewSet):
         pax = ser.validated_data["pax"]
 
         slot = Slot.objects.select_for_update().get(pk=slot.pk)
-        taken = slot.bookings.aggregate(t=models.Sum("pax"))["t"] or 0
-        if taken + pax > slot.capacity:
+        if slot.current_participants + pax > slot.capacity:
             return Response(
                 {"detail": "Not enough seats left"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        booking = Booking.objects.create(slot=slot, user=request.user, pax=pax)
+        booking = Booking.objects.create(
+            slot=slot,
+            activity=slot.activity,
+            user=request.user,
+            pax=pax,
+            status="confirmed",
+            paid=True,
+        )
+        slot.current_participants += pax
+        slot.save(update_fields=["current_participants"])
         return Response(
             self.get_serializer(booking).data,
             status=status.HTTP_201_CREATED,
@@ -281,3 +290,27 @@ class BulkSlotCreateView(APIView):
             current += timezone.timedelta(minutes=interval)
         Slot.objects.bulk_create(slots)
         return Response({"created": len(slots)}, status=201)
+
+
+class MerchantSlotCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def post(self, request):
+        ser = SlotCreateSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        activity: Activity = ser.validated_data["activity"]
+        if activity.owner != request.user:
+            return Response({"detail": "Not your activity"}, status=403)
+        slot = ser.save()
+        return Response(SlotSerializer(slot).data, status=201)
+
+
+class MerchantBookingList(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def get(self, request):
+        qs = Booking.objects.filter(activity__owner=request.user).select_related(
+            "slot", "user"
+        )
+        ser = BookingSerializer(qs, many=True)
+        return Response(ser.data)

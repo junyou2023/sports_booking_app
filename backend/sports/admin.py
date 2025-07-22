@@ -21,7 +21,14 @@ class SportAdmin(admin.ModelAdmin):
 
 @admin.register(Slot)
 class SlotAdmin(admin.ModelAdmin):
-    list_display = ("title", "facility", "begins_at", "capacity", "price")
+    list_display = (
+        "title",
+        "facility",
+        "begins_at",
+        "capacity",
+        "current_participants",
+        "price",
+    )
     list_filter = ("facility", "begins_at")
     search_fields = ("title", "location")
 
@@ -53,7 +60,7 @@ class FacilityAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ("user", "slot", "pax", "booked_at")
+    list_display = ("user", "slot", "status", "paid", "pax", "booked_at")
     list_filter = ("slot__sport", "booked_at")
     autocomplete_fields = ("slot", "user")
 
