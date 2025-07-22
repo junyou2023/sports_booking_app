@@ -53,6 +53,14 @@ class SlotCreateSerializer(serializers.ModelSerializer):
     def get_seats_left(self, obj):
         return obj.seats_left
 
+    def create(self, validated_data):
+        """Populate sport from the related activity when creating a Slot."""
+        activity = validated_data["activity"]
+        return Slot.objects.create(
+            **validated_data,
+            sport=activity.sport,
+        )
+
 
 class CategorySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
