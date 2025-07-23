@@ -38,6 +38,21 @@ class SlotService {
         .toList(growable: false);
   }
 
+  Future<List<Slot>> fetchByActivityDate(int activityId, String date) async {
+    final Response res = await apiClient.get(
+      '/slots/',
+      queryParameters: {'activity': activityId, 'date': date},
+    );
+
+    final dynamic payload = res.data;
+    final List data = payload is Map ? payload['results'] as List : payload as List;
+
+    return data
+        .cast<dynamic>()
+        .map((e) => Slot.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
   Future<void> createSlot(
       int activityId,
       DateTime start,

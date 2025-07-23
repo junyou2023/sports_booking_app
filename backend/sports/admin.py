@@ -10,6 +10,7 @@ from .models import (
     SportCategory,
     FeaturedCategory,
     FeaturedActivity,
+    UserActivityHistory,
 )
 
 
@@ -96,3 +97,9 @@ class FeaturedCategoryAdmin(admin.ModelAdmin):
 class FeaturedActivityAdmin(admin.ModelAdmin):
     list_display = ("activity", "order")
     list_editable = ("order",)
+
+
+@admin.register(UserActivityHistory)
+class UserActivityHistoryAdmin(admin.ModelAdmin):
+    list_display = ("user", "activity", "action", "timestamp")
+    list_filter = ("action",)

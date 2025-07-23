@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import '../services/booking_service.dart';
+import '../services/payment_service.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
 
@@ -42,7 +43,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Future<void> _pay() async {
     setState(() => loading = true);
     try {
-      final booking = await bookingService.create(widget.slot.id);
+      final intent = await paymentService.createIntent(widget.slot.id);
+      final booking = await paymentService.confirmIntent(intent['intent_id'] as String);
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(

@@ -5,7 +5,7 @@ Run:  pytest backend
 import pytest
 import django
 from rest_framework.test import APIClient
-from sports.models import Sport, Slot, Booking
+from sports.models import Sport, Slot, Booking, Category, Activity, UserActivityHistory
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import models
@@ -92,4 +92,62 @@ def test_concurrent_booking_capacity(db):
     t1.start(); t2.start(); t1.join(); t2.join()
 
     assert results.count(201) == 1
-    assert Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"] <= slot.capacity
+    assert (
+        Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"]
+        <= slot.capacity
+    )
+
+
+def test_slots_filter_by_activity():
+    sport = Sport.objects.create(name="Yoga")
+    disc = Category.objects.create(name="Flow")
+    activity = Activity.objects.create(
+        sport=sport,
+        discipline=disc,
+        title="Morning Flow",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
+    slot = Slot.objects.create(
+        sport=sport,
+        activity=activity,
+        title="Morning",
+        location="Room",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=5,
+        price=0,
+        rating=0,
+    )
+    client = APIClient()
+    resp = client.get("/api/slots/", {"activity": activity.id})
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+    assert resp.data[0]["id"] == slot.id
+
+
+def test_continue_planning_endpoint():
+    user = User.objects.create_user("planu")
+    sport = Sport.objects.create(name="Run")
+    cat = Category.objects.create(name="Aerobic")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        title="Morning Run",
+        description="",
+        difficulty=1,
+        duration=30,
+        base_price=5,
+    )
+    UserActivityHistory.objects.create(
+        user=user, activity=act, action="view"
+    )
+
+    client = APIClient()
+    client.force_authenticate(user)
+    resp = client.get("/api/home/continue-planning/")
+    assert resp.status_code == 200
+    assert len(resp.data) == 1
+    assert resp.data[0]["title"] == "Morning Run"

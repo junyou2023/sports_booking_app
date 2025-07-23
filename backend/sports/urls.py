@@ -13,6 +13,7 @@ from .views import (
     FeaturedCategoryViewSet,
     FeaturedActivityViewSet,
     ActivityReviewList,
+    ContinuePlanningView,
     BulkSlotCreateView,
     MerchantSlotCreateView,
     MerchantBookingList,
@@ -34,4 +35,5 @@ urlpatterns = router.urls + [
     path("merchant/slots/", MerchantSlotCreateView.as_view()),
     path("merchant/bookings/", MerchantBookingList.as_view()),
     path("activities/<int:activity_id>/reviews/", ActivityReviewList.as_view(), name="activity-reviews"),
+    path("home/continue-planning/", ContinuePlanningView.as_view()),
 ]

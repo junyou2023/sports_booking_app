@@ -17,6 +17,7 @@ from .models import (
     Facility,
     Variant,
     Activity,
+    UserActivityHistory,
     SportCategory,
     FeaturedCategory,
     FeaturedActivity,
@@ -30,6 +31,7 @@ from .serializers import (
     FacilityCreateSerializer,
     VariantSerializer,
     ActivitySerializer,
+    ActivitySimpleSerializer,
     SportCategorySerializer,
     FeaturedCategorySerializer,
     FeaturedActivitySerializer,
@@ -174,13 +176,16 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        qs = Slot.objects.select_related("facility", "sport")
+        qs = Slot.objects.select_related("facility", "sport", "activity")
         facility_id = self.request.query_params.get("facility_id")
         if facility_id:
             qs = qs.filter(facility_id=facility_id)
         sport_id = self.request.query_params.get("sport")
         if sport_id:
             qs = qs.filter(sport_id=sport_id)
+        activity_id = self.request.query_params.get("activity")
+        if activity_id:
+            qs = qs.filter(activity_id=activity_id)
         date_str = self.request.query_params.get("date")
         if date_str:
             try:
@@ -252,6 +257,36 @@ class ActivityReviewList(APIView):
         ser.is_valid(raise_exception=True)
         ser.save(activity_id=activity_id, user=request.user)
         return Response(ser.data, status=201)
+
+
+class ContinuePlanningView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        histories = (
+            UserActivityHistory.objects.filter(user=user)
+            .order_by("-timestamp")[:20]
+        )
+        act_ids = []
+        for h in histories:
+            if h.activity_id not in act_ids:
+                act_ids.append(h.activity_id)
+
+        unfinished = (
+            Booking.objects.filter(user=user, paid=False)
+            .values_list("activity_id", flat=True)
+        )
+        for aid in unfinished:
+            if aid and aid not in act_ids:
+                act_ids.append(aid)
+
+        acts = {a.id: a for a in Activity.objects.filter(id__in=act_ids)}
+        ordered = [acts[a] for a in act_ids if a in acts]
+        ser = ActivitySimpleSerializer(
+            ordered, many=True, context={"request": request}
+        )
+        return Response(ser.data)
 
 
 class BulkSlotCreateView(APIView):
