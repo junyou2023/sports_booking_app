@@ -17,6 +17,7 @@ from .models import (
     Facility,
     Variant,
     Activity,
+    UserActivityHistory,
     SportCategory,
     FeaturedCategory,
     FeaturedActivity,
@@ -30,6 +31,7 @@ from .serializers import (
     FacilityCreateSerializer,
     VariantSerializer,
     ActivitySerializer,
+    ActivitySimpleSerializer,
     SportCategorySerializer,
     FeaturedCategorySerializer,
     FeaturedActivitySerializer,
@@ -255,6 +257,36 @@ class ActivityReviewList(APIView):
         ser.is_valid(raise_exception=True)
         ser.save(activity_id=activity_id, user=request.user)
         return Response(ser.data, status=201)
+
+
+class ContinuePlanningView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        histories = (
+            UserActivityHistory.objects.filter(user=user)
+            .order_by("-timestamp")[:20]
+        )
+        act_ids = []
+        for h in histories:
+            if h.activity_id not in act_ids:
+                act_ids.append(h.activity_id)
+
+        unfinished = (
+            Booking.objects.filter(user=user, paid=False)
+            .values_list("activity_id", flat=True)
+        )
+        for aid in unfinished:
+            if aid and aid not in act_ids:
+                act_ids.append(aid)
+
+        acts = {a.id: a for a in Activity.objects.filter(id__in=act_ids)}
+        ordered = [acts[a] for a in act_ids if a in acts]
+        ser = ActivitySimpleSerializer(
+            ordered, many=True, context={"request": request}
+        )
+        return Response(ser.data)
 
 
 class BulkSlotCreateView(APIView):

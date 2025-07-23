@@ -43,6 +43,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final nearbyActsAsync = ref.watch(nearbyActivitiesProvider);
     final featuredCatsAsync = ref.watch(featuredCategoriesProvider);
     final featuredActsAsync = ref.watch(featuredActivitiesProvider);
+    final continuePlanningAsync = ref.watch(continuePlanningProvider);
 
     final Widget body = _navIndex == 2
         ? const BookingsPage()
@@ -340,7 +341,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
 
 
-          // ================= Continue planning（保持不变） =================
+          // ================= Continue planning =================
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 32, 0, 0),
             sliver: SliverToBoxAdapter(
@@ -348,27 +349,59 @@ class _HomePageState extends ConsumerState<HomePage> {
                   style: Theme.of(context).textTheme.titleLarge),
             ),
           ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 240,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ProjectCard(
-                    title: 'Sunset Sailing Tour',
-                    imageUrl: 'assets/images/sailing.jpg',
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 20),
-                  ProjectCard(
-                    title: 'Dolphin Watching',
-                    imageUrl: 'assets/images/dolphin.jpg',
-                    onTap: () {},
-                  ),
-                ],
+          continuePlanningAsync.when(
+            loading: () => const SliverToBoxAdapter(
+              child: SizedBox(
+                height: 240,
+                child: Center(child: CircularProgressIndicator()),
               ),
             ),
+            error: (e, __) => SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Error: \$e',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.red)),
+              ),
+            ),
+            data: (acts) {
+              if (acts.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text('No suggestions yet',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                  ),
+                );
+              }
+              return SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 240,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    itemCount: acts.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 20),
+                    itemBuilder: (_, i) {
+                      final act = acts[i];
+                      return ProjectCard(
+                        title: act.title,
+                        imageUrl: act.imageUrl ?? act.image,
+                        price: act.basePrice,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => ActivityDetailPage(activity: act)),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
         ],
       );
