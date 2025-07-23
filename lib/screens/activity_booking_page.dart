@@ -19,6 +19,7 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final slotsAsync = ref.watch(activitySlotsProvider(widget.activity.id));
     return Scaffold(
       appBar: AppBar(title: const Text('Select Slot')),
       body: Column(
@@ -29,12 +30,20 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                 : '${selectedDate!.toLocal()}'.split(' ')[0]),
             trailing: const Icon(Icons.calendar_today),
             onTap: () async {
-              final now = DateTime.now();
+              if (!slotsAsync.hasValue) return;
+              final allSlots = slotsAsync.value!;
+              final dates = allSlots
+                  .map((s) => DateUtils.dateOnly(s.beginsAt))
+                  .toSet();
+              if (dates.isEmpty) return;
+              final first = dates.reduce((a, b) => a.isBefore(b) ? a : b);
+              final last = dates.reduce((a, b) => a.isAfter(b) ? a : b);
               final picked = await showDatePicker(
                 context: context,
-                initialDate: selectedDate ?? now,
-                firstDate: now,
-                lastDate: now.add(const Duration(days: 365)),
+                initialDate: selectedDate ?? first,
+                firstDate: first,
+                lastDate: last,
+                selectableDayPredicate: (d) => dates.contains(DateUtils.dateOnly(d)),
               );
               if (picked != null) {
                 setState(() => selectedDate = picked);

@@ -23,6 +23,26 @@ class SlotService {
         .toList(growable: false);
   }
 
+  /// All upcoming slots for an activity. Uses `after` filter to
+  /// only return slots from now onwards.
+  Future<List<Slot>> fetchByActivity(int activityId) async {
+    final Response res = await apiClient.get(
+      '/slots/',
+      queryParameters: {
+        'activity': activityId,
+        'after': DateTime.now().toIso8601String(),
+      },
+    );
+
+    final dynamic payload = res.data;
+    final List data = payload is Map ? payload['results'] as List : payload as List;
+
+    return data
+        .cast<dynamic>()
+        .map((e) => Slot.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
   Future<List<Slot>> fetchBySportDate(int sportId, String date) async {
     final Response res = await apiClient.get(
       '/slots/',

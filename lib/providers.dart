@@ -22,6 +22,12 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
   return slotService.fetchBySport(sportId);
 });
 
+/// Upcoming slots for an activity, used to limit available dates.
+final activitySlotsProvider =
+    FutureProvider.family<List<Slot>, int>((ref, activityId) {
+  return slotService.fetchByActivity(activityId);
+});
+
 class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
