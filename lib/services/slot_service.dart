@@ -6,6 +6,11 @@ import 'api_client.dart';
 class SlotService {
   const SlotService();
 
+  /// Format a [DateTime] with an explicit UTC offset so Django's
+  /// `fromisoformat` can parse it as an aware datetime.
+  String _iso(DateTime dt) =>
+      dt.toUtc().toIso8601String().replaceFirst('Z', '+00:00');
+
   /// GET /api/slots/?sport=<sportId>
   Future<List<Slot>> fetchBySport(int sportId) async {
     final Response res = await apiClient.get(
@@ -30,7 +35,7 @@ class SlotService {
       '/slots/',
       queryParameters: {
         'activity': activityId,
-        'after': DateTime.now().toIso8601String(),
+        'after': _iso(DateTime.now()),
       },
     );
 
@@ -59,14 +64,14 @@ class SlotService {
   }
 
   Future<List<Slot>> fetchByActivityDate(int activityId, DateTime date) async {
-    final start = DateTime(date.year, date.month, date.day);
+    final start = DateTime.utc(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
     final Response res = await apiClient.get(
       '/slots/',
       queryParameters: {
         'activity': activityId,
-        'after': start.toIso8601String(),
-        'before': end.toIso8601String(),
+        'after': _iso(start),
+        'before': _iso(end),
       },
     );
 
