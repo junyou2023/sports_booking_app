@@ -31,6 +31,7 @@ class SlotSerializer(serializers.ModelSerializer):
         max_digits=3, decimal_places=1, coerce_to_string=False
     )
     seats_left = serializers.SerializerMethodField()
+    sport = SportSerializer(read_only=True)
 
     class Meta:
         model = Slot
@@ -38,6 +39,12 @@ class SlotSerializer(serializers.ModelSerializer):
 
     def get_seats_left(self, obj):
         return obj.seats_left
+
+    def to_representation(self, instance):
+        """Ensure sport is serialized even if missing on the Slot instance."""
+        if instance.sport_id is None and instance.activity_id:
+            instance.sport = instance.activity.sport
+        return super().to_representation(instance)
 
 
 class SlotCreateSerializer(serializers.ModelSerializer):
