@@ -52,9 +52,7 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   }
 
   Widget _buildSlots() {
-    final dateStr = '${selectedDate!.year.toString().padLeft(4, '0')}-'
-        '${selectedDate!.month.toString().padLeft(2, '0')}-'
-        '${selectedDate!.day.toString().padLeft(2, '0')}';
+    final dateStr = selectedDate!.toUtc().toIso8601String();
     final asyncSlots =
         ref.watch(slotsByDateProvider(SlotsByDateParams(activityId: widget.activity.id, date: dateStr)));
     return asyncSlots.when(
