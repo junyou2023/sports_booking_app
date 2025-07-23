@@ -1,11 +1,12 @@
 # sports/views.py
-from django.db import models, transaction
+from django.db import transaction, IntegrityError, models
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status, serializers
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.utils import timezone
 
 from .models import (
@@ -94,10 +95,13 @@ class SportCategoryViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         parent = serializer.validated_data.get("parent")
         name = serializer.validated_data.get("name")
-        if SportCategory.objects.filter(parent=parent, name=name).exclude(pk=serializer.instance.pk).exists():
+        if (
+            SportCategory.objects.filter(parent=parent, name=name)
+            .exclude(pk=serializer.instance.pk)
+            .exists()
+        ):
             raise serializers.ValidationError({"name": "Name exists"})
         serializer.save()
-
 
 
 class VariantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -108,6 +112,7 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ActivityViewSet(viewsets.ModelViewSet):
     serializer_class = ActivitySerializer
+
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
             perms = [permissions.IsAuthenticated, IsVendor]
@@ -123,10 +128,75 @@ class ActivityViewSet(viewsets.ModelViewSet):
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
+
+        sport = self.request.query_params.get("sport")
+        lat = self.request.query_params.get("lat")
+        lng = self.request.query_params.get("lng")
+        date = self.request.query_params.get("date")
+        radius = self.request.query_params.get("radius") or 5000
+
+        if sport:
+            qs = qs.filter(sport_id=sport)
+
+        if lat and lng:
+            try:
+                point = Point(float(lng), float(lat), srid=4326)
+                qs = qs.filter(
+                    slots__facility__location__distance_lte=(
+                        point,
+                        float(radius),
+                    )
+                )
+            except ValueError:
+                pass
+
+        if date:
+            try:
+                day = timezone.datetime.fromisoformat(date).date()
+                start = timezone.datetime.combine(
+                    day,
+                    timezone.datetime.min.time(),
+                    tzinfo=timezone.utc,
+                )
+                end = start + timezone.timedelta(days=1)
+                qs = qs.filter(
+                    slots__begins_at__gte=start,
+                    slots__begins_at__lt=end,
+                )
+            except ValueError:
+                pass
+
+        if sport or (lat and lng) or date:
+            qs = qs.filter(status=Activity.STATUS_PUBLISHED)
+            qs = qs.annotate(
+                min_price=models.Min("slots__price"),
+                avg_rating=models.Avg("slots__rating"),
+            ).distinct()
+
         return qs
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated, IsVendor],
+    )
+    def publish(self, request, pk=None):
+        activity = self.get_object()
+        if activity.owner != request.user:
+            return Response({"detail": "Not your activity"}, status=403)
+        has_future_slot = Slot.objects.filter(
+            activity=activity,
+            begins_at__gt=timezone.now()
+        ).exists()
+        if not has_future_slot:
+            return Response({"detail": "No future slots"}, status=400)
+        activity.status = Activity.STATUS_PUBLISHED
+        activity.save(update_fields=["status"])
+        serializer = self.get_serializer(activity)
+        return Response(serializer.data)
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
@@ -179,7 +249,8 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Slot.objects.select_related("facility", "sport", "activity")
         after = self.request.query_params.get("after")
         before = self.request.query_params.get("before")
-        if not after and not before:
+        date = self.request.query_params.get("date")
+        if not after and not before and not date:
             after = timezone.now().isoformat()
         facility_id = self.request.query_params.get("facility_id")
         if facility_id:
@@ -190,14 +261,34 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
         activity_id = self.request.query_params.get("activity")
         if activity_id:
             qs = qs.filter(activity_id=activity_id)
+        qs = qs.filter(
+            begins_at__gt=timezone.now(),
+            current_participants__lt=models.F("capacity"),
+        )
         if after:
             try:
-                qs = qs.filter(begins_at__gte=timezone.datetime.fromisoformat(after))
+                qs = qs.filter(
+                    begins_at__gte=timezone.datetime.fromisoformat(after)
+                )
             except ValueError:
                 pass
         if before:
             try:
-                qs = qs.filter(begins_at__lte=timezone.datetime.fromisoformat(before))
+                qs = qs.filter(
+                    begins_at__lte=timezone.datetime.fromisoformat(before)
+                )
+            except ValueError:
+                pass
+        if date:
+            try:
+                day = timezone.datetime.fromisoformat(date).date()
+                start = timezone.datetime.combine(
+                    day,
+                    timezone.datetime.min.time(),
+                    tzinfo=timezone.utc,
+                )
+                end = start + timezone.timedelta(days=1)
+                qs = qs.filter(begins_at__gte=start, begins_at__lt=end)
             except ValueError:
                 pass
         return qs
@@ -208,10 +299,25 @@ class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Booking.objects.filter(user=self.request.user).select_related(
+        qs = Booking.objects.filter(user=self.request.user).select_related(
             "slot",
             "slot__facility",
         )
+        tab = self.request.query_params.get("tab")
+        now = timezone.now()
+        if tab == "upcoming":
+            qs = qs.filter(
+                slot__begins_at__gt=now,
+                status__in=["pending", "confirmed"],
+            )
+        elif tab == "completed":
+            qs = qs.filter(
+                slot__begins_at__lte=now,
+                status="confirmed",
+            )
+        elif tab == "cancelled":
+            qs = qs.filter(status="cancelled")
+        return qs
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -228,14 +334,20 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        booking = Booking.objects.create(
-            slot=slot,
-            activity=slot.activity,
-            user=request.user,
-            pax=pax,
-            status="pending",
-            paid=False,
-        )
+        try:
+            booking = Booking.objects.create(
+                slot=slot,
+                activity=slot.activity,
+                user=request.user,
+                pax=pax,
+                status="pending",
+                paid=False,
+            )
+        except IntegrityError:
+            return Response(
+                {"detail": "Slot already booked"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         slot.current_participants += pax
         slot.save(update_fields=["current_participants"])
         return Response(
@@ -243,12 +355,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+
 class ActivityReviewList(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, activity_id):
         limit = request.query_params.get("limit")
-        qs = Review.objects.filter(activity_id=activity_id).select_related("user").order_by("-created_at")
+        qs = (
+            Review.objects.filter(activity_id=activity_id)
+            .select_related("user")
+            .order_by("-created_at")
+        )
         if limit:
             try:
                 qs = qs[: int(limit)]
@@ -351,8 +468,9 @@ class MerchantBookingList(APIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def get(self, request):
-        qs = Booking.objects.filter(activity__owner=request.user).select_related(
-            "slot", "user"
+        qs = (
+            Booking.objects.filter(activity__owner=request.user)
+            .select_related("slot", "user")
         )
         ser = BookingSerializer(qs, many=True)
         return Response(ser.data)
