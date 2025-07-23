@@ -25,7 +25,7 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
 class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
-  final String date;
+  final DateTime date;
 }
 
 final slotsByDateProvider =

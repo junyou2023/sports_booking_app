@@ -52,9 +52,14 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   }
 
   Widget _buildSlots() {
-    final dateStr = selectedDate!.toUtc().toIso8601String();
-    final asyncSlots =
-        ref.watch(slotsByDateProvider(SlotsByDateParams(activityId: widget.activity.id, date: dateStr)));
+    final asyncSlots = ref.watch(
+      slotsByDateProvider(
+        SlotsByDateParams(
+          activityId: widget.activity.id,
+          date: selectedDate!,
+        ),
+      ),
+    );
     return asyncSlots.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, __) => Center(child: Text('Error: $e')),
