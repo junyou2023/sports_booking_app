@@ -205,6 +205,12 @@ class Slot(models.Model):
     def seats_left(self) -> int:
         return max(self.capacity - self.current_participants, 0)
 
+    def save(self, *args, **kwargs):
+        """Ensure sport always matches the related activity."""
+        if self.activity_id and not self.sport_id:
+            self.sport_id = self.activity.sport_id
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:                # pragma: no cover
         return f"{self.title} @ {self.begins_at:%Y-%m-%d %H:%M}"
 
