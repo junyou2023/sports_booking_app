@@ -36,6 +36,9 @@ class SlotSerializer(serializers.ModelSerializer):
         model = Slot
         fields = "__all__"
 
+    def get_seats_left(self, obj):
+        return obj.seats_left
+
 
 class SlotCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -130,17 +133,13 @@ class ActivitySerializer(serializers.ModelSerializer):
         variant = attrs.get("variant")
         discipline = attrs.get("discipline")
         if variant and discipline and variant.discipline_id != discipline.id:
-            raise serializers.ValidationError(
-                {"variant": "Mismatch discipline"}
-            )
+            raise serializers.ValidationError({"variant": "Mismatch discipline"})
         title = attrs.get("title", "")
         if len(title) > 60:
             raise serializers.ValidationError({"title": "Max 60 characters"})
         desc = attrs.get("description", "")
         if len(desc) > 500:
-            raise serializers.ValidationError(
-                {"description": "Max 500 characters"}
-            )
+            raise serializers.ValidationError({"description": "Max 500 characters"})
         return attrs
 
 
@@ -243,6 +242,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "paid",
         )
         read_only_fields = ("id", "booked_at", "status", "paid")
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.SerializerMethodField()
