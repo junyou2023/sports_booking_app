@@ -126,8 +126,7 @@ def test_slots_filter_by_activity():
     assert resp.status_code == 200
     assert len(resp.data) == 1
     assert resp.data[0]["id"] == slot.id
-
-
+    
 def test_continue_planning_endpoint():
     user = User.objects.create_user("planu")
     sport = Sport.objects.create(name="Run")
