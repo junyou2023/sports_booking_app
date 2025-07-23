@@ -19,42 +19,66 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final slotsAsync = ref.watch(activitySlotsProvider(widget.activity.id));
     return Scaffold(
       appBar: AppBar(title: const Text('Select Slot')),
-      body: Column(
-        children: [
-          ListTile(
-            title: Text(selectedDate == null
-                ? 'Choose date'
-                : '${selectedDate!.toLocal()}'.split(' ')[0]),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: () async {
-              final now = DateTime.now();
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: selectedDate ?? now,
-                firstDate: now,
-                lastDate: now.add(const Duration(days: 365)),
-              );
-              if (picked != null) {
-                setState(() => selectedDate = picked);
-              }
-            },
-          ),
-          Expanded(
-            child: selectedDate == null
-                ? const Center(child: Text('Select a date'))
-                : _buildSlots(),
-          ),
-        ],
+      body: slotsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, __) => Center(child: Text('Error: $e')),
+        data: (allSlots) {
+          final dates = allSlots
+              .map((s) => DateUtils.dateOnly(s.beginsAt))
+              .toSet()
+              .toList()
+            ..sort();
+          selectedDate ??= dates.isNotEmpty ? dates.first : null;
+
+          if (dates.isEmpty) {
+            return const Center(child: Text('No upcoming slots'));
+          }
+
+          return Column(
+            children: [
+              SizedBox(
+                height: 60,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  itemCount: dates.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final date = dates[i];
+                    final selected = DateUtils.isSameDay(date, selectedDate);
+                    final label = '${date.month}/${date.day}';
+                    return ChoiceChip(
+                      label: Text(label),
+                      selected: selected,
+                      onSelected: (_) => setState(() => selectedDate = date),
+                    );
+                  },
+                ),
+              ),
+              Expanded(
+                child: selectedDate == null
+                    ? const SizedBox.shrink()
+                    : _buildSlots(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildSlots() {
-    final dateStr = selectedDate!.toUtc().toIso8601String();
-    final asyncSlots =
-        ref.watch(slotsByDateProvider(SlotsByDateParams(activityId: widget.activity.id, date: dateStr)));
+    final asyncSlots = ref.watch(
+      slotsByDateProvider(
+        SlotsByDateParams(
+          activityId: widget.activity.id,
+          date: selectedDate!,
+        ),
+      ),
+    );
     return asyncSlots.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, __) => Center(child: Text('Error: $e')),
