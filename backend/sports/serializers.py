@@ -144,6 +144,21 @@ class ActivitySerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ActivitySimpleSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Activity
+        fields = ("id", "title", "image_url", "base_price")
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get("request")
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        return ""
+
+
 class FeaturedCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturedCategory

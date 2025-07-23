@@ -56,7 +56,7 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
         '${selectedDate!.month.toString().padLeft(2, '0')}-'
         '${selectedDate!.day.toString().padLeft(2, '0')}';
     final asyncSlots =
-        ref.watch(slotsByDateProvider(SlotsByDateParams(sportId: widget.activity.sport, date: dateStr)));
+        ref.watch(slotsByDateProvider(SlotsByDateParams(activityId: widget.activity.id, date: dateStr)));
     return asyncSlots.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, __) => Center(child: Text('Error: $e')),

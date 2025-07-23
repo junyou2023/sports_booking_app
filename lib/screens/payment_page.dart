@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import '../services/booking_service.dart';
+import '../services/payment_service.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
 
@@ -42,7 +44,16 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Future<void> _pay() async {
     setState(() => loading = true);
     try {
-      final booking = await bookingService.create(widget.slot.id);
+      final data = await paymentService.createIntent(widget.slot.id);
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: data['client_secret'] as String,
+          merchantDisplayName: 'PlayNexus',
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+      await Future.delayed(const Duration(seconds: 2));
+      final booking = await paymentService.fetchBooking(data['booking_id'] as int);
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(

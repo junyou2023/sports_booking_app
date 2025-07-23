@@ -21,6 +21,11 @@ class BookingService {
     );
     return Booking.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<Booking> fetchById(int id) async {
+    final res = await apiClient.get('/bookings/' + id.toString() + '/');
+    return Booking.fromJson(res.data as Map<String, dynamic>);
+  }
 }
 
 final bookingService = BookingService();

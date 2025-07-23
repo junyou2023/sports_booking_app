@@ -173,6 +173,7 @@ class Slot(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
+        editable=False,
     )
     title = models.CharField(max_length=60)
     location = models.CharField(max_length=80)
@@ -193,14 +194,12 @@ class Slot(models.Model):
         "Activity",
         related_name="slots",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
     )
     current_participants = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ("begins_at",)
-        unique_together = ("facility", "begins_at")
+        unique_together = ("activity", "begins_at")
 
     @property
     def seats_left(self) -> int:
@@ -287,3 +286,34 @@ class Review(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.user} → {self.activity} ({self.rating})"
+
+
+class UserActivityHistory(models.Model):
+    """Store user interactions with activities."""
+
+    ACTION_VIEW = "view"
+    ACTION_FAVORITE = "favorite"
+    ACTION_BOOK = "book"
+
+    ACTION_CHOICES = [
+        (ACTION_VIEW, "View"),
+        (ACTION_FAVORITE, "Favorite"),
+        (ACTION_BOOK, "Book"),
+    ]
+
+    user = models.ForeignKey(
+        "auth.User",
+        on_delete=models.CASCADE,
+        related_name="activity_history",
+    )
+    activity = models.ForeignKey(
+        Activity,
+        on_delete=models.CASCADE,
+        related_name="user_history",
+    )
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ("-timestamp",)
+

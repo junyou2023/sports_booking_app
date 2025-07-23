@@ -10,6 +10,7 @@ from .models import (
     SportCategory,
     FeaturedCategory,
     FeaturedActivity,
+    UserActivityHistory,
 )
 
 
@@ -22,15 +23,15 @@ class SportAdmin(admin.ModelAdmin):
 @admin.register(Slot)
 class SlotAdmin(admin.ModelAdmin):
     list_display = (
-        "title",
-        "facility",
+        "activity",
         "begins_at",
         "capacity",
         "current_participants",
         "price",
     )
-    list_filter = ("facility", "begins_at")
-    search_fields = ("title", "location")
+    list_filter = ("activity", "begins_at")
+    search_fields = ("activity__title", "location")
+    autocomplete_fields = ("activity",)
 
 
 @admin.register(Category)
@@ -96,3 +97,9 @@ class FeaturedCategoryAdmin(admin.ModelAdmin):
 class FeaturedActivityAdmin(admin.ModelAdmin):
     list_display = ("activity", "order")
     list_editable = ("order",)
+
+
+@admin.register(UserActivityHistory)
+class UserActivityHistoryAdmin(admin.ModelAdmin):
+    list_display = ("user", "activity", "action", "timestamp")
+    list_filter = ("action",)

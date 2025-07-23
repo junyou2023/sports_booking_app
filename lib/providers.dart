@@ -23,14 +23,14 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
 });
 
 class SlotsByDateParams {
-  const SlotsByDateParams({required this.sportId, required this.date});
-  final int sportId;
+  const SlotsByDateParams({required this.activityId, required this.date});
+  final int activityId;
   final String date;
 }
 
 final slotsByDateProvider =
     FutureProvider.family<List<Slot>, SlotsByDateParams>((ref, params) {
-  return slotService.fetchBySportDate(params.sportId, params.date);
+  return slotService.fetchByActivityDate(params.activityId, params.date);
 });
 
 
