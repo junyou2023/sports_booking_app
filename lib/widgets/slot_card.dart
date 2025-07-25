@@ -58,6 +58,24 @@ class SlotCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (slot.seatsLeft == 0) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Sold Out',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

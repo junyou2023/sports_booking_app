@@ -124,6 +124,24 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
 
   Future<void> _goToPayment() async {
     if (_selectedSlot == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Booking'),
+        content: Text('Book the slot "${_selectedSlot!.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Book'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     setState(() => _navigating = true);
     final booking = await Navigator.push(
       context,

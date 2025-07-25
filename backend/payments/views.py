@@ -1,14 +1,20 @@
 import os
+import logging
 
 import stripe
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+
 
 from sports.models import Slot, Booking
 
 stripe.api_key = os.getenv('STRIPE_API_KEY', '')
+
+
+def send_push_notification(user, title, body):
+    logger = logging.getLogger('push')
+    logger.info('Push to %s: %s - %s', user.username, title, body)
 
 
 class StripeCheckoutView(APIView):
@@ -47,6 +53,7 @@ class StripeCheckoutView(APIView):
     def get(self, request):
         return Response({'detail': 'not implemented'}, status=405)
 
+
 class StripeWebhookView(APIView):
     permission_classes = []
 
@@ -63,9 +70,49 @@ class StripeWebhookView(APIView):
             intent = event['data']['object']
             slot_id = intent['metadata'].get('slot_id')
             user_id = intent['metadata'].get('user_id')
-            booking = Booking.objects.filter(slot_id=slot_id, user_id=user_id).first()
+            booking = Booking.objects.filter(
+                slot_id=slot_id, user_id=user_id
+            ).first()
             if booking:
                 booking.paid = True
                 booking.status = 'confirmed'
                 booking.save(update_fields=['paid', 'status'])
+                send_push_notification(
+                    booking.user,
+                    'Payment Success',
+                    f'Booking #{booking.id} confirmed',
+                )
+        elif event['type'] == 'payment_intent.payment_failed':
+            intent = event['data']['object']
+            slot_id = intent['metadata'].get('slot_id')
+            user_id = intent['metadata'].get('user_id')
+            booking = Booking.objects.filter(
+                slot_id=slot_id, user_id=user_id
+            ).first()
+            if booking:
+                booking.status = 'failed'
+                booking.save(update_fields=['status'])
+                send_push_notification(
+                    booking.user,
+                    'Payment Failed',
+                    f'Booking #{booking.id} failed',
+                )
+        elif event['type'] == 'charge.refunded':
+            charge = event['data']['object']
+            intent_id = charge.get('payment_intent')
+            if intent_id:
+                intent = stripe.PaymentIntent.retrieve(intent_id)
+                slot_id = intent['metadata'].get('slot_id')
+                user_id = intent['metadata'].get('user_id')
+                booking = Booking.objects.filter(
+                    slot_id=slot_id, user_id=user_id
+                ).first()
+                if booking:
+                    booking.status = 'refunded'
+                    booking.save(update_fields=['status'])
+                    send_push_notification(
+                        booking.user,
+                        'Payment Refunded',
+                        f'Booking #{booking.id} refunded',
+                    )
         return Response({'status': 'ok'})
