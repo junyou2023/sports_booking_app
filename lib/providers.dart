@@ -11,6 +11,7 @@ import 'services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models/profile.dart';
 import 'services/profile_service.dart';
+import 'package:meta/meta.dart';
 
 // ───────── Sports list ─────────
 final sportsProvider = FutureProvider<List<Sport>>((ref) async {
@@ -28,14 +29,27 @@ final activitySlotsProvider =
   return slotService.fetchByActivity(activityId);
 });
 
+@immutable
 class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
+
   final int activityId;
   final DateTime date;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SlotsByDateParams &&
+          runtimeType == other.runtimeType &&
+          activityId == other.activityId &&
+          date == other.date;
+
+  @override
+  int get hashCode => Object.hash(activityId, date);
 }
 
 final slotsByDateProvider =
-    FutureProvider.family<List<Slot>, SlotsByDateParams>((ref, params) {
+    FutureProvider.autoDispose.family<List<Slot>, SlotsByDateParams>((ref, params) {
   return slotService.fetchByActivityDate(params.activityId, params.date);
 });
 
