@@ -17,7 +17,7 @@ class ActivityBookingPage extends ConsumerStatefulWidget {
 class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   DateTime? selectedDate;
   Slot? selectedSlot;
-  bool navigating = false;
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,10 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                     return ChoiceChip(
                       label: Text(label),
                       selected: selected,
-                      onSelected: (_) => setState(() => selectedDate = date),
+                      onSelected: (_) => setState(() {
+                        selectedDate = date;
+                        selectedSlot = null;
+                      }),
                     );
                   },
                 ),
@@ -71,8 +74,8 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: navigating ? null : _continue,
-                      child: navigating
+                      onPressed: isLoading ? null : _continue,
+                      child: isLoading
                           ? const CircularProgressIndicator()
                           : const Text('Continue'),
                     ),
@@ -120,14 +123,14 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
 
   Future<void> _continue() async {
     if (selectedSlot == null) return;
-    setState(() => navigating = true);
+    setState(() => isLoading = true);
     final booking = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentPage(slot: selectedSlot!),
       ),
     );
-    if (mounted) setState(() => navigating = false);
+    if (mounted) setState(() => isLoading = false);
     if (booking != null && mounted) {
       Navigator.pop(context, booking);
     }
