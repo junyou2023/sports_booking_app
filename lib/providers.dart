@@ -11,6 +11,7 @@ import 'services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models/profile.dart';
 import 'services/profile_service.dart';
+import 'utils/cache_for.dart';
 
 // ───────── Sports list ─────────
 final sportsProvider = FutureProvider<List<Sport>>((ref) async {
