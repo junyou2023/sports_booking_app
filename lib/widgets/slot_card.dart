@@ -7,10 +7,12 @@ class SlotCard extends StatelessWidget {
     super.key,
     required this.slot,
     required this.onTap,
+    this.selected = false,
   });
 
   final Slot slot;
   final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +22,16 @@ class SlotCard extends StatelessWidget {
         width: 220,
         child: Card(
           clipBehavior: Clip.hardEdge,
+          shape: selected
+              ? RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          color: selected ? Colors.blue.shade50 : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

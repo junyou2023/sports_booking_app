@@ -16,6 +16,26 @@ class ActivityBookingPage extends ConsumerStatefulWidget {
 
 class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   DateTime? selectedDate;
+  Slot? selectedSlot;
+  bool isLoading = false;
+
+  Future<void> _continue() async {
+    if (selectedSlot == null) return;
+    setState(() => isLoading = true);
+    try {
+      final booking = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentPage(slot: selectedSlot!),
+        ),
+      );
+      if (booking != null && context.mounted) {
+        Navigator.pop(context, booking);
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +83,21 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                     ? const SizedBox.shrink()
                     : _buildSlots(),
               ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ElevatedButton(
+                  onPressed: selectedSlot != null && !isLoading
+                      ? _continue
+                      : null,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Continue'),
+                ),
+              ),
             ],
           );
         },
@@ -94,17 +129,8 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
             final Slot s = slots[i];
             return SlotCard(
               slot: s,
-              onTap: () async {
-                final booking = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentPage(slot: s),
-                  ),
-                );
-                if (booking != null) {
-                  if (context.mounted) Navigator.pop(context, booking);
-                }
-              },
+              selected: selectedSlot?.id == s.id,
+              onTap: () => setState(() => selectedSlot = s),
             );
           },
         );
