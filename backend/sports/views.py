@@ -147,7 +147,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                         float(radius),
                     )
                 )
-            except ValueError:
+            except Exception:
                 pass
 
         if date:
@@ -233,7 +233,7 @@ class FacilityViewSet(viewsets.ModelViewSet):
                     .annotate(distance=Distance("location", point))
                     .order_by("distance")
                 )
-            except ValueError:
+            except Exception:
                 pass
         return qs
 

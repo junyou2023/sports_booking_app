@@ -270,7 +270,13 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         lat = validated_data.pop("lat")
         lng = validated_data.pop("lng")
-        point = Point(lng, lat, srid=4326)
+        try:
+            point = Point(lng, lat, srid=4326)
+        except Exception:
+            raise serializers.ValidationError({
+                "lat": "Invalid coordinates",
+                "lng": "Invalid coordinates",
+            })
         request = self.context.get("request")
         owner = request.user if request else None
         facility = Facility.objects.create(
