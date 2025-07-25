@@ -24,10 +24,11 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
     final slotsAsync = ref.watch(activitySlotsProvider(widget.activity.id));
     return Scaffold(
       appBar: AppBar(title: const Text('Select Slot')),
-      body: slotsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, __) => Center(child: Text('Error: $e')),
-        data: (allSlots) {
+      body: SafeArea(
+        child: slotsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, __) => Center(child: Text('Error: $e')),
+          data: (allSlots) {
           final dates = allSlots
               .map((s) => DateUtils.dateOnly(s.beginsAt))
               .toSet()
@@ -85,6 +86,7 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
           );
         },
       ),
+    ),
     );
   }
 
