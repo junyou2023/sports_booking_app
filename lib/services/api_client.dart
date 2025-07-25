@@ -35,7 +35,7 @@ void initAuthInterceptor() {
         handler.next(options);
       },
       onError: (err, handler) async {
-        if (err.response?.statusCode == 401) {
+        if (err.response?.statusCode == 401 && err.requestOptions.extra['retried'] != true) {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
             try {
@@ -43,9 +43,23 @@ void initAuthInterceptor() {
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';
+              err.requestOptions.extra['retried'] = true;
               final cloneReq = await apiClient.fetch(err.requestOptions);
               return handler.resolve(cloneReq);
-            } catch (_) {}
+            } catch (_) {
+              await _storage.delete(key: 'access');
+              await _storage.delete(key: 'refresh');
+              err.requestOptions.headers.remove('Authorization');
+              err.requestOptions.extra['retried'] = true;
+              final cloneReq = await apiClient.fetch(err.requestOptions);
+              return handler.resolve(cloneReq);
+            }
+          } else {
+            await _storage.delete(key: 'access');
+            err.requestOptions.headers.remove('Authorization');
+            err.requestOptions.extra['retried'] = true;
+            final cloneReq = await apiClient.fetch(err.requestOptions);
+            return handler.resolve(cloneReq);
           }
         }
         handler.next(err);
