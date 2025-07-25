@@ -7,7 +7,12 @@ from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
 )
-from django.contrib.gis.db import models as gis_models
+try:
+    from django.contrib.gis.db import models as gis_models
+except Exception as exc:  # pragma: no cover - optional GIS fallback
+    import logging
+    logging.getLogger(__name__).warning("GIS disabled: %s", exc)
+    from django.db import models as gis_models
 from django.contrib.postgres.indexes import GistIndex
 from django.db.models import UniqueConstraint
 
