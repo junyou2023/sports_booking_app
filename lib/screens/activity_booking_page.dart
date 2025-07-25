@@ -16,6 +16,8 @@ class ActivityBookingPage extends ConsumerStatefulWidget {
 
 class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   DateTime? selectedDate;
+  Slot? selectedSlot;
+  bool navigating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +65,19 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                     ? const SizedBox.shrink()
                     : _buildSlots(),
               ),
+              if (selectedSlot != null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: navigating ? null : _continue,
+                      child: navigating
+                          ? const CircularProgressIndicator()
+                          : const Text('Continue'),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -94,21 +109,27 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
             final Slot s = slots[i];
             return SlotCard(
               slot: s,
-              onTap: () async {
-                final booking = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentPage(slot: s),
-                  ),
-                );
-                if (booking != null) {
-                  if (context.mounted) Navigator.pop(context, booking);
-                }
-              },
+              selected: selectedSlot?.id == s.id,
+              onTap: () => setState(() => selectedSlot = s),
             );
           },
         );
       },
     );
+  }
+
+  Future<void> _continue() async {
+    if (selectedSlot == null) return;
+    setState(() => navigating = true);
+    final booking = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentPage(slot: selectedSlot!),
+      ),
+    );
+    if (mounted) setState(() => navigating = false);
+    if (booking != null && mounted) {
+      Navigator.pop(context, booking);
+    }
   }
 }
