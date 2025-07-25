@@ -43,9 +43,16 @@ void initAuthInterceptor() {
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';
-              final cloneReq = await apiClient.fetch(err.requestOptions);
-              return handler.resolve(cloneReq);
-            } catch (_) {}
+              final clone = await apiClient.fetch(err.requestOptions);
+              return handler.resolve(clone);
+            } catch (_) {
+              await _storage.delete(key: 'access');
+              await _storage.delete(key: 'refresh');
+              apiClient.options.headers.remove('Authorization');
+            }
+          } else {
+            await _storage.delete(key: 'access');
+            apiClient.options.headers.remove('Authorization');
           }
         }
         handler.next(err);
