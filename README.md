@@ -67,6 +67,25 @@ PostGIS is required for the new facility search API. Docker uses
 `postgis/postgis:15-3.4` for the database so no extra setup is needed.
 If running locally install PostGIS and set `ENGINE=django.contrib.gis.db.backends.postgis`
 in `PlayNexus/settings.py`.
+
+GeoDjango also needs the GDAL and SpatiaLite libraries installed. The
+exact package names depend on your platform but the following commands work
+on most systems:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install gdal-bin libgdal-dev libspatialite7 libspatialite-dev
+
+# macOS (Homebrew)
+brew install gdal libspatialite
+
+# Fedora
+sudo dnf install gdal gdal-devel libspatialite
+```
+
+If these libraries are missing Django will fail at runtime with errors about
+missing GDAL or SpatiaLite.
+
 Seed demo data with:
 
 ```bash
