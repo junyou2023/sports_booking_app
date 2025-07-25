@@ -16,12 +16,29 @@ class ActivityBookingPage extends ConsumerStatefulWidget {
 
 class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   DateTime? selectedDate;
+  Slot? _selectedSlot;
+  bool _navigating = false;
 
   @override
   Widget build(BuildContext context) {
     final slotsAsync = ref.watch(activitySlotsProvider(widget.activity.id));
     return Scaffold(
       appBar: AppBar(title: const Text('Select Slot')),
+      bottomNavigationBar: _selectedSlot == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: _navigating ? null : _goToPayment,
+                child: _navigating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Continue'),
+              ),
+            ),
       body: slotsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, __) => Center(child: Text('Error: $e')),
@@ -94,21 +111,29 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
             final Slot s = slots[i];
             return SlotCard(
               slot: s,
-              onTap: () async {
-                final booking = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentPage(slot: s),
-                  ),
-                );
-                if (booking != null) {
-                  if (context.mounted) Navigator.pop(context, booking);
-                }
+              selected: _selectedSlot?.id == s.id,
+              onTap: () {
+                setState(() => _selectedSlot = s);
               },
             );
           },
         );
       },
     );
+  }
+
+  Future<void> _goToPayment() async {
+    if (_selectedSlot == null) return;
+    setState(() => _navigating = true);
+    final booking = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentPage(slot: _selectedSlot!),
+      ),
+    );
+    if (mounted) {
+      setState(() => _navigating = false);
+      if (booking != null) Navigator.pop(context, booking);
+    }
   }
 }
