@@ -14,9 +14,9 @@ docker compose up -d --build
 docker compose exec web python backend/manage.py migrate --noinput
 
 # 3. optional: load demo sports and facilities
-docker compose exec web python backend/manage.py seed_taxonomy
-docker compose exec web python backend/manage.py seed_sports
-docker compose exec web python backend/manage.py seed_facilities
+#docker compose exec web python backend/manage.py seed_taxonomy
+#docker compose exec web python backend/manage.py seed_sports
+#docker compose exec web python backend/manage.py seed_facilities
 
 # 4. collect static files
 docker compose exec web python backend/manage.py collectstatic --noinput

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';        // new
 import 'package:sports_booking_app/screens/slots_page.dart';
+import '../services/activity_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_card.dart';

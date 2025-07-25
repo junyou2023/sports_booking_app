@@ -5,6 +5,7 @@ import '../models/activity.dart';
 import '../models/review.dart';
 import '../providers/review_provider.dart';
 import '../providers.dart';
+import '../widgets/auth_sheet.dart';
 import 'activity_booking_page.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
