@@ -1,5 +1,6 @@
 // lib/providers.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'models/sport.dart';
 import 'models/slot.dart';
 import 'models/booking.dart';
@@ -28,22 +29,22 @@ final activitySlotsProvider =
   return slotService.fetchByActivity(activityId);
 });
 
+@immutable
 class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
   final DateTime date;
 
-  DateTime get _day => DateTime.utc(date.year, date.month, date.day);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SlotsByDateParams &&
+          runtimeType == other.runtimeType &&
+          activityId == other.activityId &&
+          date == other.date;
 
   @override
-  bool operator ==(Object other) {
-    return other is SlotsByDateParams &&
-        other.activityId == activityId &&
-        other._day == _day;
-  }
-
-  @override
-  int get hashCode => Object.hash(activityId, _day);
+  int get hashCode => Object.hash(activityId, date);
 }
 
 final slotsByDateProvider =
