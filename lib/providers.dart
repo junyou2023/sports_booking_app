@@ -34,6 +34,16 @@ class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
   final DateTime date;
+
+  @override
+  bool operator ==(Object other) {
+    return other is SlotsByDateParams &&
+        other.activityId == activityId &&
+        other.date == date;
+  }
+
+  @override
+  int get hashCode => Object.hash(activityId, date);
 }
 
 final slotsByDateProvider =
