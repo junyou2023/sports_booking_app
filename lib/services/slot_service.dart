@@ -48,10 +48,13 @@ class SlotService {
         .toList(growable: false);
   }
 
-  Future<List<Slot>> fetchBySportDate(int sportId, String date) async {
+  Future<List<Slot>> fetchBySportDate(int sportId, DateTime after) async {
     final Response res = await apiClient.get(
       '/slots/',
-      queryParameters: {'sport': sportId, 'after': date},
+      queryParameters: {
+        'sport': sportId,
+        'after': _iso(after),
+      },
     );
 
     final dynamic payload = res.data;

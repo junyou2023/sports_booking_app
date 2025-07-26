@@ -2,6 +2,7 @@
 /// All services import this instead of creating their own client.
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -19,6 +20,9 @@ void initApiClient() {
       responseType: ResponseType.json,
     ),
   );
+  if (kDebugMode) {
+    apiClient.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  }
 }
 
 final _storage = const FlutterSecureStorage();
@@ -39,7 +43,7 @@ void initAuthInterceptor() {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
             try {
-              final res = await apiClient.post('/token/refresh/', data: {'refresh': refresh});
+              final res = await apiClient.post('/auth/token/refresh/', data: {'refresh': refresh});
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';

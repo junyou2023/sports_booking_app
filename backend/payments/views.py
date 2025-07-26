@@ -2,7 +2,7 @@ import os
 
 import stripe
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -23,11 +23,20 @@ class StripeCheckoutView(APIView):
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
 
-        intent = stripe.PaymentIntent.create(
-            amount=int(slot.price * 100),
-            currency='usd',
-            metadata={'slot_id': slot_id, 'user_id': request.user.id},
-        )
+        if not stripe.api_key:
+            return Response({'detail': 'server misconfigured: STRIPE_API_KEY missing'}, status=500)
+
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=int(slot.price * 100),
+                currency='usd',
+                automatic_payment_methods={'enabled': True},
+                metadata={'slot_id': slot_id, 'user_id': request.user.id},
+            )
+        except stripe.error.StripeError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+        except Exception as e:
+            return Response({'detail': 'unexpected error: ' + str(e)}, status=500)
         booking = Booking.objects.create(
             slot=slot,
             activity=slot.activity,
@@ -41,14 +50,15 @@ class StripeCheckoutView(APIView):
                 'client_secret': intent.client_secret,
                 'intent_id': intent.id,
                 'booking_id': booking.id,
-            }
+            },
+            status=200,
         )
 
     def get(self, request):
         return Response({'detail': 'not implemented'}, status=405)
 
 class StripeWebhookView(APIView):
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         payload = request.body

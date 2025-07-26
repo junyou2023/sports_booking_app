@@ -32,6 +32,18 @@ class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
   final DateTime date;
+
+  DateTime get _day => DateTime.utc(date.year, date.month, date.day);
+
+  @override
+  bool operator ==(Object other) {
+    return other is SlotsByDateParams &&
+        other.activityId == activityId &&
+        other._day == _day;
+  }
+
+  @override
+  int get hashCode => Object.hash(activityId, _day);
 }
 
 final slotsByDateProvider =
