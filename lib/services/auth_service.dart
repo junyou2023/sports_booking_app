@@ -89,7 +89,7 @@ class AuthService {
     final refresh = await _storage.read(key: 'refresh');
     if (refresh == null) return;
     final Response res = await apiClient.post(
-      '/token/refresh/',
+      '/auth/token/refresh/',
       data: {'refresh': refresh},
     );
     final access = res.data['access'];
