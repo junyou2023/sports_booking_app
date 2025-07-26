@@ -61,6 +61,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         MaterialPageRoute(
           builder: (_) => BookingConfirmationPage(booking: booking),
         ),
+        result: booking,
       );
     } catch (e) {
       if (mounted) {

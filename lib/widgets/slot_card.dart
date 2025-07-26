@@ -7,10 +7,12 @@ class SlotCard extends StatelessWidget {
     super.key,
     required this.slot,
     required this.onTap,
+    this.selected = false,
   });
 
   final Slot slot;
   final VoidCallback onTap;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +21,7 @@ class SlotCard extends StatelessWidget {
       child: SizedBox(
         width: 220,
         child: Card(
+          color: selected ? Theme.of(context).colorScheme.primaryContainer : null,
           clipBehavior: Clip.hardEdge,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

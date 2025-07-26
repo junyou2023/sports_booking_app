@@ -28,6 +28,7 @@ class SlotsPage extends ConsumerWidget {
           itemCount: slots.length,
           itemBuilder: (_, i) => SlotCard(
             slot: slots[i],
+            selected: false,
             onTap: () async {
               final token = await authService.getToken();
               if (token == null) {

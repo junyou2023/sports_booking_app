@@ -16,16 +16,20 @@ class ActivityBookingPage extends ConsumerStatefulWidget {
 
 class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
   DateTime? selectedDate;
+  Slot? selectedSlot;
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     final slotsAsync = ref.watch(activitySlotsProvider(widget.activity.id));
     return Scaffold(
       appBar: AppBar(title: const Text('Select Slot')),
-      body: slotsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, __) => Center(child: Text('Error: $e')),
-        data: (allSlots) {
+      body: SafeArea(
+        child: slotsAsync.when(
+          skipLoadingOnRefresh: true,
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, __) => Center(child: Text('Error: $e')),
+          data: (allSlots) {
           final dates = allSlots
               .map((s) => DateUtils.dateOnly(s.beginsAt))
               .toSet()
@@ -53,7 +57,10 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                     return ChoiceChip(
                       label: Text(label),
                       selected: selected,
-                      onSelected: (_) => setState(() => selectedDate = date),
+                      onSelected: (_) => setState(() {
+                        selectedDate = date;
+                        selectedSlot = null;
+                      }),
                     );
                   },
                 ),
@@ -63,10 +70,24 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
                     ? const SizedBox.shrink()
                     : _buildSlots(),
               ),
+              if (selectedSlot != null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _continue,
+                      child: isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text('Continue'),
+                    ),
+                  ),
+                ),
             ],
           );
         },
       ),
+    ),
     );
   }
 
@@ -80,35 +101,56 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
       ),
     );
     return asyncSlots.when(
+      skipLoadingOnRefresh: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, __) => Center(child: Text('Error: $e')),
       data: (slots) {
+        final isRefreshing = asyncSlots.isLoading && asyncSlots.value != null;
+        Widget content;
         if (slots.isEmpty) {
-          return const Center(child: Text('No slots'));
+          content = const Center(child: Text('No slots'));
+        } else {
+          content = ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: slots.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, i) {
+              final Slot s = slots[i];
+              return SlotCard(
+                slot: s,
+                selected: selectedSlot?.id == s.id,
+                onTap: () => setState(() => selectedSlot = s),
+              );
+            },
+          );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: slots.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) {
-            final Slot s = slots[i];
-            return SlotCard(
-              slot: s,
-              onTap: () async {
-                final booking = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentPage(slot: s),
-                  ),
-                );
-                if (booking != null) {
-                  if (context.mounted) Navigator.pop(context, booking);
-                }
-              },
-            );
-          },
+        return Stack(
+          children: [
+            content,
+            if (isRefreshing)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
         );
       },
     );
+  }
+
+  Future<void> _continue() async {
+    if (selectedSlot == null) return;
+    setState(() => isLoading = true);
+    final booking = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentPage(slot: selectedSlot!),
+      ),
+    );
+    if (mounted) setState(() => isLoading = false);
+    if (booking != null && mounted) {
+      Navigator.pop(context, booking);
+    }
   }
 }

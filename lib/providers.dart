@@ -11,6 +11,7 @@ import 'services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'models/profile.dart';
 import 'services/profile_service.dart';
+import 'utils/cache_for.dart';
 
 // ───────── Sports list ─────────
 final sportsProvider = FutureProvider<List<Sport>>((ref) async {
@@ -24,7 +25,8 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
 
 /// Upcoming slots for an activity, used to limit available dates.
 final activitySlotsProvider =
-    FutureProvider.family<List<Slot>, int>((ref, activityId) {
+    FutureProvider.autoDispose.family<List<Slot>, int>((ref, activityId) {
+  ref.cacheFor(const Duration(minutes: 5));
   return slotService.fetchByActivity(activityId);
 });
 
@@ -32,10 +34,21 @@ class SlotsByDateParams {
   const SlotsByDateParams({required this.activityId, required this.date});
   final int activityId;
   final DateTime date;
+
+  @override
+  bool operator ==(Object other) {
+    return other is SlotsByDateParams &&
+        other.activityId == activityId &&
+        other.date == date;
+  }
+
+  @override
+  int get hashCode => Object.hash(activityId, date);
 }
 
 final slotsByDateProvider =
-    FutureProvider.family<List<Slot>, SlotsByDateParams>((ref, params) {
+    FutureProvider.autoDispose.family<List<Slot>, SlotsByDateParams>((ref, params) {
+  ref.cacheFor(const Duration(minutes: 5));
   return slotService.fetchByActivityDate(params.activityId, params.date);
 });
 
