@@ -26,6 +26,7 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
       appBar: AppBar(title: const Text('Select Slot')),
       body: SafeArea(
         child: slotsAsync.when(
+          skipLoadingOnRefresh: true,
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, __) => Center(child: Text('Error: $e')),
           data: (allSlots) {
@@ -100,24 +101,39 @@ class _ActivityBookingPageState extends ConsumerState<ActivityBookingPage> {
       ),
     );
     return asyncSlots.when(
+      skipLoadingOnRefresh: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, __) => Center(child: Text('Error: $e')),
       data: (slots) {
+        final isRefreshing = asyncSlots.isLoading && asyncSlots.value != null;
+        Widget content;
         if (slots.isEmpty) {
-          return const Center(child: Text('No slots'));
+          content = const Center(child: Text('No slots'));
+        } else {
+          content = ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: slots.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, i) {
+              final Slot s = slots[i];
+              return SlotCard(
+                slot: s,
+                selected: selectedSlot?.id == s.id,
+                onTap: () => setState(() => selectedSlot = s),
+              );
+            },
+          );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: slots.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) {
-            final Slot s = slots[i];
-            return SlotCard(
-              slot: s,
-              selected: selectedSlot?.id == s.id,
-              onTap: () => setState(() => selectedSlot = s),
-            );
-          },
+        return Stack(
+          children: [
+            content,
+            if (isRefreshing)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+          ],
         );
       },
     );
