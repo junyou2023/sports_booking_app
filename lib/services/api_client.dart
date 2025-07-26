@@ -39,7 +39,7 @@ void initAuthInterceptor() {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
             try {
-              final res = await apiClient.post('/token/refresh/', data: {'refresh': refresh});
+              final res = await apiClient.post('/auth/token/refresh/', data: {'refresh': refresh});
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';

@@ -47,13 +47,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       final data = await paymentService.createIntent(widget.slot.id);
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: data['client_secret'] as String,
+          paymentIntentClientSecret: data.clientSecret,
           merchantDisplayName: 'PlayNexus',
         ),
       );
       await Stripe.instance.presentPaymentSheet();
       await Future.delayed(const Duration(seconds: 2));
-      final booking = await paymentService.fetchBooking(data['booking_id'] as int);
+      final booking = await paymentService.fetchBooking(data.bookingId);
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(
