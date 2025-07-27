@@ -22,6 +22,7 @@ Future<void> main() async {
   // <-- load .env variables
 
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
+  await Stripe.instance.applySettings();
 
   initApiClient();
   initAuthInterceptor();

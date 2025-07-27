@@ -5,13 +5,16 @@ import 'api_client.dart';
 class PaymentService {
   Future<Map<String, dynamic>> createIntent(int slotId) async {
     try {
-      final res = await apiClient.post('/payments/checkout/', data: {'slot': slotId});
+      final res =
+          await apiClient.post('/payments/checkout/', data: {'slot': slotId});
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      if (e.response?.data is Map && e.response?.data['detail'] != null) {
-        throw Exception(e.response?.data['detail'].toString());
+      final detail =
+          e.response?.data is Map ? e.response?.data['detail'] : null;
+      if (detail != null) {
+        throw Exception('HTTP ${e.response?.statusCode}: $detail');
       }
-      throw Exception('HTTP ${e.response?.statusCode}: ${e.response?.data}');
+      throw Exception('HTTP ${e.response?.statusCode}: ${e.message}');
     }
   }
 

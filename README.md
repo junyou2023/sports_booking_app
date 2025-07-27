@@ -7,7 +7,7 @@ The quickest way to try it is with Docker and Flutter:
 # 1. copy environment files and start services
 cp backend/.env.example backend/.env
 cp mobile/.env.example mobile/.env
-# add your Stripe keys in these files
+# replace the placeholder Stripe keys in these files
 docker compose up -d --build
 
 # 2. apply migrations (first run only)
@@ -127,11 +127,11 @@ respective environment files:
 
 ```
 backend/.env:
-STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
-STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_API_KEY=sk_test_PLACEHOLDER_NOT_A_REAL_KEY   # secret key for the Django backend
+STRIPE_WEBHOOK_SECRET=whsec_PLACEHOLDER
 
 mobile/.env:
-STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
+STRIPE_PUBLIC_KEY=pk_test_PLACEHOLDER # publishable key for the Flutter app
 ```
 
 After updating the environment file run `flutter pub get` to install the

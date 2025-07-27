@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import '../services/booking_service.dart';
 import '../services/payment_service.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
@@ -54,7 +56,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       await Stripe.instance.presentPaymentSheet();
       await Future.delayed(const Duration(seconds: 2));
       final booking = await paymentService.confirmIntent(
-        data['payment_intent_id'] as String,
+        data['intent_id'] as String,
       );
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
@@ -64,6 +66,24 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           builder: (_) => BookingConfirmationPage(booking: booking),
         ),
       );
+    } on DioException catch (e) {
+      final detail =
+          e.response?.data is Map ? e.response?.data['detail'] : null;
+      final msg = detail != null
+          ? 'HTTP ${e.response?.statusCode}: $detail'
+          : 'HTTP ${e.response?.statusCode}: ${e.message}';
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } on PlatformException catch (e) {
+      final msg = e.code == 'Canceled'
+          ? 'Payment cancelled'
+          : 'Payment error: ${e.message}';
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

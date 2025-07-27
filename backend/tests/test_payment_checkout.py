@@ -51,7 +51,7 @@ def test_checkout_no_key_returns_500(auth_client, slot, monkeypatch):
     assert 'misconfigured' in resp.data['detail']
 
 
-def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
+def test_checkout_returns_intent_only(auth_client, slot, monkeypatch):
     class FakeIntent:
         id = 'pi_123'
         client_secret = 'sec'
@@ -62,7 +62,4 @@ def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
     assert resp.status_code == 200
     data = resp.data
     assert data['intent_id'] == 'pi_123'
-    booking = Booking.objects.get(id=data['booking_id'])
-    assert booking.slot == slot
-    assert booking.status == 'pending'
-    assert not booking.paid
+    assert Booking.objects.count() == 0
