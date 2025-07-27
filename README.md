@@ -6,6 +6,7 @@ The quickest way to try it is with Docker and Flutter:
 ```bash
 # 1. copy environment files and start services
 cp .env.example .env
+cp backend/.env.example backend/.env
 cp mobile/.env.example mobile/.env
 # add your Stripe keys in these files
 docker compose up -d --build
@@ -126,17 +127,17 @@ Stripe dashboard (**Developers → API keys** in test mode) and set them in the
 respective environment files:
 
 ```
-.env:
+backend/.env:
 STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
 STRIPE_WEBHOOK_SECRET=whsec_xxx
-STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key used by Flutter when Dockerizing
 
 mobile/.env:
-STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
+STRIPE_PUBLIC_KEY=pk_test_xxx
+API_BASE_URL=http://10.0.2.2:8000/api
 ```
 
 `manage.py` and the Django settings automatically load variables from
-`.env` when running locally.
+`backend/.env` when running locally.
 
 After updating the environment file run `flutter pub get` to install the
 `flutter_stripe` dependency and rebuild the app.
