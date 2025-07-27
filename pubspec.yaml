@@ -35,4 +35,4 @@ flutter:
 
   assets:
     - assets/images/         # load entire folder
-    - .env
+    - mobile/.env

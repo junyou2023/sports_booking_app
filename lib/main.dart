@@ -13,12 +13,12 @@ import 'services/api_client.dart';
 /// 1. `WidgetsFlutterBinding.ensureInitialized()` is required when you need to
 ///    await asynchronous code **before** runApp (here: loading the .env file).
 /// 2. `dotenv.load()` reads the API_BASE_URL (and any future secrets) from the
-///    `.env` file at project root.
+///    `mobile/.env` file included as a Flutter asset.
 /// 3. `ProviderScope` must wrap the entire widget-tree so Riverpod can manage
 ///    its providers (e.g. `sportsProvider`, `slotsProvider`, …).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: 'mobile/.env');
   // <-- load .env variables
 
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
