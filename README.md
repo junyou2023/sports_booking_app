@@ -114,7 +114,8 @@ provider profile which can be updated via `/api/provider/profile/`.
 
 ## Payments and Stripe
 
-The backend uses Stripe for processing payments. Set your Stripe keys in `.env`:
+The backend uses Stripe for processing payments. Obtain test keys from your
+Stripe dashboard (**Developers → API keys** in test mode) and set them in `.env`:
 
 ```
 STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
@@ -123,6 +124,24 @@ STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
 
 After updating the environment file run `flutter pub get` to install the
 `flutter_stripe` dependency and rebuild the app.
+
+To run the backend locally without Docker:
+
+```bash
+pip install -r requirements.txt
+python backend/manage.py migrate
+python backend/manage.py runserver 0.0.0.0:8000
+```
+
+For webhook handling during development you can use the Stripe CLI:
+
+```bash
+stripe login
+stripe listen --forward-to http://127.0.0.1:8000/api/payments/webhook/
+# copy the displayed whsec_* value into .env as STRIPE_WEBHOOK_SECRET
+```
+
+Use the test card **4242 4242 4242 4242** with any future expiry and CVC.
 
 ## Image Upload Setup
 

@@ -1,5 +1,4 @@
 import os
-
 import stripe
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -23,8 +22,11 @@ class StripeCheckoutView(APIView):
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
 
-        if not stripe.api_key:
-            return Response({'detail': 'server misconfigured: STRIPE_API_KEY missing'}, status=500)
+        if not stripe.api_key or stripe.api_key.endswith('xxx'):
+            return Response(
+                {'detail': 'server misconfigured: STRIPE_API_KEY missing/invalid'},
+                status=500,
+            )
 
         try:
             intent = stripe.PaymentIntent.create(
@@ -34,9 +36,9 @@ class StripeCheckoutView(APIView):
                 metadata={'slot_id': slot_id, 'user_id': request.user.id},
             )
         except stripe.error.StripeError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+            return Response({'detail': str(e)}, status=400)
         except Exception as e:
-            return Response({'detail': 'unexpected error: ' + str(e)}, status=500)
+            return Response({'detail': f'server error: {e}'}, status=500)
         booking = Booking.objects.create(
             slot=slot,
             activity=slot.activity,
@@ -62,10 +64,18 @@ class StripeWebhookView(APIView):
 
     def post(self, request):
         payload = request.body
-        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
         secret = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+
+        if not secret:
+            return Response({'detail': 'webhook secret missing'}, status=500)
+
         try:
-            event = stripe.Webhook.construct_event(payload, sig_header, secret)
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, secret
+            )
+        except stripe.error.SignatureVerificationError:
+            return Response({'detail': 'invalid webhook signature'}, status=400)
         except Exception:
             return Response({'detail': 'invalid payload'}, status=400)
 
