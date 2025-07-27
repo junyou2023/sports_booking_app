@@ -61,7 +61,7 @@ services:
               --workers 3
               --timeout 120
     restart: unless-stopped
-    env_file: .env            # 秘钥、邮箱、Stripe 等都放这里
+    env_file: backend/.env            # 秘钥、邮箱、Stripe 等都放这里
     environment:
       DJANGO_SETTINGS_MODULE: backend.PlayNexus.settings
       # 仅开发机需要；部署到云服务器可在 .env 设置

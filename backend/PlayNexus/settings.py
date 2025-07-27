@@ -18,7 +18,7 @@ from datetime import timedelta
 # Basic paths & security
 # ──────────────────────────────
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR.parent / '.env')
+load_dotenv(BASE_DIR / '.env')
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")

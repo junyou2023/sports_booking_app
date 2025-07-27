@@ -18,7 +18,7 @@ import 'services/api_client.dart';
 ///    its providers (e.g. `sportsProvider`, `slotsProvider`, …).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: 'mobile/.env');
   // <-- load .env variables
 
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
