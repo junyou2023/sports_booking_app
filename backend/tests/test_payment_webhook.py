@@ -33,7 +33,6 @@ def test_payment_webhook_updates_booking():
         rating=0,
     )
     user_id = 1
-    booking = Booking.objects.create(slot=slot, activity=act, user_id=user_id)
     client = APIClient()
     event = {
         "type": "payment_intent.succeeded",
@@ -49,6 +48,6 @@ def test_payment_webhook_updates_booking():
         content_type="application/json",
     )
     assert res.status_code == 200
-    booking.refresh_from_db()
+    booking = Booking.objects.get(slot=slot, user_id=user_id)
     assert booking.paid
     assert booking.status == "confirmed"
