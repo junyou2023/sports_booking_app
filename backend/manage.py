@@ -4,8 +4,8 @@ import os
 import sys
 from dotenv import load_dotenv
 
-# Load environment variables for local runs (backend/.env)
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+# Load environment variables for local runs (project root .env)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 
 def main():

@@ -5,7 +5,7 @@ The quickest way to try it is with Docker and Flutter:
 
 ```bash
 # 1. copy environment files and start services
-cp backend/.env.example backend/.env
+cp .env.example .env
 cp mobile/.env.example mobile/.env
 # add your Stripe keys in these files
 docker compose up -d --build
@@ -61,7 +61,7 @@ To run the backend tests:
 ```bash
 DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
 ```
-If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `backend/.env` includes
+If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `.env` includes
 `10.0.2.2` so Django accepts requests from the emulator.
 The backend exposes a simple auth API supporting email/password and Google login.
 After signing up or using Google the app stores JWT tokens securely and the
@@ -126,16 +126,17 @@ Stripe dashboard (**Developers → API keys** in test mode) and set them in the
 respective environment files:
 
 ```
-backend/.env:
+.env:
 STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
 STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key used by Flutter when Dockerizing
 
 mobile/.env:
 STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
 ```
 
 `manage.py` and the Django settings automatically load variables from
-`backend/.env` when running locally.
+`.env` when running locally.
 
 After updating the environment file run `flutter pub get` to install the
 `flutter_stripe` dependency and rebuild the app.
@@ -153,7 +154,7 @@ For webhook handling during development you can use the Stripe CLI:
 ```bash
 stripe login
 stripe listen --forward-to http://127.0.0.1:8000/api/payments/webhook/
-# copy the displayed whsec_* value into backend/.env as STRIPE_WEBHOOK_SECRET
+# copy the displayed whsec_* value into `.env` as STRIPE_WEBHOOK_SECRET
 ```
 
 Use the test card **4242 4242 4242 4242** with any future expiry and CVC.
