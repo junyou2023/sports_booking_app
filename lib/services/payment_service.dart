@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import '../models/booking.dart';
 import 'api_client.dart';
 
 class PaymentService {
@@ -13,11 +12,6 @@ class PaymentService {
           : e.message;
       throw Exception(msg ?? 'Payment checkout failed');
     }
-  }
-
-  Future<Booking> fetchBooking(int bookingId) async {
-    final res = await apiClient.get('/bookings/' + bookingId.toString() + '/');
-    return Booking.fromJson(res.data as Map<String, dynamic>);
   }
 }
 

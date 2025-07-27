@@ -4,6 +4,8 @@ import '../models/slot.dart';
 import '../services/booking_service.dart';
 import '../services/payment_service.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
 
@@ -42,6 +44,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   }
 
   Future<void> _pay() async {
+    if (Stripe.publishableKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Stripe key missing')),
+      );
+      return;
+    }
+
     setState(() => loading = true);
     try {
       final data = await paymentService.createIntent(widget.slot.id);
@@ -52,8 +61,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         ),
       );
       await Stripe.instance.presentPaymentSheet();
+
       await Future.delayed(const Duration(seconds: 2));
-      final booking = await paymentService.fetchBooking(data['booking_id'] as int);
+      final bookings = await bookingService.fetchMine();
+      final booking = bookings.firstWhere(
+        (b) => b.slot.id == widget.slot.id,
+        orElse: () => bookings.first,
+      );
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -62,6 +76,22 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           builder: (_) => BookingConfirmationPage(booking: booking),
         ),
       );
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map
+          ? e.response?.data['detail']?.toString()
+          : null;
+      final msg = detail ?? 'HTTP ${e.response?.statusCode ?? ''}: ${e.message}';
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } on PlatformException catch (e) {
+      if (e.code == FailureCode.Canceled) {
+        // user dismissed sheet
+      } else if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('${e.code}: ${e.message}')));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

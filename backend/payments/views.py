@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import IntegrityError
 
 from sports.models import Slot, Booking
 
@@ -39,19 +40,11 @@ class StripeCheckoutView(APIView):
             return Response({'detail': str(e)}, status=400)
         except Exception as e:
             return Response({'detail': f'server error: {e}'}, status=500)
-        booking = Booking.objects.create(
-            slot=slot,
-            activity=slot.activity,
-            user=request.user,
-            status="pending",
-            paid=False,
-            pax=1,
-        )
+
         return Response(
             {
                 'client_secret': intent.client_secret,
                 'intent_id': intent.id,
-                'booking_id': booking.id,
             },
             status=200,
         )
@@ -83,9 +76,18 @@ class StripeWebhookView(APIView):
             intent = event['data']['object']
             slot_id = intent['metadata'].get('slot_id')
             user_id = intent['metadata'].get('user_id')
-            booking = Booking.objects.filter(slot_id=slot_id, user_id=user_id).first()
-            if booking:
-                booking.paid = True
-                booking.status = 'confirmed'
-                booking.save(update_fields=['paid', 'status'])
+            try:
+                slot = Slot.objects.get(pk=slot_id)
+                Booking.objects.create(
+                    slot=slot,
+                    activity=slot.activity,
+                    user_id=user_id,
+                    status='confirmed',
+                    paid=True,
+                    pax=1,
+                )
+            except IntegrityError:
+                Booking.objects.filter(slot_id=slot_id, user_id=user_id).update(
+                    paid=True, status='confirmed'
+                )
         return Response({'status': 'ok'})

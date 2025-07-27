@@ -2,6 +2,8 @@
     <!-- Needed for geolocator -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Networking permission required for API calls and Stripe -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="sports_booking_app"
         android:name="${applicationName}"
