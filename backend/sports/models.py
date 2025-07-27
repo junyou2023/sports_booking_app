@@ -233,6 +233,7 @@ class Booking(models.Model):
     booked_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, default="confirmed")
     paid = models.BooleanField(default=False)
+    payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
     pax = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(20)],

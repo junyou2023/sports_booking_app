@@ -11,12 +11,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 from datetime import timedelta
 
 # ──────────────────────────────
 # Basic paths & security
 # ──────────────────────────────
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
+# Load environment variables for local runs (project root .env)
+load_dotenv(BASE_DIR.parent / '.env')
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")

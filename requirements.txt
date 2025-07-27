@@ -12,6 +12,7 @@ djangorestframework-gis==1.2.0
 whitenoise==6.6.0
 Pillow==11.3.0
 stripe==9.8.0
+python-dotenv==1.0.1
 
 # 新增：容器/CI 运行必备
 psycopg2-binary==2.9.9      # Postgres 驱动
