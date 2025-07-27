@@ -134,6 +134,9 @@ mobile/.env:
 STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
 ```
 
+`manage.py` and the Django settings automatically load variables from
+`backend/.env` when running locally.
+
 After updating the environment file run `flutter pub get` to install the
 `flutter_stripe` dependency and rebuild the app.
 
