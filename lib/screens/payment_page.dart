@@ -53,7 +53,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       );
       await Stripe.instance.presentPaymentSheet();
       await Future.delayed(const Duration(seconds: 2));
-      final booking = await paymentService.fetchBooking(data['booking_id'] as int);
+      final booking = await paymentService.confirmIntent(
+        data['payment_intent_id'] as String,
+      );
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(

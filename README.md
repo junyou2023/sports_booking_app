@@ -4,9 +4,10 @@ This project contains a Flutter client and a Django backend.
 The quickest way to try it is with Docker and Flutter:
 
 ```bash
-# 1. copy environment file and start services
-cp .env.example .env
-# add your Stripe keys in .env
+# 1. copy environment files and start services
+cp backend/.env.example backend/.env
+cp mobile/.env.example mobile/.env
+# add your Stripe keys in these files
 docker compose up -d --build
 
 # 2. apply migrations (first run only)
@@ -24,11 +25,17 @@ docker compose exec web python backend/manage.py collectstatic --noinput
 # 5. verify the backend is running
 curl http://localhost:8000/healthz
 
-# 6. get Flutter packages
+# 6. prepare Flutter project
+flutter clean
 flutter pub get
 
 # 7. run the app on an emulator/device
 flutter run
+
+The Android project uses `FlutterFragmentActivity` to support the Stripe
+PaymentSheet. If running on a physical device over HTTP you may need to enable
+cleartext traffic in `android/app/src/main/AndroidManifest.xml`.
+The minimum SDK version is set to 23 in `android/app/build.gradle.kts`.
 
 ```
 
@@ -36,8 +43,8 @@ The Docker image runs `collectstatic` during build and serves the compiled
 assets with [WhiteNoise](https://whitenoise.evans.io/) so the Django admin loads
 its CSS correctly when deployed.
 
-The `.env` file must define `API_BASE_URL` so the Flutter app knows where the
-backend is. It should also include the Stripe keys used by the payment flow.
+`mobile/.env` must define `API_BASE_URL` so the Flutter app knows where the
+backend is. It should also include the publishable Stripe key used by the payment flow.
 When testing on the Android emulator the correct value for `API_BASE_URL` is
 `http://10.0.2.2:8000/api`.
 `initApiClient` automatically appends a trailing slash so either form
@@ -54,7 +61,7 @@ To run the backend tests:
 ```bash
 DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
 ```
-If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `.env` includes
+If testing on the Android emulator, ensure `ALLOWED_HOSTS` in `backend/.env` includes
 `10.0.2.2` so Django accepts requests from the emulator.
 The backend exposes a simple auth API supporting email/password and Google login.
 After signing up or using Google the app stores JWT tokens securely and the
@@ -115,10 +122,15 @@ provider profile which can be updated via `/api/provider/profile/`.
 ## Payments and Stripe
 
 The backend uses Stripe for processing payments. Obtain test keys from your
-Stripe dashboard (**Developers → API keys** in test mode) and set them in `.env`:
+Stripe dashboard (**Developers → API keys** in test mode) and set them in the
+respective environment files:
 
 ```
+backend/.env:
 STRIPE_API_KEY=sk_test_xxx   # secret key for the Django backend
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+
+mobile/.env:
 STRIPE_PUBLIC_KEY=pk_test_xxx # publishable key for the Flutter app
 ```
 
@@ -138,7 +150,7 @@ For webhook handling during development you can use the Stripe CLI:
 ```bash
 stripe login
 stripe listen --forward-to http://127.0.0.1:8000/api/payments/webhook/
-# copy the displayed whsec_* value into .env as STRIPE_WEBHOOK_SECRET
+# copy the displayed whsec_* value into backend/.env as STRIPE_WEBHOOK_SECRET
 ```
 
 Use the test card **4242 4242 4242 4242** with any future expiry and CVC.
