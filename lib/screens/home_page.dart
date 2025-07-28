@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';        // new
 import 'package:sports_booking_app/screens/slots_page.dart';
 import '../services/activity_service.dart';
+import 'package:dio/dio.dart';
 import '../utils/theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_card.dart';
@@ -364,17 +365,40 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
-            error: (e, __) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Error: $e',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.red)),
-              ),
-            ),
-            data: (page) {
+            error: (e, __) {
+              Widget child;
+              if (e is DioException && e.response?.statusCode == 401) {
+                child = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('请先登录查看 Continue planning'),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => showAuthSheet(context),
+                      child: const Text('登录'),
+                    ),
+                  ],
+                );
+              } else {
+                child = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('加载失败，请重试'),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(continuePlanningProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                );
+              }
+              return SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: child,
+                ),
+              );
+            },
               final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(

@@ -6,6 +6,7 @@ import '../providers/activity_provider.dart';
 import '../services/activity_service.dart';
 import 'activity_detail_page.dart';
 import '../widgets/activity_card.dart';
+import 'add_activity_page.dart';
 
 class ActivitiesByCategoryPage extends ConsumerStatefulWidget {
   final Category category;
@@ -147,6 +148,19 @@ class _ActivitiesByCategoryPageState
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final created = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddActivityPage()),
+          );
+          if (created == true) {
+            await _refresh();
+            ref.invalidate(activitiesByCategoryProvider(widget.category.id));
+          }
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

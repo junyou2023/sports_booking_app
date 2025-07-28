@@ -178,7 +178,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  imageCtrl.text,
                                 );
                               } else {
                                 await activityService.updateActivity(
@@ -191,7 +190,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  imageCtrl.text,
                                 );
                               }
                               if (context.mounted) {

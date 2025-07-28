@@ -36,7 +36,17 @@ class HomeService {
 
   Future<Paginated<Activity>> fetchContinuePlanning() async {
     final res = await apiClient.get('/home/continue-planning/');
-    return _parse(res.data);
+    final data = res.data;
+    if (data is List) {
+      return Paginated.fromList(
+        data.cast<Map<String, dynamic>>(),
+        Activity.fromSimple,
+      );
+    }
+    if (data is Map<String, dynamic>) {
+      return Paginated.fromJson(data, Activity.fromSimple);
+    }
+    return Paginated(count: 0, next: null, previous: null, results: const []);
   }
 }
 
