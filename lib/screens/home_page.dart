@@ -386,6 +386,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const Text('加载失败，请重试'),
                     const SizedBox(height: 8),
                     ElevatedButton(
+                      // 触发重新拉取；refresh 或 invalidate 都可
                       onPressed: () => ref.refresh(continuePlanningProvider),
                       child: const Text('Retry'),
                     ),
@@ -399,13 +400,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               );
             },
+            // 之前缺少的 data 分支：把页面渲染代码包进来
+            data: (page) {
               final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text('No suggestions yet',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                    child: Text(
+                      'No suggestions yet',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
                 );
               }
