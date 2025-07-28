@@ -11,6 +11,8 @@ import '../widgets/activity_card.dart';
 import '../widgets/project_card.dart';
 import '../widgets/search_bar.dart';
 import 'categories_page.dart';
+import '../models/category.dart';
+import 'activities_by_category_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
 import '../providers/category_provider.dart';
@@ -237,7 +239,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                           title: c.name,
                           asset: c.icon,
                           imageUrl: c.imageUrl,
-                          onTap: () {},
+                          onTap: () {
+                            final cat = Category(
+                              id: c.id,
+                              name: c.name,
+                              icon: c.icon,
+                              imageUrl: c.imageUrl,
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ActivitiesByCategoryPage(category: cat),
+                              ),
+                            );
+                          },
                         );
                       }
                       return MoreCategoryCard(
