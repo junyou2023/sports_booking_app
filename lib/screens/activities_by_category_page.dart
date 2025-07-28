@@ -7,6 +7,8 @@ import '../services/activity_service.dart';
 import 'activity_detail_page.dart';
 import '../widgets/activity_card.dart';
 
+import "package:dio/dio.dart";
+import "../utils/snackbar.dart";
 class ActivitiesByCategoryPage extends ConsumerStatefulWidget {
   final Category category;
   const ActivitiesByCategoryPage({super.key, required this.category});
@@ -70,13 +72,18 @@ class _ActivitiesByCategoryPageState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Error: $e'),
+              const Text('加载失败，请稍后重试'),
               const SizedBox(height: 12),
-              ElevatedButton(onPressed: () => ref.refresh(activitiesByCategoryProvider(widget.category.id)), child: const Text('Retry')),
+              ElevatedButton(
+                onPressed: () => ref.refresh(activitiesByCategoryProvider(widget.category.id)),
+                child: const Text('Retry'),
+              ),
             ],
+          ),
           ),
         ),
         data: (page) {
+          debugPrint('category_${widget.category.id}: ${page.results.length} items');
           if (_items.isEmpty) {
             _items.addAll(page.results);
             _hasNext = page.next != null;
@@ -86,11 +93,11 @@ class _ActivitiesByCategoryPageState
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('No activities found'),
+                  const Text('该分类暂无活动'),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Back'),
+                    onPressed: _refresh,
+                    child: const Text('Refresh'),
                   ),
                 ],
               ),
