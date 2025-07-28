@@ -120,6 +120,22 @@ provider profile which can be updated via `/api/provider/profile/`.
 - JWT authentication with email or Google
 - Flutter client using Riverpod state management
 
+## Activities by Category API
+
+`GET /api/activities/?category=<id>&page=<n>&page_size=<m>` returns activities
+filtered by the given category. Results are paginated using DRF's standard
+structure.
+
+```bash
+curl -s "http://127.0.0.1:8000/api/activities/?category=1&page=1&page_size=20"
+```
+
+Ensure the backend is running (`python backend/manage.py runserver`) before
+issuing the request.
+
+On the client you can tap any category card to view its activities, pull down to
+refresh and load more when reaching the end of the list.
+
 ## Payments and Stripe
 
 The backend uses Stripe for processing payments. Obtain test keys from your

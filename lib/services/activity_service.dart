@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/activity.dart';
+import '../models/paginated.dart';
 import 'api_client.dart';
 
 class ActivityService {
@@ -17,6 +18,22 @@ class ActivityService {
         .cast<Map<String, dynamic>>()
         .map(Activity.fromJson)
         .toList();
+  }
+
+  Future<Paginated<Activity>> fetchActivitiesByCategory(
+    int categoryId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final res = await apiClient.get('/activities/', queryParameters: {
+      'category': categoryId,
+      'page': page,
+      'page_size': pageSize,
+    });
+    return Paginated.fromJson(
+      res.data as Map<String, dynamic>,
+      Activity.fromJson,
+    );
   }
 
   Future<Activity> fetchById(int id) async {

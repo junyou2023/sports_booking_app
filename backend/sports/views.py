@@ -1,11 +1,12 @@
 # sports/views.py
-from django.db import models, transaction
+from django.db import transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status, serializers
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 
 from .models import (
@@ -38,6 +39,13 @@ from .serializers import (
     ReviewSerializer,
     SlotCreateSerializer,
 )
+
+
+class DefaultPagination(PageNumberPagination):
+    """Simple page-number pagination with 20 items per page."""
+
+    page_size = 20
+    page_size_query_param = "page_size"
 
 
 class SportViewSet(viewsets.ReadOnlyModelViewSet):
@@ -94,10 +102,13 @@ class SportCategoryViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         parent = serializer.validated_data.get("parent")
         name = serializer.validated_data.get("name")
-        if SportCategory.objects.filter(parent=parent, name=name).exclude(pk=serializer.instance.pk).exists():
+        if (
+            SportCategory.objects.filter(parent=parent, name=name)
+            .exclude(pk=serializer.instance.pk)
+            .exists()
+        ):
             raise serializers.ValidationError({"name": "Name exists"})
         serializer.save()
-
 
 
 class VariantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -108,6 +119,8 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ActivityViewSet(viewsets.ModelViewSet):
     serializer_class = ActivitySerializer
+    pagination_class = DefaultPagination
+
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
             perms = [permissions.IsAuthenticated, IsVendor]
@@ -123,6 +136,12 @@ class ActivityViewSet(viewsets.ModelViewSet):
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
+        category = self.request.query_params.get("category")
+        if category:
+            try:
+                qs = qs.filter(discipline_id=int(category))
+            except (TypeError, ValueError):
+                qs = qs.none()
         return qs
 
     def perform_create(self, serializer):
@@ -192,12 +211,14 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(activity_id=activity_id)
         if after:
             try:
-                qs = qs.filter(begins_at__gte=timezone.datetime.fromisoformat(after))
+                dt = timezone.datetime.fromisoformat(after)
+                qs = qs.filter(begins_at__gte=dt)
             except ValueError:
                 pass
         if before:
             try:
-                qs = qs.filter(begins_at__lte=timezone.datetime.fromisoformat(before))
+                dt = timezone.datetime.fromisoformat(before)
+                qs = qs.filter(begins_at__lte=dt)
             except ValueError:
                 pass
         return qs
@@ -243,12 +264,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+
 class ActivityReviewList(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, activity_id):
         limit = request.query_params.get("limit")
-        qs = Review.objects.filter(activity_id=activity_id).select_related("user").order_by("-created_at")
+        qs = (
+            Review.objects.filter(activity_id=activity_id)
+            .select_related("user")
+            .order_by("-created_at")
+        )
         if limit:
             try:
                 qs = qs[: int(limit)]
@@ -351,8 +377,9 @@ class MerchantBookingList(APIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def get(self, request):
-        qs = Booking.objects.filter(activity__owner=request.user).select_related(
-            "slot", "user"
+        qs = (
+            Booking.objects.filter(activity__owner=request.user)
+            .select_related("slot", "user")
         )
         ser = BookingSerializer(qs, many=True)
         return Response(ser.data)
