@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/category_card.dart';
+import 'activities_by_category_page.dart';
 import '../providers/category_provider.dart';
 
 class CategoriesPage extends ConsumerWidget {
@@ -29,7 +30,12 @@ class CategoriesPage extends ConsumerWidget {
               title: cats[i].name,
               asset: cats[i].icon,
               imageUrl: cats[i].imageUrl,
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ActivitiesByCategoryPage(category: cats[i]),
+                ),
+              ),
             ),
           ),
         ),

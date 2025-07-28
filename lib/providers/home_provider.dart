@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/featured_category.dart';
 import '../models/featured_activity.dart';
 import '../models/activity.dart';
+import '../models/paginated.dart';
 import '../services/home_service.dart';
 
 final featuredCategoriesProvider =
@@ -14,6 +15,6 @@ final featuredActivitiesProvider =
   return homeService.fetchFeaturedActivities();
 });
 
-final continuePlanningProvider = FutureProvider<List<Activity>>((ref) async {
+final continuePlanningProvider = FutureProvider<Paginated<Activity>>((ref) async {
   return homeService.fetchContinuePlanning();
 });

@@ -11,6 +11,7 @@ import '../widgets/activity_card.dart';
 import '../widgets/project_card.dart';
 import '../widgets/search_bar.dart';
 import 'categories_page.dart';
+import 'activities_by_category_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
 import '../providers/category_provider.dart';
@@ -237,7 +238,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                           title: c.name,
                           asset: c.icon,
                           imageUrl: c.imageUrl,
-                          onTap: () {},
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ActivitiesByCategoryPage(category: c),
+                            ),
+                          ),
                         );
                       }
                       return MoreCategoryCard(
@@ -293,7 +299,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // ❸ data state
-            data: (acts) {
+            data: (page) {
+              final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
@@ -360,14 +367,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             error: (e, __) => SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Error: \$e',
+                child: Text('Error: $e',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
                         ?.copyWith(color: Colors.red)),
               ),
             ),
-            data: (acts) {
+            data: (page) {
+              final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(

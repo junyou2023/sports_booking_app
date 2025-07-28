@@ -1,22 +1,45 @@
 import 'package:dio/dio.dart';
 import '../models/activity.dart';
+import '../models/paginated.dart';
 import 'api_client.dart';
 
 class ActivityService {
-  Future<List<Activity>> fetchMine() async {
-    final res = await apiClient.get('/activities/', queryParameters: {'mine': '1'});
-    return (res.data as List)
-        .cast<Map<String, dynamic>>()
-        .map(Activity.fromJson)
-        .toList();
+  Paginated<Activity> _parsePage(Object data) {
+    if (data is List) {
+      return Paginated.fromList(
+        data.cast<Map<String, dynamic>>(),
+        Activity.fromJson,
+      );
+    }
+    if (data is Map<String, dynamic>) {
+      return Paginated.fromJson(data, Activity.fromJson);
+    }
+    return Paginated(count: 0, next: null, previous: null, results: const []);
   }
 
-  Future<List<Activity>> fetchNearby() async {
-    final res = await apiClient.get('/activities/', queryParameters: {'nearby': '1'});
-    return (res.data as List)
-        .cast<Map<String, dynamic>>()
-        .map(Activity.fromJson)
-        .toList();
+  Future<Paginated<Activity>> fetchActivities({Map<String, dynamic>? params}) async {
+    final res = await apiClient.get('/activities/', queryParameters: params);
+    return _parsePage(res.data);
+  }
+
+  Future<Paginated<Activity>> fetchMine() async {
+    return fetchActivities(params: {'mine': '1'});
+  }
+
+  Future<Paginated<Activity>> fetchNearby() async {
+    return fetchActivities(params: {'nearby': '1'});
+  }
+
+  Future<Paginated<Activity>> fetchActivitiesByCategory(
+    int categoryId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return fetchActivities(params: {
+      'category': categoryId,
+      'page': page,
+      'page_size': pageSize,
+    });
   }
 
   Future<Activity> fetchById(int id) async {

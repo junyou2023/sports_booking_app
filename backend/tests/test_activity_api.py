@@ -1,13 +1,13 @@
 import django
 django.setup()  # noqa: E402
 import pytest  # noqa: E402
-from rest_framework.test import APIClient  # noqa: E402
 from sports.models import (  # noqa: E402
     Sport,
     Category,
     Variant,
     Facility,
     Slot,
+    Activity,
 )
 from django.utils import timezone  # noqa: E402
 
@@ -73,3 +73,56 @@ def test_bulk_slot_create(auth_client):
     assert resp.status_code == 201
     assert resp.data["created"] >= 1
     assert Slot.objects.count() == resp.data["created"]
+
+
+def test_filter_activities_by_category(client):
+    sport = Sport.objects.create(name="Row")
+    cat1 = Category.objects.create(name="Water")
+    cat2 = Category.objects.create(name="Land")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat1,
+        title="Rowing",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
+    Activity.objects.create(
+        sport=sport,
+        discipline=cat2,
+        title="Biking",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
+    resp = client.get("/api/activities/", {"category": cat1.id})
+    assert resp.status_code == 200
+    assert resp.data["count"] == 1
+    assert resp.data["results"][0]["id"] == act.id
+
+
+def test_filter_activities_invalid_category(client):
+    resp = client.get("/api/activities/", {"category": "bad"})
+    assert resp.status_code == 200
+    assert resp.data["results"] == []
+
+
+def test_list_no_pagination(client):
+    sport = Sport.objects.create(name="Run")
+    cat = Category.objects.create(name="Track")
+    for i in range(5):
+        Activity.objects.create(
+            sport=sport,
+            discipline=cat,
+            title=f"Run {i}",
+            description="",
+            difficulty=1,
+            duration=60,
+            base_price=0,
+        )
+    resp = client.get("/api/activities/", {"no_page": 1})
+    assert resp.status_code == 200
+    assert isinstance(resp.data, list)
+    assert len(resp.data) >= 5
