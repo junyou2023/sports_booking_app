@@ -189,6 +189,12 @@ pip install Pillow
 docker compose up -d
 ```
 Uploaded files will appear under `media/` and are served at `/media/` in development.
+Verify your images load correctly with for example:
+
+```bash
+curl -I http://127.0.0.1:8000/media/category/hero_banner.jpg
+```
+Add your own files in `backend/media/category/` if the example paths return 404s.
 
 ## Running tests
 
