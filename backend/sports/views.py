@@ -144,6 +144,11 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 qs = qs.none()
         return qs
 
+    def list(self, request, *args, **kwargs):
+        if request.query_params.get("no_page") == "1":
+            self.pagination_class = None
+        return super().list(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 

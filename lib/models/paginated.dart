@@ -27,4 +27,16 @@ class Paginated<T> {
       results: list,
     );
   }
+
+  factory Paginated.fromList(
+    List<Map<String, dynamic>> list,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    return Paginated(
+      count: list.length,
+      next: null,
+      previous: null,
+      results: list.map(fromJson).toList(growable: false),
+    );
+  }
 }

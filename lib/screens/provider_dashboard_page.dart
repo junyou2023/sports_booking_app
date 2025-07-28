@@ -41,22 +41,25 @@ class ProviderDashboardPage extends ConsumerWidget {
       body: asyncActivities.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (list) => ListView.builder(
-          itemCount: list.length,
+        data: (page) => ListView.builder(
+          itemCount: page.results.length,
           itemBuilder: (_, i) => ListTile(
-            leading: (list[i].imageUrl != null && list[i].imageUrl!.isNotEmpty)
-                ? Image.network(list[i].imageUrl!, width: 50, fit: BoxFit.cover)
-                : list[i].image.isNotEmpty
-                    ? Image.network(list[i].image, width: 50, fit: BoxFit.cover)
+            leading: (page.results[i].imageUrl != null &&
+                    page.results[i].imageUrl!.isNotEmpty)
+                ? Image.network(page.results[i].imageUrl!,
+                    width: 50, fit: BoxFit.cover)
+                : page.results[i].image.isNotEmpty
+                    ? Image.network(page.results[i].image,
+                        width: 50, fit: BoxFit.cover)
                     : null,
-            title: Text(list[i].title),
+            title: Text(page.results[i].title),
             trailing: IconButton(
               icon: const Icon(Icons.schedule),
               onPressed: () async {
                 final created = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => AddSlotPage(activityId: list[i].id),
+                    builder: (_) => AddSlotPage(activityId: page.results[i].id),
                   ),
                 );
                 if (created == true) {
@@ -69,9 +72,9 @@ class ProviderDashboardPage extends ConsumerWidget {
             onTap: () async {
               final updated = await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => AddActivityPage(activity: list[i]),
-                ),
+                  MaterialPageRoute(
+                    builder: (_) => AddActivityPage(activity: page.results[i]),
+                  ),
               );
               if (updated == true) {
                 ref.invalidate(activitiesProvider);

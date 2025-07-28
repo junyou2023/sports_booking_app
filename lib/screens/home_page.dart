@@ -299,7 +299,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
 
             // ❸ data state
-            data: (acts) {
+            data: (page) {
+              final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
@@ -366,14 +367,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             error: (e, __) => SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Error: \$e',
+                child: Text('Error: $e',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
                         ?.copyWith(color: Colors.red)),
               ),
             ),
-            data: (acts) {
+            data: (page) {
+              final acts = page.results;
               if (acts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(

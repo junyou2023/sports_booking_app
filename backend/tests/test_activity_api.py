@@ -107,3 +107,22 @@ def test_filter_activities_invalid_category(client):
     resp = client.get("/api/activities/", {"category": "bad"})
     assert resp.status_code == 200
     assert resp.data["results"] == []
+
+
+def test_list_no_pagination(client):
+    sport = Sport.objects.create(name="Run")
+    cat = Category.objects.create(name="Track")
+    for i in range(5):
+        Activity.objects.create(
+            sport=sport,
+            discipline=cat,
+            title=f"Run {i}",
+            description="",
+            difficulty=1,
+            duration=60,
+            base_price=0,
+        )
+    resp = client.get("/api/activities/", {"no_page": 1})
+    assert resp.status_code == 200
+    assert isinstance(resp.data, list)
+    assert len(resp.data) >= 5

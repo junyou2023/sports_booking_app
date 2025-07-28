@@ -123,11 +123,15 @@ provider profile which can be updated via `/api/provider/profile/`.
 ## Activities by Category API
 
 `GET /api/activities/?category=<id>&page=<n>&page_size=<m>` returns activities
-filtered by the given category. Results are paginated using DRF's standard
-structure.
+filtered by the given category. All activity list endpoints now return a
+paginated JSON object with `count`, `next`, `previous` and `results` fields.
+Use the items under `results` on the client.
+
+Disable pagination temporarily by passing `?no_page=1`.
 
 ```bash
 curl -s "http://127.0.0.1:8000/api/activities/?category=1&page=1&page_size=20"
+curl -s "http://127.0.0.1:8000/api/activities/?no_page=1"
 ```
 
 Ensure the backend is running (`python backend/manage.py runserver`) before
