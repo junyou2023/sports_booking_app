@@ -75,11 +75,11 @@ class _ActivitiesByCategoryPageState
               const Text('加载失败，请稍后重试'),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () => ref.refresh(activitiesByCategoryProvider(widget.category.id)),
+                onPressed: () => ref.refresh(
+                    activitiesByCategoryProvider(widget.category.id)),
                 child: const Text('Retry'),
               ),
             ],
-          ),
           ),
         ),
         data: (page) {
