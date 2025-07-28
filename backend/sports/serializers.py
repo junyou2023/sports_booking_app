@@ -168,7 +168,7 @@ class ActivitySimpleSerializer(serializers.ModelSerializer):
 class FeaturedCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturedCategory
-        fields = ("id", "category", "image", "order")
+        fields = ("id", "category", "image", "display_order", "show_on_home")
 
 
 class FeaturedActivitySerializer(serializers.ModelSerializer):

@@ -43,6 +43,7 @@ class CategoryAdmin(admin.ModelAdmin):
     def image_preview(self, obj):
         if obj.image:
             from django.utils.html import format_html
+
             return format_html('<img src="{}" style="height:50px"/>', obj.image.url)
         return "-"
 
@@ -83,14 +84,15 @@ class ActivityAdmin(admin.ModelAdmin):
     def image_preview(self, obj):
         if obj.image:
             from django.utils.html import format_html
+
             return format_html('<img src="{}" style="height:60px"/>', obj.image.url)
         return "-"
 
 
 @admin.register(FeaturedCategory)
 class FeaturedCategoryAdmin(admin.ModelAdmin):
-    list_display = ("category", "order")
-    list_editable = ("order",)
+    list_display = ("category", "display_order", "show_on_home")
+    list_editable = ("display_order", "show_on_home")
 
 
 @admin.register(FeaturedActivity)

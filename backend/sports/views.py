@@ -2,7 +2,8 @@
 from django.db import models, transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
-from rest_framework import viewsets, permissions, status, serializers
+from rest_framework import viewsets, permissions, status, serializers, pagination
+from django.db.models import Avg, Min
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -61,6 +62,12 @@ class FeaturedCategoryViewSet(viewsets.ModelViewSet):
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.query_params.get("home") == "true":
+            qs = qs.filter(show_on_home=True).order_by("display_order")
+        return qs
+
 
 class FeaturedActivityViewSet(viewsets.ModelViewSet):
     queryset = FeaturedActivity.objects.select_related("activity")
@@ -94,10 +101,13 @@ class SportCategoryViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         parent = serializer.validated_data.get("parent")
         name = serializer.validated_data.get("name")
-        if SportCategory.objects.filter(parent=parent, name=name).exclude(pk=serializer.instance.pk).exists():
+        if (
+            SportCategory.objects.filter(parent=parent, name=name)
+            .exclude(pk=serializer.instance.pk)
+            .exists()
+        ):
             raise serializers.ValidationError({"name": "Name exists"})
         serializer.save()
-
 
 
 class VariantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -108,6 +118,13 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ActivityViewSet(viewsets.ModelViewSet):
     serializer_class = ActivitySerializer
+
+    class Pagination(pagination.PageNumberPagination):
+        page_size = 10
+        page_size_query_param = "page_size"
+
+    pagination_class = Pagination
+
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
             perms = [permissions.IsAuthenticated, IsVendor]
@@ -120,9 +137,52 @@ class ActivityViewSet(viewsets.ModelViewSet):
         mine = self.request.query_params.get("mine")
         if mine == "1" and self.request.user.is_authenticated:
             qs = qs.filter(owner=self.request.user)
+
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
+
+        category_ids = self.request.query_params.get("category")
+        if category_ids:
+            try:
+                ids = [int(c) for c in category_ids.split(",")]
+                qs = qs.filter(discipline_id__in=ids)
+            except ValueError:
+                pass
+
+        after = self.request.query_params.get("after")
+        if after:
+            try:
+                dt = timezone.datetime.fromisoformat(after)
+                qs = qs.filter(slots__begins_at__gte=dt)
+            except ValueError:
+                pass
+
+        before = self.request.query_params.get("before")
+        if before:
+            try:
+                dt = timezone.datetime.fromisoformat(before)
+                qs = qs.filter(slots__begins_at__lte=dt)
+            except ValueError:
+                pass
+
+        qs = qs.annotate(
+            next_slot=Min("slots__begins_at"),
+            avg_rating=Avg("reviews__rating"),
+        ).distinct()
+
+        ordering = self.request.query_params.get("ordering")
+        mapping = {
+            "price": "base_price",
+            "-price": "-base_price",
+            "rating": "avg_rating",
+            "-rating": "-avg_rating",
+            "begins_at": "next_slot",
+            "-begins_at": "-next_slot",
+        }
+        if ordering in mapping:
+            qs = qs.order_by(mapping[ordering])
+
         return qs
 
     def perform_create(self, serializer):
@@ -243,12 +303,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+
 class ActivityReviewList(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, activity_id):
         limit = request.query_params.get("limit")
-        qs = Review.objects.filter(activity_id=activity_id).select_related("user").order_by("-created_at")
+        qs = (
+            Review.objects.filter(activity_id=activity_id)
+            .select_related("user")
+            .order_by("-created_at")
+        )
         if limit:
             try:
                 qs = qs[: int(limit)]
@@ -271,18 +336,16 @@ class ContinuePlanningView(APIView):
 
     def get(self, request):
         user = request.user
-        histories = (
-            UserActivityHistory.objects.filter(user=user)
-            .order_by("-timestamp")[:20]
-        )
+        histories = UserActivityHistory.objects.filter(user=user).order_by(
+            "-timestamp"
+        )[:20]
         act_ids = []
         for h in histories:
             if h.activity_id not in act_ids:
                 act_ids.append(h.activity_id)
 
-        unfinished = (
-            Booking.objects.filter(user=user, paid=False)
-            .values_list("activity_id", flat=True)
+        unfinished = Booking.objects.filter(user=user, paid=False).values_list(
+            "activity_id", flat=True
         )
         for aid in unfinished:
             if aid and aid not in act_ids:
@@ -290,9 +353,7 @@ class ContinuePlanningView(APIView):
 
         acts = {a.id: a for a in Activity.objects.filter(id__in=act_ids)}
         ordered = [acts[a] for a in act_ids if a in acts]
-        ser = ActivitySimpleSerializer(
-            ordered, many=True, context={"request": request}
-        )
+        ser = ActivitySimpleSerializer(ordered, many=True, context={"request": request})
         return Response(ser.data)
 
 
@@ -303,12 +364,8 @@ class BulkSlotCreateView(APIView):
         try:
             facility = Facility.objects.get(pk=request.data.get("facility"))
             sport = Sport.objects.get(pk=request.data.get("sport"))
-            start = timezone.datetime.fromisoformat(
-                request.data.get("start_time")
-            )
-            end = timezone.datetime.fromisoformat(
-                request.data.get("end_time")
-            )
+            start = timezone.datetime.fromisoformat(request.data.get("start_time"))
+            end = timezone.datetime.fromisoformat(request.data.get("end_time"))
             interval = int(request.data.get("interval"))
         except Exception:
             return Response({"detail": "Invalid parameters"}, status=400)
@@ -323,8 +380,7 @@ class BulkSlotCreateView(APIView):
                     title=f"{sport.name} {current:%H:%M}",
                     location=facility.name,
                     begins_at=current,
-                    ends_at=current
-                    + timezone.timedelta(minutes=interval),
+                    ends_at=current + timezone.timedelta(minutes=interval),
                     capacity=request.data.get("capacity", 1),
                     price=request.data.get("price", 0),
                 )

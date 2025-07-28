@@ -24,6 +24,21 @@ class ActivityService {
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<ActivityPage> fetchByCategory(
+    int categoryId, {
+    String? ordering,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    final res = await apiClient.get('/activities/', queryParameters: {
+      'category': categoryId,
+      if (ordering != null) 'ordering': ordering,
+      'page': page,
+      'page_size': pageSize,
+    });
+    return ActivityPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<void> createActivity(
     int sport,
     int discipline,
