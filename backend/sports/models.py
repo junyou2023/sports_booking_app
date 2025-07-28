@@ -21,7 +21,7 @@ class Sport(models.Model):
     class Meta:
         ordering = ("name",)
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return self.name
 
 
@@ -40,7 +40,9 @@ class SportCategory(models.Model):
 
     class Meta:
         ordering = ("name",)
-        constraints = [UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")]
+        constraints = [
+            UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return self.full_path
@@ -53,6 +55,7 @@ class SportCategory(models.Model):
             parts.append(p.name)
             p = p.parent
         return " / ".join(reversed(parts))
+
 
 # ───────────────────────────────── Category ───────────────────────────────
 class Category(models.Model):
@@ -180,15 +183,12 @@ class Slot(models.Model):
     begins_at = models.DateTimeField()
     ends_at = models.DateTimeField()
 
-    capacity = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)]
-    )
+    capacity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
     price = models.DecimalField(  # 0.00 ⇒ free
         max_digits=7, decimal_places=2, default=0
     )
     rating = models.DecimalField(  # NEW: matches serializer / seed
-        max_digits=3, decimal_places=1, default=0,
-        help_text="Average rating 0–5"
+        max_digits=3, decimal_places=1, default=0, help_text="Average rating 0–5"
     )
     activity = models.ForeignKey(
         "Activity",
@@ -211,7 +211,7 @@ class Slot(models.Model):
             self.sport_id = self.activity.sport_id
         super().save(*args, **kwargs)
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return f"{self.title} @ {self.begins_at:%Y-%m-%d %H:%M}"
 
 
@@ -219,9 +219,7 @@ class Slot(models.Model):
 class Booking(models.Model):
     """User reservation of a slot (unique per user+slot)."""
 
-    slot = models.ForeignKey(
-        Slot, related_name="bookings", on_delete=models.PROTECT
-    )
+    slot = models.ForeignKey(Slot, related_name="bookings", on_delete=models.PROTECT)
     activity = models.ForeignKey(
         "Activity",
         related_name="bookings",
@@ -244,7 +242,7 @@ class Booking(models.Model):
         ordering = ("-booked_at",)
         unique_together = ("slot", "user")
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return f"{self.user} → {self.slot} ({self.pax})"
 
 
@@ -254,10 +252,11 @@ class FeaturedCategory(models.Model):
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     image = models.ImageField(upload_to="home_categories/")
-    order = models.PositiveSmallIntegerField(default=0)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    show_on_home = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ("order",)
+        ordering = ("display_order",)
 
     def __str__(self) -> str:  # pragma: no cover
         return self.category.name
@@ -284,7 +283,9 @@ class Review(models.Model):
         on_delete=models.CASCADE,
     )
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -323,4 +324,3 @@ class UserActivityHistory(models.Model):
 
     class Meta:
         ordering = ("-timestamp",)
-
