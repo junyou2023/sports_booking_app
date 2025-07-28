@@ -123,6 +123,12 @@ class ActivityViewSet(viewsets.ModelViewSet):
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
+        category_id = self.request.query_params.get("category")
+        if category_id:
+            try:
+                qs = qs.filter(discipline_id=int(category_id))
+            except (TypeError, ValueError):
+                qs = qs.none()
         return qs
 
     def perform_create(self, serializer):

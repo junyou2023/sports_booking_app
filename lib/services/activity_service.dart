@@ -19,6 +19,15 @@ class ActivityService {
         .toList();
   }
 
+  Future<List<Activity>> fetchByCategory(int categoryId) async {
+    final res = await apiClient
+        .get('/activities/', queryParameters: {'category': '$categoryId'});
+    return (res.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(Activity.fromJson)
+        .toList();
+  }
+
   Future<Activity> fetchById(int id) async {
     final Response res = await apiClient.get('/activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);
