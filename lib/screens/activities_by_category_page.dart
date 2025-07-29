@@ -7,6 +7,9 @@ import '../services/activity_service.dart';
 import 'activity_detail_page.dart';
 import '../widgets/activity_card.dart';
 import 'add_activity_page.dart';
+import '../providers/favorite_provider.dart';
+import '../providers.dart';
+import '../widgets/auth_sheet.dart';
 
 class ActivitiesByCategoryPage extends ConsumerStatefulWidget {
   final Category category;
@@ -155,9 +158,18 @@ class _ActivitiesByCategoryPageState
                       price: act.basePrice,
                       rating: 0,
                       reviews: 0,
-                      asset: act.imageUrl ?? act.image,
-                      isFavorite: false,
-                      onFavorite: () {},
+                      asset: act.imageUrl ?? act.image ?? 'assets/images/default.jpg',
+                      isFavorite: ref.watch(favoriteIdsProvider).contains(act.id),
+                      onFavorite: () async {
+                        if (ref.read(authNotifierProvider) !=
+                            AuthStatus.authenticated) {
+                          showAuthSheet(context);
+                          return;
+                        }
+                        await ref
+                            .read(favoriteIdsProvider.notifier)
+                            .toggle(context, act.id);
+                      },
                       onTap: () {
                         debugPrint('view_activity_from_category: categoryId=${widget.category.id} activityId=${act.id}');
                         Navigator.push(

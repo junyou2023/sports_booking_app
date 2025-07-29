@@ -14,6 +14,7 @@ from .models import (
     FeaturedCategory,
     Review,
     FeaturedActivity,
+    Favorite,
 )
 
 
@@ -260,3 +261,19 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def get_user_email(self, obj):
         return getattr(obj.user, "email", "")
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    activity = ActivitySimpleSerializer(read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ("id", "activity", "created_at")
+
+
+class FavoriteIdSerializer(serializers.ModelSerializer):
+    activity = serializers.IntegerField(source="activity_id")
+
+    class Meta:
+        model = Favorite
+        fields = ("activity",)

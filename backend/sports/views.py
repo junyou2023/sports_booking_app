@@ -2,7 +2,8 @@
 from django.db import transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
-from rest_framework import viewsets, permissions, status, serializers
+from rest_framework import viewsets, permissions, status, serializers, mixins
+from rest_framework.decorators import action
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -22,6 +23,7 @@ from .models import (
     SportCategory,
     FeaturedCategory,
     FeaturedActivity,
+    Favorite,
 )
 from .serializers import (
     SportSerializer,
@@ -38,6 +40,8 @@ from .serializers import (
     FeaturedActivitySerializer,
     ReviewSerializer,
     SlotCreateSerializer,
+    FavoriteSerializer,
+    FavoriteIdSerializer,
 )
 
 
@@ -151,6 +155,17 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    @action(detail=True, methods=["post"], url_path="favorite/toggle",
+            permission_classes=[permissions.IsAuthenticated])
+    def favorite_toggle(self, request, pk=None):
+        fav, created = Favorite.objects.get_or_create(
+            user=request.user, activity_id=pk
+        )
+        if not created:
+            fav.delete()
+            return Response({"favorited": False})
+        return Response({"favorited": True})
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
@@ -388,3 +403,44 @@ class MerchantBookingList(APIView):
         )
         ser = BookingSerializer(qs, many=True)
         return Response(ser.data)
+
+
+class FavoriteViewSet(viewsets.GenericViewSet,
+                      mixins.ListModelMixin,
+                      mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = FavoriteSerializer
+    pagination_class = DefaultPagination
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user).select_related(
+            "activity")
+
+    def create(self, request, *args, **kwargs):
+        activity_id = request.data.get("activity")
+        if not activity_id:
+            return Response({"detail": "activity required"}, status=400)
+        fav, created = Favorite.objects.get_or_create(
+            user=request.user, activity_id=activity_id
+        )
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response({"favorited": True}, status=status_code)
+
+    def destroy(self, request, pk=None):
+        Favorite.objects.filter(user=request.user, activity_id=pk).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"], pagination_class=None)
+    def ids(self, request):
+        ids = list(
+            Favorite.objects.filter(user=request.user).values_list(
+                "activity_id", flat=True
+            )
+        )
+        return Response(ids)
+
+    @action(detail=False, methods=["get"], pagination_class=None)
+    def count(self, request):
+        cnt = Favorite.objects.filter(user=request.user).count()
+        return Response({"count": cnt})
