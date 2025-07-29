@@ -5,6 +5,9 @@ import 'package:sports_booking_app/screens/slots_page.dart';
 import '../services/activity_service.dart';
 import '../utils/theme.dart';
 import '../widgets/app_bottom_nav.dart';
+import 'package:dio/dio.dart';
+import '../utils/snackbar.dart';
+import '../utils/errors.dart';
 import '../widgets/category_card.dart';
 import '../widgets/more_category_card.dart';
 import '../widgets/activity_card.dart';
@@ -367,11 +370,35 @@ class _HomePageState extends ConsumerState<HomePage> {
             error: (e, __) => SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Error: $e',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.red)),
+                child: Column(
+                  children: [
+                    Text(
+                      e is FriendlyError ? e.message : '加载失败，请稍后重试',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.red),
+                    ),
+                    const SizedBox(height: 12),
+                    if (e is FriendlyError && e.unauthorized)
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                          );
+                        },
+                        child: const Text('去登录'),
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: () => ref.refresh(continuePlanningProvider),
+                        child: const Text('Retry'),
+                      ),
+                  ],
+                ),
               ),
             ),
             data: (page) {
@@ -399,12 +426,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                         title: act.title,
                         imageUrl: act.imageUrl ?? act.image,
                         price: act.basePrice,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => ActivityDetailPage(activity: act)),
-                          );
-                        },
+                        onTap: () async {
+                            try {
+                              final detail = await activityService.fetchById(act.id);
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => ActivityDetailPage(activity: detail)),
+                              );
+                            } on DioException catch (e) {
+                              showApiError(context, e, "");
+                            }
+                          },
                       );
                     },
                   ),

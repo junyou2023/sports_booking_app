@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import '../models/featured_category.dart';
 import '../models/featured_activity.dart';
 import '../models/activity.dart';
 import '../models/paginated.dart';
 import 'api_client.dart';
+import '../utils/errors.dart';
 
 class HomeService {
   Future<List<FeaturedCategory>> fetchFeaturedCategories() async {
@@ -35,8 +37,39 @@ class HomeService {
   }
 
   Future<Paginated<Activity>> fetchContinuePlanning() async {
-    final res = await apiClient.get('/home/continue-planning/');
-    return _parse(res.data);
+    try {
+      final res = await apiClient.get('/home/continue-planning/');
+      final list = (res.data as List).cast<Map<String, dynamic>>();
+      final acts = list
+          .map(
+            (j) => Activity(
+              id: j['id'] as int,
+              title: j['title'] as String,
+              imageUrl: j['image_url'] as String?,
+              basePrice: (j['base_price'] as num?)?.toDouble() ?? 0.0,
+              sport: 0,
+              discipline: 0,
+              variant: null,
+              image: '',
+              description: '',
+              difficulty: 1,
+              duration: 60,
+            ),
+          )
+          .toList(growable: false);
+      return Paginated(
+        count: acts.length,
+        next: null,
+        previous: null,
+        results: acts,
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw const FriendlyError('请先登录后再查看 Continue planning',
+            unauthorized: true);
+      }
+      throw const FriendlyError('加载 Continue planning 失败，请稍后重试');
+    }
   }
 }
 
