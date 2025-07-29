@@ -38,4 +38,20 @@ class Activity {
         duration: j['duration'] as int? ?? 60,
         basePrice: (j['base_price'] as num).toDouble(),
       );
+
+  /// Create an [Activity] from a simplified JSON structure used by
+  /// `/api/home/continue-planning/` which only contains a few fields.
+  factory Activity.fromSimple(Map<String, dynamic> j) => Activity(
+        id: j['id'] as int,
+        sport: 0,
+        discipline: 0,
+        variant: null,
+        image: '',
+        imageUrl: j['image_url'] as String?,
+        title: j['title'] as String,
+        description: '',
+        difficulty: 1,
+        duration: 60,
+        basePrice: (j['base_price'] as num?)?.toDouble() ?? 0.0,
+      );
 }

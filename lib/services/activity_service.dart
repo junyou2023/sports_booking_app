@@ -56,7 +56,6 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice,
-    String image,
   ) async {
     await apiClient.post('/activities/', data: {
       'sport': sport,
@@ -67,7 +66,6 @@ class ActivityService {
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
-      'image': image,
     });
   }
 
@@ -81,7 +79,6 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice,
-    String image,
   ) async {
     await apiClient.patch('/activities/' + id.toString() + '/', data: {
       'sport': sport,
@@ -92,7 +89,6 @@ class ActivityService {
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
-      'image': image,
     });
   }
 }
