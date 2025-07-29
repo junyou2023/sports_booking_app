@@ -18,6 +18,7 @@ import '../providers.dart';                                   // ← new (sports
 import '../providers/category_provider.dart';
 import '../providers/activity_provider.dart';
 import '../providers/home_provider.dart';
+import '../providers/favorite_provider.dart';
 import 'add_activity_page.dart';
 import 'login_page.dart';                                     // for login navigation
 import 'profile_page.dart';
@@ -25,6 +26,7 @@ import 'activity_detail_page.dart';
 import '../widgets/auth_sheet.dart';
 import '../services/auth_service.dart';
 import 'bookings_page.dart';
+import 'favorites_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -35,6 +37,16 @@ class HomePage extends ConsumerStatefulWidget {               // Stateful → Co
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _navIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(authNotifierProvider) == AuthStatus.authenticated) {
+        ref.read(favoriteIdsProvider.notifier).load();
+      }
+    });
+  }
 
 
   @override
@@ -48,9 +60,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final featuredActsAsync = ref.watch(featuredActivitiesProvider);
     final continuePlanningAsync = ref.watch(continuePlanningProvider);
 
-    final Widget body = _navIndex == 2
-        ? const BookingsPage()
-        : CustomScrollView(
+    final Widget body = _navIndex == 1
+        ? const FavoritesPage()
+        : _navIndex == 2
+            ? const BookingsPage()
+            : CustomScrollView(
         slivers: [
           // ================= Hero + Search + Quick Filters（保持不变） =================
           SliverAppBar(
@@ -324,15 +338,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) {
                       final act = acts[i];
+                      final favIds = ref.watch(favoriteIdsProvider);
                       return ActivityCard(
                         title: act.title,
                         location: '',
                         price: act.basePrice,
                         rating: 0,
                         reviews: 0,
-                        asset: act.imageUrl ?? act.image,
-                        isFavorite: false,
-                        onFavorite: () {},
+                        asset: act.imageUrl ?? act.image ?? 'assets/images/default.jpg',
+                        isFavorite: favIds.contains(act.id),
+                        onFavorite: () async {
+                          if (ref.read(authNotifierProvider) !=
+                              AuthStatus.authenticated) {
+                            showAuthSheet(context);
+                            return;
+                          }
+                          await ref
+                              .read(favoriteIdsProvider.notifier)
+                              .toggle(context, act.id);
+                        },
                         onTap: () {
                           Navigator.push(
                             context,

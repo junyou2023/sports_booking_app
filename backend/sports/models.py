@@ -2,6 +2,7 @@
 # Domain models for the sports-booking backend.  Comments in EN only.
 
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from django.core.validators import (
     MinValueValidator,
@@ -323,4 +324,21 @@ class UserActivityHistory(models.Model):
 
     class Meta:
         ordering = ("-timestamp",)
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="favorites",
+    )
+    activity = models.ForeignKey(
+        Activity,
+        on_delete=models.CASCADE,
+        related_name="favorited_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "activity")
 

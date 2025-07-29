@@ -1,15 +1,17 @@
 // ========== lib/widgets/app_bottom_nav.dart ==========
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/favorite_provider.dart';
 import '../utils/theme.dart';
 
 /// Material-3 风格底栏：Icon + Label，全局 4 个目的地
-class AppBottomNav extends StatelessWidget {
+class AppBottomNav extends ConsumerWidget {
   final int index;
   final ValueChanged<int> onTap;
   const AppBottomNav({super.key, required this.index, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // —— 构造带徽标的图标 —— //
     Widget _icon(IconData outlined, IconData filled,
         {required bool selected, int badge = 0}) {
@@ -61,8 +63,12 @@ class AppBottomNav extends StatelessWidget {
           label: 'Home',
         ),
         NavigationDestination(
-          icon: _icon(Icons.favorite_outline, Icons.favorite,
-              selected: index == 1, badge: 2), // 示范红点
+          icon: _icon(
+            Icons.favorite_outline,
+            Icons.favorite,
+            selected: index == 1,
+            badge: ref.watch(favoriteCountProvider),
+          ),
           label: 'Favorites',
         ),
         NavigationDestination(
