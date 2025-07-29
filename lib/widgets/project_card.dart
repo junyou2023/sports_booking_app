@@ -20,7 +20,11 @@ class ProjectCard extends StatelessWidget {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black12),
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.grey.shade200,
+          alignment: Alignment.center,
+          child: const Icon(Icons.image_not_supported_outlined),
+        ),
       );
     }
     return Image.asset(imageUrl, fit: BoxFit.cover);

@@ -25,14 +25,32 @@ class CategoryCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? Image.network(imageUrl!,
-                      width: 96, height: 96, fit: BoxFit.cover)
-                  : asset.startsWith('http')
-                      ? Image.network(asset,
-                          width: 96, height: 96, fit: BoxFit.cover)
-                      : Image.asset(asset,
-                          width: 96, height: 96, fit: BoxFit.cover),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: imageUrl != null && imageUrl!.isNotEmpty
+                    ? Image.network(
+                        imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey.shade200,
+                          alignment: Alignment.center,
+                          child:
+                              const Icon(Icons.image_not_supported_outlined),
+                        ),
+                      )
+                    : asset.startsWith('http')
+                        ? Image.network(
+                            asset,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.grey.shade200,
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                  Icons.image_not_supported_outlined),
+                            ),
+                          )
+                        : Image.asset(asset, fit: BoxFit.cover),
+              ),
             ),
             const SizedBox(height: 8),
             Text(

@@ -29,24 +29,21 @@ class ActivityCard extends StatelessWidget {
 
   // ----- 私有：生成图片组件，自动判断网络 / 本地 -------------------------
   Widget _buildHeroImage() {
-    if (asset.startsWith('http')) {
-      return Image.network(
-        asset,
-        height: 140,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(
-          color: Colors.black12,
-          child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-        ),
-      );
-    }
-    return Image.asset(
-      asset,
-      height: 140,
-      width: double.infinity,
-      fit: BoxFit.cover,
-    );
+    final img = asset.startsWith('http')
+        ? Image.network(
+            asset,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: Colors.grey.shade200,
+              alignment: Alignment.center,
+              child: const Icon(Icons.image_not_supported_outlined),
+            ),
+          )
+        : Image.asset(
+            asset,
+            fit: BoxFit.cover,
+          );
+    return AspectRatio(aspectRatio: 16 / 9, child: img);
   }
 
   @override

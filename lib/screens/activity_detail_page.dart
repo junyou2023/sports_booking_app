@@ -103,7 +103,7 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
             const SizedBox(height: 8),
             reviewsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, __) => Text('Error: ${r'$'}e'),
+              error: (e, __) => Text('Error: $e'),
               data: (List<Review> reviews) {
                 if (reviews.isEmpty) {
                   return const Text('No reviews yet');
