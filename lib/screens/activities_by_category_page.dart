@@ -82,16 +82,33 @@ class _ActivitiesByCategoryPageState
             _items.addAll(page.results);
             _hasNext = page.next != null;
           }
+          // 当没有任何活动时，显示空态并提供返回或创建入口
           if (_items.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('No activities found'),
+                  const Text('该分类暂无活动'),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Back'),
+                    child: const Text('返回'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final created = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddActivityPage()),
+                      );
+                      if (created == true) {
+                        await _refresh();
+                        ref.invalidate(
+                          activitiesByCategoryProvider(widget.category.id),
+                        );
+                      }
+                    },
+                    child: const Text('去创建'),
                   ),
                 ],
               ),
@@ -104,13 +121,22 @@ class _ActivitiesByCategoryPageState
               itemCount: _items.length + 1,
               itemBuilder: (context, i) {
                 if (i == _items.length) {
+                  // 调整加载更多尾部逻辑，避免在无更多数据时渲染空白
                   if (_loadingMore) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
                       child: Center(child: CircularProgressIndicator()),
                     );
                   }
-                  if (!_hasNext) return const SizedBox.shrink();
+                  if (!_hasNext) {
+                    if (_items.isNotEmpty) {
+                      return const SizedBox(height: 16);
+                    }
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: Text('没有更多数据')), 
+                    );
+                  }
                   return Center(
                     child: ElevatedButton(
                       onPressed: _loadMore,
