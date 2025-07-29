@@ -16,29 +16,34 @@ class CategoriesPage extends ConsumerWidget {
       body: catsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
-        data: (cats) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: GridView.builder(
-            itemCount: cats.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisExtent: 140,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-            ),
-            itemBuilder: (_, i) => CategoryCard(
-              title: cats[i].name,
-              asset: cats[i].icon,
-              imageUrl: cats[i].imageUrl,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ActivitiesByCategoryPage(category: cats[i]),
+        data: (cats) {
+          if (cats.isEmpty) {
+            return const Center(child: Text('No categories available'));
+          }
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: GridView.builder(
+              itemCount: cats.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisExtent: 140,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+              ),
+              itemBuilder: (_, i) => CategoryCard(
+                title: cats[i].name,
+                asset: cats[i].icon,
+                imageUrl: cats[i].imageUrl,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ActivitiesByCategoryPage(category: cats[i]),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
