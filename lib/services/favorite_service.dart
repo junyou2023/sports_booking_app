@@ -23,7 +23,8 @@ class FavoriteService {
       'page': page,
       'page_size': pageSize,
     });
-    return Paginated.fromJson(res.data as Map<String, dynamic>, Activity.fromJson);
+    return Paginated.fromJson(res.data as Map<String, dynamic>,
+        (j) => Activity.fromSimple(j['activity'] as Map<String, dynamic>));
   }
 
   Future<bool> toggle(int activityId) async {
