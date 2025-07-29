@@ -76,39 +76,32 @@ class ActivityCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Expanded(                                     // 防止溢出
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 4),
-                      Text(location, style: Theme.of(context).textTheme.bodySmall),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          RatingBarIndicator(
-                            rating: rating,
-                            itemCount: 5,
-                            itemSize: 16,
-                            unratedColor: Colors.grey.shade300,
-                            itemBuilder: (_, __) =>
-                            const Icon(Icons.star_rounded, color: Colors.amber),
-                          ),
-                          const SizedBox(width: 4),
-                          Text('($reviews)',
-                              style: Theme.of(context).textTheme.bodySmall),
-                          const Spacer(),
-                          Text('\$${price.toStringAsFixed(0)}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(location, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        RatingBarIndicator(
+                          rating: rating,
+                          itemCount: 5,
+                          itemSize: 16,
+                          unratedColor: Colors.grey.shade300,
+                          itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: Colors.amber),
+                        ),
+                        const SizedBox(width: 4),
+                        Text('($reviews)', style: Theme.of(context).textTheme.bodySmall),
+                        const Spacer(),
+                        Text('\$${price.toStringAsFixed(0)}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
