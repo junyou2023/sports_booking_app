@@ -6,7 +6,9 @@ import '../models/review.dart';
 import '../providers/review_provider.dart';
 import '../providers.dart';
 import '../widgets/auth_sheet.dart';
+import '../widgets/activity_map.dart';
 import 'activity_booking_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
   final Activity activity;
@@ -21,6 +23,30 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
   final commentCtrl = TextEditingController();
   int _rating = 5;
   bool _submitting = false;
+
+  Future<void> _openNavigation() async {
+    final lat = widget.activity.lat;
+    final lng = widget.activity.lng;
+    if (lat == null || lng == null) return;
+    final label = Uri.encodeComponent(widget.activity.title);
+    final googleUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=${lat},${lng}');
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      final appleUrl = Uri.parse('http://maps.apple.com/?ll=${lat},${lng}&q=${label}');
+      if (await canLaunchUrl(appleUrl)) {
+        await launchUrl(appleUrl);
+        return;
+      }
+    } else {
+      final geoUrl = Uri.parse('geo:${lat},${lng}?q=${lat},${lng}(${label})');
+      if (await canLaunchUrl(geoUrl)) {
+        await launchUrl(geoUrl);
+        return;
+      }
+    }
+    if (await canLaunchUrl(googleUrl)) {
+      await launchUrl(googleUrl, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   void dispose() {
@@ -80,6 +106,15 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
+            SizedBox(
+              height: 220,
+              child: ActivityMap(
+                lat: widget.activity.lat,
+                lng: widget.activity.lng,
+                title: widget.activity.title,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(widget.activity.description),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -98,6 +133,12 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
               },
               child: const Text('Book now'),
             ),
+            const SizedBox(height: 12),
+            if (widget.activity.lat != null && widget.activity.lng != null)
+              ElevatedButton(
+                onPressed: _openNavigation,
+                child: const Text('Navigate'),
+              ),
             const SizedBox(height: 24),
             Text('Reviews', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),

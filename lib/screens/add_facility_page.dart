@@ -46,7 +46,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
 
   Future<void> _setCurrentLocation() async {
     try {
-      final pos = await locationService.getCurrent();
+      final pos = await locationService.current();
       setState(() {
         lat = pos.latitude;
         lng = pos.longitude;
