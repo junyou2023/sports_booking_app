@@ -98,6 +98,26 @@ requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
 `AndroidManifest.xml`. iOS must include `NSLocationWhenInUseUsageDescription` in
 `Info.plist`.
 
+### Google Maps API key
+
+Google Maps requires an API key for Android and iOS. **Do not commit the key to
+version control.**
+
+1. Create a key in the Google Cloud console with Maps SDK enabled.
+2. In your local environment export `MAPS_API_KEY` before running `flutter run`:
+
+   ```bash
+   export MAPS_API_KEY=YOUR_KEY
+   flutter run
+   ```
+
+3. CI systems should inject the same environment variable so the key is
+   available during the build.
+
+The Android manifest contains `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />` and iOS uses
+`GMSServices.provideAPIKey(ProcessInfo.processInfo.environment["MAPS_API_KEY"] ?? "")` so the value is read from the environment at build
+time.
+
 ## Merchant interface
 
 Logged-in providers can publish new facilities via the **Add** button on the
