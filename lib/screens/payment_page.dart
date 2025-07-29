@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
@@ -44,6 +45,18 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Future<void> _pay() async {
     setState(() => loading = true);
     try {
+      // Ensure network connectivity before contacting Stripe
+      try {
+        await InternetAddress.lookup('api.stripe.com');
+      } on SocketException catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('当前网络不可达，请检查联网或代理设置')),
+          );
+        }
+        return;
+      }
+
       final data = await paymentService.createIntent(widget.slot.id);
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
@@ -64,6 +77,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           builder: (_) => BookingConfirmationPage(booking: booking),
         ),
       );
+    } on StripeException catch (e) {
+      if (mounted) {
+        final msg = e.error.localizedMessage ?? e.error.message ?? '支付失败，请稍后重试';
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
