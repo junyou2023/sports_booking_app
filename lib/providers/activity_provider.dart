@@ -11,7 +11,8 @@ final nearbyActivitiesProvider = FutureProvider<Paginated<Activity>>((ref) async
   return activityService.fetchNearby();
 });
 
-final activitiesByCategoryProvider =
-    FutureProvider.family<Paginated<Activity>, int>((ref, categoryId) async {
+// autoDispose so that list refreshes when returning after adding new activity
+final activitiesByCategoryProvider = FutureProvider.autoDispose
+    .family<Paginated<Activity>, int>((ref, categoryId) async {
   return activityService.fetchActivitiesByCategory(categoryId);
 });
