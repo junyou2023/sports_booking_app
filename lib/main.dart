@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'utils/theme.dart';
 import 'screens/home_page.dart';
 import 'screens/login_page.dart';
 import 'services/api_client.dart';
+import 'services/notification_service.dart';
 
 /// Application entry-point.
 /// ---------------------------------------------------------------------------
@@ -25,12 +29,26 @@ Future<void> main() async {
 
   initApiClient();
   initAuthInterceptor();
+  await initPush();
 
   runApp(
     const ProviderScope(                        // <-- Riverpod root scope
       child: SportsBookingApp(),
     ),
   );
+}
+
+Future<void> initPush() async {
+  if (dotenv.env['FCM_ENABLED'] != '1') return;
+  try {
+    await Firebase.initializeApp();
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission();
+    final token = await messaging.getToken();
+    if (token != null) {
+      await notificationService.registerDevice(token, 'android');
+    }
+  } catch (_) {}
 }
 
 /// Root widget of the app.

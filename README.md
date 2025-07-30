@@ -218,3 +218,9 @@ DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
 A helper script `scripts/run_backend_tests.sh` automates the above commands.
 Some tests require SpatiaLite which may not work on every platform. Docker is
 the recommended environment for running the full test suite.
+
+## Push notifications
+
+The app implements a simple notification system backed by Firebase Cloud Messaging (FCM).  Set `FCM_ENABLED=True` in `backend/.env` and provide Google credentials via `GOOGLE_APPLICATION_CREDENTIALS` to enable push delivery.  Without these settings the client falls back to polling the unread count every 30 seconds.
+
+Registering for push on the client requires adding Firebase configuration files and enabling messaging in your Firebase project.  After `firebase_core` is configured the app will automatically obtain a device token and POST it to `/api/devices/`.

@@ -15,6 +15,8 @@ from .models import (
     Review,
     FeaturedActivity,
     Favorite,
+    Notification,
+    UserDevice,
 )
 
 
@@ -277,3 +279,28 @@ class FavoriteIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ("activity",)
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    is_read = serializers.BooleanField(source="is_read", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = (
+            "id",
+            "ntype",
+            "title",
+            "body",
+            "data",
+            "created_at",
+            "read_at",
+            "is_read",
+        )
+        read_only_fields = ("id", "created_at", "read_at", "is_read")
+
+
+class UserDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserDevice
+        fields = ("id", "token", "platform", "is_active", "last_seen")
+        read_only_fields = ("id", "is_active", "last_seen")
