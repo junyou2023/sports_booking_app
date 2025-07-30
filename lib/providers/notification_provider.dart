@@ -11,8 +11,8 @@ class UnreadCountNotifier extends StateNotifier<int> {
     refresh();
   }
 
-  Timer? _timer;
   final Ref ref;
+  Timer? _timer;
 
   Future<void> refresh() async {
     try {
@@ -70,7 +70,6 @@ class NotificationListController extends StateNotifier<NotificationListState> {
   NotificationListController(this.ref) : super(NotificationListState.initial());
 
   final Ref ref;
-  static const int _pageSize = 20;
   int? _inFlightPage;
 
   Future<void> loadFirst() async {
@@ -116,18 +115,49 @@ class NotificationListController extends StateNotifier<NotificationListState> {
 
   Future<void> markAllRead() async {
     final svc = ref.read(notificationServiceProvider);
-    await svc.markAllRead();
-    state = state.copyWith(
-        items: [for (final n in state.items) AppNotification(
-          id: n.id,
-          ntype: n.ntype,
-          title: n.title,
-          body: n.body,
-          data: n.data,
-          createdAt: n.createdAt,
-          readAt: n.readAt ?? DateTime.now(),
-        )]);
-    ref.read(unreadCountProvider.notifier).refresh();
+    try {
+      await svc.markAllRead();
+      state = state.copyWith(
+        items: [
+          for (final n in state.items)
+            AppNotification(
+              id: n.id,
+              ntype: n.ntype,
+              title: n.title,
+              body: n.body,
+              data: n.data,
+              createdAt: n.createdAt,
+              readAt: n.readAt ?? DateTime.now(),
+            )
+        ],
+      );
+      ref.read(unreadCountProvider.notifier).refresh();
+    } catch (_) {}
+  }
+
+  Future<void> markRead(int id) async {
+    final index = state.items.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+    final svc = ref.read(notificationServiceProvider);
+    try {
+      await svc.markRead(id);
+      final updated = [
+        for (final n in state.items)
+          n.id == id
+              ? AppNotification(
+                  id: n.id,
+                  ntype: n.ntype,
+                  title: n.title,
+                  body: n.body,
+                  data: n.data,
+                  createdAt: n.createdAt,
+                  readAt: n.readAt ?? DateTime.now(),
+                )
+              : n
+      ];
+      state = state.copyWith(items: updated);
+      ref.read(unreadCountProvider.notifier).refresh();
+    } catch (_) {}
   }
 }
 
