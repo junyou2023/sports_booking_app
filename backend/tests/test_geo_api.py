@@ -21,8 +21,8 @@ pytestmark = [pytest.mark.django_db]
 
 
 def setup_data():
-    c1 = Category.objects.create(name="滑板")
-    c2 = Category.objects.create(name="冲浪")
+    c1 = Category.objects.create(name="Skateboard")
+    c2 = Category.objects.create(name="Surfing")
     f1 = Facility.objects.create(name="A", location=Point(0, 0), radius=1000)
     f1.categories.add(c1, c2)
     f2 = Facility.objects.create(
@@ -57,7 +57,7 @@ def test_facilities_filter_near_categories():
         {
             "near": "0,0",
             "radius": 2000,
-            "categories": "滑板,冲浪",
+            "categories": "Skateboard,Surfing",
         },
     )
     assert resp.status_code == 200

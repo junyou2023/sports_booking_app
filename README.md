@@ -127,6 +127,13 @@ filtered by the given category. All activity list endpoints now return a
 paginated JSON object with `count`, `next`, `previous` and `results` fields.
 Use the items under `results` on the client.
 
+## Search API
+
+`GET /api/activities/?q=<query>&page=<n>` performs a text search across
+activity titles, descriptions and sport names. Optional `category` narrows the
+results. Facilities support the same `q` parameter. Enable trigram indexes for
+Postgres by setting `USE_TRIGRAM=True` in `backend/.env` and applying migrations.
+
 Disable pagination temporarily by passing `?no_page=1`.
 
 ```bash

@@ -42,6 +42,18 @@ class ActivityService {
     });
   }
 
+  Future<Paginated<Activity>> searchActivities({
+    required String query,
+    int? categoryId,
+    int page = 1,
+  }) async {
+    return fetchActivities(params: {
+      'q': query,
+      if (categoryId != null) 'category': categoryId,
+      'page': page,
+    });
+  }
+
   Future<Activity> fetchById(int id) async {
     final Response res = await apiClient.get('/activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);

@@ -1,5 +1,5 @@
 // lib/widgets/activity_card.dart
-// -- 既支持本地 asset，又支持网络 URL 的卡片 ---------------------------
+// -- Card supporting both local assets and network URLs ---------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -9,7 +9,7 @@ class ActivityCard extends StatelessWidget {
   final double price;
   final double rating;
   final int reviews;
-  final String asset;            // 本地或网络路径
+  final String asset;            // Local or network path
   final VoidCallback onTap;
   final VoidCallback onFavorite;
   final bool isFavorite;
@@ -27,7 +27,7 @@ class ActivityCard extends StatelessWidget {
     required this.isFavorite,
   });
 
-  // ----- 私有：生成图片组件，自动判断网络 / 本地 -------------------------
+  // ----- Private: build image widget, automatically choose network/local ------
   Widget _buildHeroImage() {
     final path = asset.isNotEmpty ? asset : 'assets/images/default.jpg';
     if (path.startsWith('http')) {

@@ -93,13 +93,13 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('还没有收藏'),
+                    const Text('No favorites yet'),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const HomePage())),
-                    child: const Text('去浏览活动'),
+                      child: const Text('Browse activities'),
                   ),
                 ],
               ),
@@ -122,7 +122,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                       if (!_hasNext) {
                         return const Padding(
                           padding: EdgeInsets.all(16),
-                          child: Center(child: Text('没有更多数据')),
+                          child: Center(child: Text('No more data')),
                         );
                       }
                       return Padding(

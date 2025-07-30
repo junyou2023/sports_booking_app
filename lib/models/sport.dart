@@ -9,7 +9,7 @@ class Sport {
 
   final int    id;
   final String name;
-  final String banner;          // 绝对 http(s) 或 asset 路径；永不为空
+  final String banner;          // Absolute http(s) or asset path; never empty
   final String description;
 
   factory Sport.fromJson(Map<String, dynamic> json) {
@@ -17,16 +17,16 @@ class Sport {
 
     late final String normalized;
     if (raw.startsWith('http')) {
-      // 完整网络 URL
+      // Full network URL
       normalized = raw;
     } else if (raw.startsWith('assets/')) {
-      // 已经是 asset 路径
+      // Already an asset path
       normalized = raw;
     } else if (raw.isNotEmpty) {
-      // 文件名 → 拼 asset
+      // File name → prepend asset path
       normalized = 'assets/images/$raw';
     } else {
-      // 空值 → 占位图
+      // Empty → placeholder image
       normalized = 'assets/images/default.jpg';
     }
 

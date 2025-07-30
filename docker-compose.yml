@@ -1,23 +1,23 @@
 # ── docker-compose.yml ──
-# 单文件即可一键起整个后端栈：PostgreSQL + Redis + Django(Gunicorn)
+# Single file to spin up the entire backend stack: PostgreSQL + Redis + Django (Gunicorn)
 # ---------------------------------------------------------------
 
 version: "3.9"
 
 ###############################################################################
-# 共享网络 & 卷
+# Shared network & volumes
 ###############################################################################
 networks:
   app-net:
     driver: bridge
 
 volumes:
-  dbdata:          # PostgreSQL 持久化
+  dbdata:          # PostgreSQL persistence
   media:
   # static:
 
 ###############################################################################
-# 服务定义
+# Service definitions
 ###############################################################################
 services:
   # ────────────────────────────────────────────────────────────── PostgreSQL ──
@@ -30,7 +30,7 @@ services:
       POSTGRES_PASSWORD: sportspwd
     volumes:
       - dbdata:/var/lib/postgresql/data
-    ports: ["5432:5432"]      # 仅本机调试需要，服务器部署可删
+    ports: ["5432:5432"]      # Only needed for local debugging; remove in production
     networks: [app-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -42,7 +42,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports: ["6379:6379"]      # 同上，生产可删
+    ports: ["6379:6379"]      # Same as above, remove in production
     networks: [app-net]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -53,7 +53,7 @@ services:
   # ──────────────────────────────────────────────────────────────── Django ────
   web:
     build:
-      context: .              # 根目录含 Dockerfile
+      context: .              # Root folder contains Dockerfile
       dockerfile: Dockerfile
     command: >
       gunicorn backend.PlayNexus.wsgi:application
@@ -61,14 +61,14 @@ services:
               --workers 3
               --timeout 120
     restart: unless-stopped
-    env_file: .env            # 秘钥、邮箱、Stripe 等都放这里
+    env_file: .env            # Secrets, email and Stripe settings
     environment:
       DJANGO_SETTINGS_MODULE: backend.PlayNexus.settings
-      # 仅开发机需要；部署到云服务器可在 .env 设置
+      # Needed only for development; configure in .env when deploying to the cloud
       ALLOWED_HOSTS: localhost,127.0.0.1,10.0.2.2
       API_BASE_URL: http://0.0.0.0:8000/api
     volumes:
-      - .:/app                # 代码热更新；生产可改成只挂 static/media
+      - .:/app                # Hot reload; mount only static/media in production
       - ./media:/app/media
       # - static:/app/static
     ports: ["8000:8000"]

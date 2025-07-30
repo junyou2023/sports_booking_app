@@ -22,7 +22,7 @@ class RoundedSearchBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(height / 2),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(height / 2),
-          child: BackdropFilter(          // 轻磨砂，提升质感
+          child: BackdropFilter(          // subtle blur for a polished look
             filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
             child: Container(
               height: height,
