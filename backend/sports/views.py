@@ -2,6 +2,7 @@
 from django.db import transaction
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Q
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
 from accounts.permissions import IsVendor
@@ -146,6 +147,19 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(discipline_id=int(category))
             except (TypeError, ValueError):
                 qs = qs.none()
+
+        query = self.request.query_params.get("q")
+        if query:
+            query = query.strip()
+            if len(query) > 64:
+                return qs.none()
+            qs = qs.filter(
+                Q(title__icontains=query)
+                | Q(description__icontains=query)
+                | Q(sport__name__icontains=query)
+                | Q(discipline__name__icontains=query)
+            )
+
         return qs
 
     def list(self, request, *args, **kwargs):
@@ -190,6 +204,15 @@ class FacilityViewSet(viewsets.ModelViewSet):
         if categories:
             names = categories.split(",")
             qs = qs.filter(categories__name__in=names).distinct()
+
+        query = self.request.query_params.get("q")
+        if query:
+            query = query.strip()
+            if len(query) > 64:
+                return qs.none()
+            qs = qs.filter(
+                Q(name__icontains=query) | Q(categories__name__icontains=query)
+            ).distinct()
 
         near = self.request.query_params.get("near")
         if near:

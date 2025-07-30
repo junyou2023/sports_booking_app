@@ -11,6 +11,7 @@ import '../widgets/more_category_card.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/project_card.dart';
 import '../widgets/search_bar.dart';
+import 'search_page.dart';
 import 'categories_page.dart';
 import 'activities_by_category_page.dart';
 
@@ -133,7 +134,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         opacity: opacity,
                         child: Row(
                           children: [
-                            const Expanded(child: RoundedSearchBar()),
+                            Expanded(
+                              child: RoundedSearchBar(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SearchPage(),
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 12),
                             IconButton(
                               icon: const Icon(Icons.person_outline),

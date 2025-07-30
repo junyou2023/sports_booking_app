@@ -23,6 +23,7 @@ load_dotenv(BASE_DIR.parent / '.env')
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
+USE_TRIGRAM = os.getenv("USE_TRIGRAM", "False") == "True"
 
 ALLOWED_HOSTS = [
     'localhost',

@@ -59,6 +59,24 @@ class FacilityService {
   Future<void> deleteFacility(int id) async {
     await apiClient.delete('/facilities/$id/');
   }
+
+  Future<List<Facility>> searchFacilities({required String query, int page = 1}) async {
+    final res = await apiClient.get('/facilities/', queryParameters: {
+      'q': query,
+      'page': page,
+    });
+    dynamic data = res.data;
+    if (data is Map && data['results'] is List) {
+      data = data['results'];
+    }
+    if (data is! List) {
+      throw Exception('Unexpected response format');
+    }
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(Facility.fromJson)
+        .toList(growable: false);
+  }
 }
 
 final facilityService = FacilityService();
