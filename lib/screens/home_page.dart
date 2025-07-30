@@ -27,6 +27,7 @@ import '../widgets/auth_sheet.dart';
 import '../services/auth_service.dart';
 import 'bookings_page.dart';
 import 'favorites_page.dart';
+import 'search_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -133,7 +134,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         opacity: opacity,
                         child: Row(
                           children: [
-                            const Expanded(child: RoundedSearchBar()),
+                            Expanded(
+                              child: RoundedSearchBar(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const SearchPage()),
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 12),
                             IconButton(
                               icon: const Icon(Icons.person_outline),
