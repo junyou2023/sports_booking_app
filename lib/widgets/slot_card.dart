@@ -66,7 +66,7 @@ class SlotCard extends StatelessWidget {
   }
 }
 
-/// 智能图片组件：支持网络 / 本地，并始终回退到占位图
+/// Smart image widget supporting network/local sources with fallback
 class _SmartImage extends StatelessWidget {
   const _SmartImage({required this.url});
 
@@ -74,7 +74,7 @@ class _SmartImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 若为空，直接使用占位路径（防御性）
+      // Use placeholder if empty (defensive)
     final path = url.isNotEmpty ? url : 'assets/images/hiking.jpg';
     final isRemote = path.startsWith('http');
 

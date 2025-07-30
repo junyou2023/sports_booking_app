@@ -85,17 +85,17 @@ class _ActivitiesByCategoryPageState
             _items.addAll(page.results);
             _hasNext = page.next != null;
           }
-          // 当没有任何活动时，显示空态并提供返回或创建入口
+          // When there are no activities show an empty state with options
           if (_items.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('该分类暂无活动'),
+                    const Text('No activities in this category'),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('返回'),
+                      child: const Text('Back'),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
@@ -111,7 +111,7 @@ class _ActivitiesByCategoryPageState
                         );
                       }
                     },
-                    child: const Text('去创建'),
+                      child: const Text('Create one'),
                   ),
                 ],
               ),
@@ -124,7 +124,7 @@ class _ActivitiesByCategoryPageState
               itemCount: _items.length + 1,
               itemBuilder: (context, i) {
                 if (i == _items.length) {
-                  // 调整加载更多尾部逻辑，避免在无更多数据时渲染空白
+                  // Adjust footer logic to avoid blank space when no more data
                   if (_loadingMore) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
@@ -137,7 +137,7 @@ class _ActivitiesByCategoryPageState
                     }
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Center(child: Text('没有更多数据')), 
+                        child: Center(child: Text('No more data')),
                     );
                   }
                   return Center(

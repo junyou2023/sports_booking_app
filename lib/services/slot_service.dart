@@ -18,7 +18,7 @@ class SlotService {
       queryParameters: {'sport': sportId},
     );
 
-    // 如果后端以后改成 {"results":[...]} 也能兼容
+    // Compatible if backend later switches to {"results": [...]} format
     final dynamic payload = res.data;
     final List data = payload is Map ? payload['results'] as List : payload as List;
 

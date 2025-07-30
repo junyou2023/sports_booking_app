@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/favorite_provider.dart';
 import '../utils/theme.dart';
 
-/// Material-3 风格底栏：Icon + Label，全局 4 个目的地
+/// Material-3 style bottom navigation: icon + label with four destinations
 class AppBottomNav extends ConsumerWidget {
   final int index;
   final ValueChanged<int> onTap;
@@ -12,7 +12,7 @@ class AppBottomNav extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // —— 构造带徽标的图标 —— //
+    // —— Build icon with optional badge —— //
     Widget _icon(IconData outlined, IconData filled,
         {required bool selected, int badge = 0}) {
       final icon = Icon(
@@ -21,7 +21,7 @@ class AppBottomNav extends ConsumerWidget {
         color: selected ? AppTheme.primary : Colors.black54,
       );
 
-      // 如需徽标
+      // Add badge if needed
       if (badge == 0) return icon;
       return Stack(
         clipBehavior: Clip.none,
@@ -51,7 +51,7 @@ class AppBottomNav extends ConsumerWidget {
       height: 72,
       elevation: 0,
       backgroundColor: Colors.white,
-      indicatorColor: AppTheme.primary.withOpacity(.12),          // 圆形水滴
+        indicatorColor: AppTheme.primary.withOpacity(.12),          // circular indicator
       surfaceTintColor: Colors.white,
       selectedIndex: index,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

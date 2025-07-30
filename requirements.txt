@@ -14,8 +14,8 @@ Pillow==11.3.0
 stripe==9.8.0
 python-dotenv==1.0.1
 
-# 新增：容器/CI 运行必备
-psycopg2-binary==2.9.9      # Postgres 驱动
-gunicorn==21.2.0            # 生产 WSGI
-flake8==6.1.0               # 代码规范检查
+# Added: required for container/CI
+psycopg2-binary==2.9.9      # Postgres driver
+gunicorn==21.2.0            # production WSGI server
+flake8==6.1.0               # code style check
 pytest-django==4.8.0

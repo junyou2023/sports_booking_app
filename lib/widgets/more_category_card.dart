@@ -1,7 +1,7 @@
 // ========== lib/widgets/more_category_card.dart ==========
 import 'package:flutter/material.dart';
 
-/// 横向列表最后一个“More”卡片：边框 + 三点图标
+/// "More" card used at the end of a horizontal list: border + ellipsis icon
 class MoreCategoryCard extends StatelessWidget {
   final VoidCallback onTap;
   const MoreCategoryCard({super.key, required this.onTap});

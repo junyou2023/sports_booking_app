@@ -26,16 +26,16 @@ class Slot {
   final double   rating;
   final int      seatsLeft;
 
-  /// 允许后端返回 sport=ID 或 sport=Map 两种格式
+  /// Allows backend to return either sport=ID or sport=Map
   factory Slot.fromJson(Map<String, dynamic> j) {
     final dynamic sportRaw = j['sport'];
 
-    /// 解析 Sport
+    /// Parse Sport
     late final Sport sport;
     if (sportRaw is Map<String, dynamic>) {
       sport = Sport.fromJson(sportRaw);
     } else if (sportRaw is int) {
-      // 如果只有 ID，就先创建一个占位 Sport；需要时再去懒加载详情
+      // If only an ID is provided create placeholder Sport and lazy load details
       sport = Sport(id: sportRaw, name: '', banner: '', description: '');
     } else {
       throw const FormatException('Unsupported sport payload');
@@ -55,7 +55,7 @@ class Slot {
     );
   }
 
-  /// 方便之后可能的写操作
+  /// Convenience for potential future write operations
   Map<String, dynamic> toJson() => {
     'id'        : id,
     'sport'     : sport.id,
