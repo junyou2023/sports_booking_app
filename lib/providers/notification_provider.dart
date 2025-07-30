@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_notification.dart';
-import '../models/paginated.dart';
 import '../services/notification_service.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) => notificationService);
@@ -35,10 +34,10 @@ final unreadCountProvider = StateNotifierProvider<UnreadCountNotifier, int>((ref
 
 class NotificationListState {
   const NotificationListState({
-    required this.items,
-    required this.page,
-    required this.hasNext,
-    required this.isLoading,
+    this.items = const [],
+    this.page = 1,
+    this.hasNext = false,
+    this.isLoading = false,
     this.error,
   });
 
@@ -64,46 +63,54 @@ class NotificationListState {
     );
   }
 
-  factory NotificationListState.initial() =>
-      const NotificationListState(items: [], page: 1, hasNext: true, isLoading: false, error: null);
+  factory NotificationListState.initial() => const NotificationListState();
 }
 
 class NotificationListController extends StateNotifier<NotificationListState> {
   NotificationListController(this.ref) : super(NotificationListState.initial());
 
   final Ref ref;
+  static const int _pageSize = 20;
+  int? _inFlightPage;
 
   Future<void> loadFirst() async {
-    state = NotificationListState.initial().copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, page: 1, hasNext: false, error: null);
     try {
       final svc = ref.read(notificationServiceProvider);
-      final page = await svc.list(page: 1);
-      state = state.copyWith(
-        items: page.results,
+      final pageData = await svc.listPaginated(page: 1);
+      state = NotificationListState(
+        items: pageData.items,
         page: 1,
-        hasNext: page.next != null,
+        hasNext: pageData.hasNext,
         isLoading: false,
       );
       ref.read(unreadCountProvider.notifier).refresh();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
+    } finally {
+      _inFlightPage = null;
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || !state.hasNext) return;
+    if (!state.hasNext || state.isLoading) return;
+    final next = state.page + 1;
+    if (_inFlightPage == next) return;
+    _inFlightPage = next;
     state = state.copyWith(isLoading: true);
     try {
       final svc = ref.read(notificationServiceProvider);
-      final page = await svc.list(page: state.page + 1);
-      state = state.copyWith(
-        items: [...state.items, ...page.results],
-        page: state.page + 1,
-        hasNext: page.next != null,
+      final pageData = await svc.listPaginated(page: next);
+      state = NotificationListState(
+        items: [...state.items, ...pageData.items],
+        page: next,
+        hasNext: pageData.hasNext,
         isLoading: false,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
+    } finally {
+      _inFlightPage = null;
     }
   }
 

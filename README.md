@@ -224,3 +224,4 @@ the recommended environment for running the full test suite.
 The app implements a simple notification system backed by Firebase Cloud Messaging (FCM).  Set `FCM_ENABLED=True` in `backend/.env` and provide Google credentials via `GOOGLE_APPLICATION_CREDENTIALS` to enable push delivery.  Without these settings the client falls back to polling the unread count every 30 seconds.
 
 Registering for push on the client requires adding Firebase configuration files and enabling messaging in your Firebase project.  After `firebase_core` is configured the app will automatically obtain a device token and POST it to `/api/devices/`.
+\nThe notifications API uses page-based pagination. The Flutter implementation assumes a page size of 20 and relies on the `next` field from Django REST Framework to decide if more pages are available.

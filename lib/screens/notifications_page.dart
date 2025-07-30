@@ -39,37 +39,44 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           )
         ],
       ),
-      body: state.isLoading && state.items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null
-              ? Center(child: Text('Error: ${state.error}'))
-              : RefreshIndicator(
-                  onRefresh: () => ref.read(notificationListProvider.notifier).loadFirst(),
-                  child: ListView.builder(
-                    controller: _scroll,
-                    itemCount: state.items.length + (state.hasNext ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= state.items.length) {
-                        ref.read(notificationListProvider.notifier).loadMore();
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final n = state.items[index];
-                      return ListTile(
-                        leading: Icon(Icons.notifications, color: n.isRead ? Colors.grey : Colors.blue),
-                        title: Text(n.title),
-                        subtitle: Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis),
-                        trailing: Text(timeago.format(n.createdAt)),
-                        tileColor: n.isRead ? null : Colors.blue.withOpacity(0.05),
-                        onTap: () {
-                          // TODO: navigate based on n.data
-                        },
-                      );
-                    },
-                  ),
-                ),
+      body: Builder(builder: (_) {
+        if (state.isLoading && state.items.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.error != null) {
+          return const Center(child: Text('加载失败，稍后重试'));
+        }
+        if (!state.isLoading && state.items.isEmpty) {
+          return const Center(child: Text('暂无通知'));
+        }
+        final showLoadMoreRow = state.items.isNotEmpty && state.hasNext;
+        return ListView.builder(
+          controller: _scroll,
+          itemCount: state.items.length + (showLoadMoreRow ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= state.items.length) {
+              if (!state.isLoading) {
+                ref.read(notificationListProvider.notifier).loadMore();
+              }
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final n = state.items[index];
+            return ListTile(
+              leading: Icon(Icons.notifications, color: n.isRead ? Colors.grey : Colors.blue),
+              title: Text(n.title),
+              subtitle: Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: Text(timeago.format(n.createdAt)),
+              tileColor: n.isRead ? null : Colors.blue.withOpacity(0.05),
+              onTap: () {
+                // TODO: navigate based on n.data
+              },
+            );
+          },
+        );
+      }),
     );
   }
 
