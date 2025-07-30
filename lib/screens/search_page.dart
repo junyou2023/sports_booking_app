@@ -69,7 +69,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           controller: _controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: '搜索活动、运动或地点',
+            hintText: 'Search activities, sports or locations',
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear),
@@ -108,7 +108,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Widget _buildHistory() {
     if (_history.isEmpty) {
-      return const Center(child: Text('暂无搜索记录'));
+        return const Center(child: Text('No search history'));
     }
     return Padding(
       padding: const EdgeInsets.all(16),

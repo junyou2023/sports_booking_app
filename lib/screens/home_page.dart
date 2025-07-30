@@ -54,7 +54,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final double paddingTop = MediaQuery.of(context).padding.top;
 
-    // ========== 监听 Provider ==========
+    // ========== Listen to Providers ==========
     final categoriesAsync = ref.watch(categoriesProvider);
     final nearbyActsAsync = ref.watch(nearbyActivitiesProvider);
     final featuredCatsAsync = ref.watch(featuredCategoriesProvider);
@@ -67,7 +67,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ? const BookingsPage()
             : CustomScrollView(
         slivers: [
-          // ================= Hero + Search + Quick Filters（保持不变） =================
+          // ================= Hero + Search + Quick Filters (unchanged) =================
           SliverAppBar(
             automaticallyImplyLeading: false,
             expandedHeight: 360,
@@ -226,7 +226,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
 
-          // ================= Categories（保持不变） =================
+            // ================= Categories (unchanged) =================
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 24, 0, 0),
             sliver: SliverToBoxAdapter(
@@ -405,11 +405,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('请先登录查看 Continue planning'),
+                      const Text('Please log in to view Continue planning'),
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: () => showAuthSheet(context),
-                      child: const Text('登录'),
+                      child: const Text('Log in'),
                     ),
                   ],
                 );
@@ -417,10 +417,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('加载失败，请重试'),
+                    const Text('Failed to load, please retry'),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      // 触发重新拉取；refresh 或 invalidate 都可
+                      // Trigger a refresh; either refresh or invalidate works
                       onPressed: () => ref.refresh(continuePlanningProvider),
                       child: const Text('Retry'),
                     ),
@@ -434,7 +434,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               );
             },
-            // 之前缺少的 data 分支：把页面渲染代码包进来
+            // Previously missing data branch: render the page here
             data: (page) {
               final acts = page.results;
               if (acts.isEmpty) {
@@ -510,7 +510,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// ======================== 小型私有组件（原样保留） ========================
+// ======================== Small private widgets (unchanged) ========================
 
 class _NotificationBell extends StatelessWidget {
   final int count;
