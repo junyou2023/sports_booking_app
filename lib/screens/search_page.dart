@@ -27,7 +27,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: ref.read(searchQueryProvider));
-    ref.listen<String>(debouncedQueryProvider, (_, __) {
+    ref.listen(debouncedQueryProvider, (_, __) {
       setState(() {
         _items.clear();
         _page = 1;
