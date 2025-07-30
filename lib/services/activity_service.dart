@@ -42,6 +42,29 @@ class ActivityService {
     });
   }
 
+  Future<Paginated<Activity>> searchActivities({
+    required String query,
+    int page = 1,
+    int pageSize = 20,
+    CancelToken? cancelToken,
+  }) async {
+    final res = await apiClient.get(
+      '/activities/',
+      queryParameters: {
+        'search': query,
+        'page': page,
+        'page_size': pageSize,
+      },
+      cancelToken: cancelToken,
+    );
+    return _parsePage(res.data);
+  }
+
+  Future<List<String>> suggestActivities(String q) async {
+    final res = await apiClient.get('/search/suggest/', queryParameters: {'q': q});
+    return (res.data as List).cast<String>();
+  }
+
   Future<Activity> fetchById(int id) async {
     final Response res = await apiClient.get('/activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);

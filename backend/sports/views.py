@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from accounts.permissions import IsVendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -124,6 +125,10 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 class ActivityViewSet(viewsets.ModelViewSet):
     serializer_class = ActivitySerializer
     pagination_class = DefaultPagination
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["title", "description", "discipline__name"]
+    ordering_fields = ["title", "base_price", "created_at"]
+    ordering = ["-created_at"]
 
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
@@ -310,6 +315,22 @@ class ActivityReviewList(APIView):
         ser.is_valid(raise_exception=True)
         ser.save(activity_id=activity_id, user=request.user)
         return Response(ser.data, status=201)
+
+
+class ActivitySearchSuggest(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        q = request.query_params.get("q", "").strip()
+        if not q:
+            return Response([])
+        qs = (
+            Activity.objects.filter(title__icontains=q)
+            .order_by("title")
+            .values_list("title", flat=True)
+            .distinct()[:10]
+        )
+        return Response(list(qs))
 
 
 class ContinuePlanningView(APIView):
