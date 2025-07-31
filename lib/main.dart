@@ -8,7 +8,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'utils/theme.dart';
 import 'screens/home_page.dart';
-import 'screens/login_page.dart';
 import 'services/api_client.dart';
 import 'services/notification_service.dart';
 
@@ -28,7 +27,6 @@ Future<void> main() async {
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
 
   initApiClient();
-  initAuthInterceptor();
   await initPush();
 
   runApp(
