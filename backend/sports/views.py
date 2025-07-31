@@ -25,6 +25,8 @@ from .models import (
     FeaturedCategory,
     FeaturedActivity,
     Favorite,
+    Notification,
+    UserDevice,
 )
 from .serializers import (
     SportSerializer,
@@ -43,6 +45,8 @@ from .serializers import (
     SlotCreateSerializer,
     FavoriteSerializer,
     FavoriteIdSerializer,
+    NotificationSerializer,
+    UserDeviceSerializer,
 )
 
 
@@ -467,3 +471,50 @@ class FavoriteViewSet(viewsets.GenericViewSet,
     def count(self, request):
         cnt = Favorite.objects.filter(user=request.user).count()
         return Response({"count": cnt})
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = DefaultPagination
+
+    def get_queryset(self):
+        qs = Notification.objects.filter(user=self.request.user)
+        if self.request.query_params.get("unread") == "1":
+            qs = qs.filter(read_at__isnull=True)
+        return qs
+
+    @action(detail=False, methods=["get"], pagination_class=None)
+    def unread_count(self, request):
+        cnt = Notification.objects.filter(user=request.user, read_at__isnull=True).count()
+        return Response({"count": cnt})
+
+    @action(detail=True, methods=["post"], pagination_class=None)
+    def read(self, request, pk=None):
+        Notification.objects.filter(user=request.user, pk=pk, read_at__isnull=True).update(read_at=timezone.now())
+        return Response({"read": True})
+
+    @action(detail=False, methods=["post"], pagination_class=None)
+    def mark_all_read(self, request):
+        Notification.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
+        return Response({"marked": True})
+
+
+class UserDeviceViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.DestroyModelMixin):
+    serializer_class = UserDeviceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UserDevice.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        platform = request.data.get("platform")
+        if not token or not platform:
+            return Response({"detail": "token and platform required"}, status=400)
+        device, _ = UserDevice.objects.update_or_create(
+            token=token,
+            defaults={"user": request.user, "platform": platform, "is_active": True},
+        )
+        ser = self.get_serializer(device)
+        return Response(ser.data, status=201)

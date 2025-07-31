@@ -28,6 +28,9 @@ import '../widgets/auth_sheet.dart';
 import '../services/auth_service.dart';
 import 'bookings_page.dart';
 import 'favorites_page.dart';
+import '../providers/notification_provider.dart';
+import '../widgets/notification_bell.dart';
+import 'notifications_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -45,6 +48,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (ref.read(authNotifierProvider) == AuthStatus.authenticated) {
         ref.read(favoriteIdsProvider.notifier).load();
+        ref.read(unreadCountProvider.notifier).refresh();
       }
     });
   }
@@ -155,7 +159,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                               ),
                             ),
-                            const _NotificationBell(count: 6),
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final count = ref.watch(unreadCountProvider);
+                                return NotificationBell(
+                                  count: count,
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const NotificationsPage(),
+                                      ),
+                                    );
+                                    ref.read(unreadCountProvider.notifier).refresh();
+                                  },
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -512,45 +532,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 // ======================== Small private widgets (unchanged) ========================
 
-class _NotificationBell extends StatelessWidget {
-  final int count;
-  const _NotificationBell({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 6,
-      shadowColor: Colors.black26,
-      shape: const CircleBorder(),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 24),
-            onPressed: () {},
-          ),
-          if (count > 0)
-            Positioned(
-              right: -2,
-              top: -2,
-              child: Container(
-                decoration: const BoxDecoration(
-                    color: Colors.red, shape: BoxShape.circle),
-                padding: const EdgeInsets.all(2),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                child: Text('$count',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 class _QuickFilter extends StatelessWidget {
   final IconData icon;

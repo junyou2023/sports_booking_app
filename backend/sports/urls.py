@@ -18,6 +18,8 @@ from .views import (
     MerchantSlotCreateView,
     MerchantBookingList,
     FavoriteViewSet,
+    NotificationViewSet,
+    UserDeviceViewSet,
 )
 
 router = DefaultRouter()
@@ -32,6 +34,8 @@ router.register(r"featured-activities", FeaturedActivityViewSet, basename="featu
 router.register(r"slots",     SlotViewSet,     basename="slot")
 router.register(r"bookings",  BookingViewSet,  basename="booking")
 router.register(r"favorites", FavoriteViewSet, basename="favorite")
+router.register(r"notifications", NotificationViewSet, basename="notification")
+router.register(r"devices", UserDeviceViewSet, basename="device")
 urlpatterns = router.urls + [
     path("slots/bulk/", BulkSlotCreateView.as_view(), name="slot-bulk"),
     path("merchant/slots/", MerchantSlotCreateView.as_view()),

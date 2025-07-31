@@ -342,3 +342,55 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ("user", "activity")
 
+
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    ntype = models.CharField(max_length=30)
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.title
+
+    @property
+    def is_read(self) -> bool:
+        return self.read_at is not None
+
+
+class UserDevice(models.Model):
+    PLATFORM_IOS = "ios"
+    PLATFORM_ANDROID = "android"
+    PLATFORM_WEB = "web"
+
+    PLATFORM_CHOICES = [
+        (PLATFORM_IOS, "iOS"),
+        (PLATFORM_ANDROID, "Android"),
+        (PLATFORM_WEB, "Web"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="devices",
+    )
+    token = models.CharField(max_length=255, unique=True)
+    platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES)
+    is_active = models.BooleanField(default=True)
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "is_active"])]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.user_id}:{self.platform}"
+
