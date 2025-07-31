@@ -72,7 +72,9 @@ String _errMsg(Object e) {
     final data = e.response?.data;
     if (data is Map && data['detail'] != null) return data['detail'].toString();
     if (data is String && data.isNotEmpty) return data;
-    return 'HTTP ${e.response?.statusCode ?? ''} ${e.message}';
+    final code = e.response?.statusCode ?? '';
+    final msg = e.message ?? e.error?.toString() ?? '';
+    return 'HTTP $code $msg'.trim();
   }
   return e.toString();
 }
