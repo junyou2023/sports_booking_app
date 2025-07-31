@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/app_notification.dart';
 import '../services/notification_service.dart';
@@ -66,6 +67,16 @@ class NotificationListState {
   factory NotificationListState.initial() => const NotificationListState();
 }
 
+String _errMsg(Object e) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map && data['detail'] != null) return data['detail'].toString();
+    if (data is String && data.isNotEmpty) return data;
+    return 'HTTP ${e.response?.statusCode ?? ''} ${e.message}';
+  }
+  return e.toString();
+}
+
 class NotificationListController extends StateNotifier<NotificationListState> {
   NotificationListController(this.ref) : super(NotificationListState.initial());
 
@@ -85,7 +96,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       );
       ref.read(unreadCountProvider.notifier).refresh();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _errMsg(e));
     } finally {
       _inFlightPage = null;
     }
@@ -107,7 +118,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: _errMsg(e));
     } finally {
       _inFlightPage = null;
     }
@@ -134,7 +145,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       );
       ref.read(unreadCountProvider.notifier).refresh();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: _errMsg(e));
     }
   }
 
@@ -161,7 +172,7 @@ class NotificationListController extends StateNotifier<NotificationListState> {
       state = state.copyWith(items: updated, error: null);
       ref.read(unreadCountProvider.notifier).refresh();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: _errMsg(e));
     }
   }
 }

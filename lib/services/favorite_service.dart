@@ -14,12 +14,12 @@ class FriendlyError implements Exception {
 
 class FavoriteService {
   Future<Set<int>> fetchFavoriteIds() async {
-    final Response res = await apiClient.get('/favorites/ids/');
+    final Response res = await apiClient.get('favorites/ids/');
     return (res.data as List).cast<int>().toSet();
   }
 
   Future<Paginated<Activity>> listFavorites({int page = 1, int pageSize = 20}) async {
-    final Response res = await apiClient.get('/favorites/', queryParameters: {
+    final Response res = await apiClient.get('favorites/', queryParameters: {
       'page': page,
       'page_size': pageSize,
     });
@@ -29,7 +29,7 @@ class FavoriteService {
 
   Future<bool> toggle(int activityId) async {
     try {
-      final Response res = await apiClient.post('/activities/$activityId/favorite/toggle/');
+      final Response res = await apiClient.post('activities/$activityId/favorite/toggle/');
       return res.data['favorited'] as bool? ?? true;
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) throw UnauthorizedError();

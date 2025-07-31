@@ -6,7 +6,7 @@ import 'api_client.dart';
 
 class BookingService {
   Future<List<Booking>> fetchMine() async {
-    final res = await apiClient.get('/bookings/');
+    final res = await apiClient.get('bookings/');
     return (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(Booking.fromJson)
@@ -15,7 +15,7 @@ class BookingService {
 
   Future<Booking> create(int slotId, {int pax = 1}) async {
     final res = await apiClient.post(
-      '/bookings/',
+      'bookings/',
       data: {'slot_id': slotId, 'pax': pax},
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
@@ -23,7 +23,7 @@ class BookingService {
   }
 
   Future<Booking> fetchById(int id) async {
-    final res = await apiClient.get('/bookings/' + id.toString() + '/');
+    final res = await apiClient.get('bookings/' + id.toString() + '/');
     return Booking.fromJson(res.data as Map<String, dynamic>);
   }
 }
