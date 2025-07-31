@@ -8,11 +8,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 late Dio apiClient;
 
-/// Call after dotenv.load to construct the client with the base URL.
+/// Call after dotenv.load to construct the client with the base URL and
+/// attach authorization / refresh logic.
 void initApiClient() {
-  var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
+  var base = dotenv.env['API_BASE_URL'] ?? '';
+  if (base.isEmpty) {
+    throw Exception('API_BASE_URL missing in .env');
+  }
   if (!base.endsWith('/')) base += '/';
-  apiClient = Dio(
+
+  final dio = Dio(
     BaseOptions(
       baseUrl: base,
       connectTimeout: const Duration(seconds: 15),
@@ -20,19 +25,17 @@ void initApiClient() {
       responseType: ResponseType.json,
     ),
   );
+
   if (kDebugMode) {
-    apiClient.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }
-}
 
-final _storage = const FlutterSecureStorage();
+  const storage = FlutterSecureStorage();
 
-/// Attach Authorization header if token is stored.
-void initAuthInterceptor() {
-  apiClient.interceptors.add(
+  dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access');
+        final token = await storage.read(key: 'access');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -40,15 +43,18 @@ void initAuthInterceptor() {
       },
       onError: (err, handler) async {
         if (err.response?.statusCode == 401) {
-          final refresh = await _storage.read(key: 'refresh');
+          final refresh = await storage.read(key: 'refresh');
           if (refresh != null) {
             try {
-              final res = await apiClient.post('/auth/token/refresh/', data: {'refresh': refresh});
-              final access = res.data['access'];
-              await _storage.write(key: 'access', value: access);
+              final bare = Dio(BaseOptions(baseUrl: base));
+              final res = await bare.post('auth/token/refresh/', data: {
+                'refresh': refresh,
+              });
+              final access = res.data['access'] as String;
+              await storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';
-              final cloneReq = await apiClient.fetch(err.requestOptions);
-              return handler.resolve(cloneReq);
+              final retry = await dio.fetch(err.requestOptions);
+              return handler.resolve(retry);
             } catch (_) {}
           }
         }
@@ -56,4 +62,6 @@ void initAuthInterceptor() {
       },
     ),
   );
+
+  apiClient = dio;
 }

@@ -18,16 +18,22 @@ class NotificationService {
       'page': page,
       if (unreadOnly) 'unread': '1',
     });
+
     final data = res.data;
     if (data is Map<String, dynamic>) {
-      final results = (data['results'] as List).cast<Map<String, dynamic>>();
-      final items = results.map(AppNotification.fromJson).toList();
+      final results = (data['results'] as List?) ?? [];
+      final items = results
+          .whereType<Map<String, dynamic>>()
+          .map(AppNotification.fromJson)
+          .toList();
       final hasNext = data['next'] != null;
       return Paged(items, hasNext);
     } else if (data is List) {
-      final items = data.cast<Map<String, dynamic>>().map(AppNotification.fromJson).toList();
-      final hasNext = items.length == 20;
-      return Paged(items, hasNext);
+      final items = data
+          .cast<Map<String, dynamic>>()
+          .map(AppNotification.fromJson)
+          .toList();
+      return Paged(items, false);
     }
     return const Paged([], false);
   }

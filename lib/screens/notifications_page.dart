@@ -50,6 +50,14 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('加载失败'),
+                if (state.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      state.error!,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () =>

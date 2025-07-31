@@ -6,7 +6,7 @@ class FacilityService {
   Future<List<Facility>> fetchFacilities(
       List<String> categories, double radius, double lat, double lng,
       {bool mine = false}) async {
-    final res = await apiClient.get('/facilities/', queryParameters: {
+    final res = await apiClient.get('facilities/', queryParameters: {
       'categories': categories.join(','),
       if (radius > 0) 'radius': radius.toInt(),
       if (lat != 0 || lng != 0) 'near': '$lat,$lng',
@@ -31,7 +31,7 @@ class FacilityService {
   Future<void> createFacility(
       String name, double lat, double lng, List<String> categories,
       {double radius = 1000}) async {
-    await apiClient.post('/facilities/', data: {
+    await apiClient.post('facilities/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
@@ -47,7 +47,7 @@ class FacilityService {
   Future<void> updateFacility(
       int id, String name, double lat, double lng, List<String> categories,
       {double radius = 1000}) async {
-    await apiClient.patch('/facilities/$id/', data: {
+    await apiClient.patch('facilities/$id/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
@@ -57,11 +57,11 @@ class FacilityService {
   }
 
   Future<void> deleteFacility(int id) async {
-    await apiClient.delete('/facilities/$id/');
+    await apiClient.delete('facilities/$id/');
   }
 
   Future<List<Facility>> searchFacilities({required String query, int page = 1}) async {
-    final res = await apiClient.get('/facilities/', queryParameters: {
+    final res = await apiClient.get('facilities/', queryParameters: {
       'q': query,
       'page': page,
     });

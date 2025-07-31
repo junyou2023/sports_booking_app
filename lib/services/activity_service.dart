@@ -18,7 +18,7 @@ class ActivityService {
   }
 
   Future<Paginated<Activity>> fetchActivities({Map<String, dynamic>? params}) async {
-    final res = await apiClient.get('/activities/', queryParameters: params);
+    final res = await apiClient.get('activities/', queryParameters: params);
     return _parsePage(res.data);
   }
 
@@ -55,7 +55,7 @@ class ActivityService {
   }
 
   Future<Activity> fetchById(int id) async {
-    final Response res = await apiClient.get('/activities/$id/');
+    final Response res = await apiClient.get('activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
@@ -69,7 +69,7 @@ class ActivityService {
     int duration,
     double basePrice,
   ) async {
-    await apiClient.post('/activities/', data: {
+    await apiClient.post('activities/', data: {
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
@@ -92,7 +92,7 @@ class ActivityService {
     int duration,
     double basePrice,
   ) async {
-    await apiClient.patch('/activities/' + id.toString() + '/', data: {
+    await apiClient.patch('activities/' + id.toString() + '/', data: {
       'sport': sport,
       'discipline': discipline,
       'variant': variant,
