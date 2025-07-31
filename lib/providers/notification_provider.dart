@@ -130,9 +130,12 @@ class NotificationListController extends StateNotifier<NotificationListState> {
               readAt: n.readAt ?? DateTime.now(),
             )
         ],
+        error: null,
       );
       ref.read(unreadCountProvider.notifier).refresh();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
   }
 
   Future<void> markRead(int id) async {
@@ -155,9 +158,11 @@ class NotificationListController extends StateNotifier<NotificationListState> {
                 )
               : n
       ];
-      state = state.copyWith(items: updated);
+      state = state.copyWith(items: updated, error: null);
       ref.read(unreadCountProvider.notifier).refresh();
-    } catch (_) {}
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
   }
 }
 
