@@ -10,11 +10,11 @@ late Dio apiClient;
 
 /// Call after dotenv.load to construct the client with the base URL.
 void initApiClient() {
-  var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
-  if (!base.endsWith('/')) base += '/';
+  var base = dotenv.env['API_BASE_URL'] ?? '';
+  base = base.replaceAll(RegExp(r'/+\$'), '');
   apiClient = Dio(
     BaseOptions(
-      baseUrl: base,
+      baseUrl: '$base/',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       responseType: ResponseType.json,
@@ -26,6 +26,7 @@ void initApiClient() {
 }
 
 final _storage = const FlutterSecureStorage();
+bool _refreshing = false;
 
 /// Attach Authorization header if token is stored.
 void initAuthInterceptor() {
@@ -39,17 +40,24 @@ void initAuthInterceptor() {
         handler.next(options);
       },
       onError: (err, handler) async {
-        if (err.response?.statusCode == 401) {
+        if (err.response?.statusCode == 401 && !_refreshing) {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
+            _refreshing = true;
             try {
-              final res = await apiClient.post('/auth/token/refresh/', data: {'refresh': refresh});
+              final res = await apiClient.post('auth/token/refresh/', data: {'refresh': refresh});
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
+              apiClient.options.headers['Authorization'] = 'Bearer $access';
               err.requestOptions.headers['Authorization'] = 'Bearer $access';
               final cloneReq = await apiClient.fetch(err.requestOptions);
+              _refreshing = false;
               return handler.resolve(cloneReq);
-            } catch (_) {}
+            } catch (_) {
+              await _storage.delete(key: 'access');
+              await _storage.delete(key: 'refresh');
+              _refreshing = false;
+            }
           }
         }
         handler.next(err);

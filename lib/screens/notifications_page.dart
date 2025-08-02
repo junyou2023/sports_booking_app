@@ -49,7 +49,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('加载失败'),
+                Text(state.error!.split('\n').first),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () =>

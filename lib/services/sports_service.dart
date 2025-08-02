@@ -15,7 +15,7 @@ import 'api_client.dart';
 class SportsService {
   /// GET /api/sports/
   Future<List<Sport>> fetchSports() async {
-    final res = await apiClient.get('/sports/');
+    final res = await apiClient.get('sports/');
     final list = (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(Sport.fromJson)
@@ -28,7 +28,7 @@ class SportsService {
   /// The backend returns ALL upcoming slots (future dates only).
   /// You can add query-string filters on the API later as needed.
   Future<List<Slot>> fetchSlots() async {
-    final res = await apiClient.get('/slots/');
+    final res = await apiClient.get('slots/');
     final list = (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(Slot.fromJson)
@@ -37,7 +37,7 @@ class SportsService {
   }
 
   Future<List<Category>> fetchCategories() async {
-    final res = await apiClient.get('/categories/');
+    final res = await apiClient.get('categories/');
     return (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(Category.fromJson)
@@ -45,7 +45,7 @@ class SportsService {
   }
 
   Future<List<Variant>> fetchVariants() async {
-    final res = await apiClient.get('/variants/');
+    final res = await apiClient.get('variants/');
     return (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(Variant.fromJson)
