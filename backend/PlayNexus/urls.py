@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
@@ -29,8 +30,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("healthz", lambda r: JsonResponse({"status": "ok"})),
     path("admin/", admin.site.urls),
-    path("api/", include("sports.urls")),          # ← REST entrance
-    path("api/", include("accounts.urls")),        # profile endpoint
+    path("api/", include("sports.urls")),  # ← REST entrance
+    path("api/", include("accounts.urls")),  # profile endpoint
     path("api/", include("payments.urls")),
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/register/", RegisterView.as_view()),
@@ -44,13 +45,9 @@ urlpatterns = [
         name="token_obtain_pair",
     ),
     path(
-        "api/token/refresh/",
-        TokenRefreshView.as_view(),
-        name="token_refresh",
-    ),
-    path(
         "api/auth/token/refresh/",
         TokenRefreshView.as_view(),
+        name="token_refresh",
     ),
     path(
         "password-reset-confirm/<uidb64>/<token>/",

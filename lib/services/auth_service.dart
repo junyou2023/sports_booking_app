@@ -94,6 +94,9 @@ class AuthService {
     );
     final access = res.data['access'];
     await _storage.write(key: 'access', value: access);
+    if (res.data['refresh'] != null) {
+      await _storage.write(key: 'refresh', value: res.data['refresh']);
+    }
     apiClient.options.headers['Authorization'] = 'Bearer $access';
   }
 
