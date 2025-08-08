@@ -66,10 +66,6 @@ void initAuthInterceptor() {
               apiClient.options.headers.remove('Authorization');
               navigatorKey.currentState?.pushReplacementNamed('/login');
             }
-          } else {
-            await _storage.deleteAll();
-            apiClient.options.headers.remove('Authorization');
-            navigatorKey.currentState?.pushReplacementNamed('/login');
           }
         }
         handler.next(err);
