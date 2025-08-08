@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -19,17 +20,17 @@ from datetime import timedelta
 # ──────────────────────────────
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 # Load environment variables for local runs (project root .env)
-load_dotenv(BASE_DIR.parent / '.env')
+load_dotenv(BASE_DIR.parent / ".env")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
 USE_TRIGRAM = os.getenv("USE_TRIGRAM", "False") == "True"
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '10.0.2.2',       # Android Emulator
-    'testserver',
+    "localhost",
+    "127.0.0.1",
+    "10.0.2.2",  # Android Emulator
+    "testserver",
 ]
 SITE_ID = 1
 
@@ -44,7 +45,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # 3rd-party
     "rest_framework",
     "corsheaders",
@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-
     # Local apps
     # use absolute path so management commands work from any cwd
     "sports.apps.SportsConfig",
@@ -72,7 +71,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",       # must be first
+    "corsheaders.middleware.CorsMiddleware",  # must be first
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -136,21 +135,9 @@ AUTH_PASSWORD_VALIDATORS = [
             "UserAttributeSimilarityValidator"
         )
     },
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation.MinimumLengthValidator"
-        )
-    },
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation.CommonPasswordValidator"
-        )
-    },
-    {
-        "NAME": (
-            "django.contrib.auth.password_validation.NumericPasswordValidator"
-        )
-    },
+    {"NAME": ("django.contrib.auth.password_validation.MinimumLengthValidator")},
+    {"NAME": ("django.contrib.auth.password_validation.CommonPasswordValidator")},
+    {"NAME": ("django.contrib.auth.password_validation.NumericPasswordValidator")},
 ]
 
 # ──────────────────────────────
@@ -175,7 +162,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ──────────────────────────────
 # CORS (allow everything in dev)
 # ──────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = True      # ⚠ tighten in production
+CORS_ALLOW_ALL_ORIGINS = True  # ⚠ tighten in production
 
 # ──────────────────────────────
 # Django REST framework + JWT
@@ -191,12 +178,10 @@ REST_FRAMEWORK = {
     # "DEFAULT_PAGINATION_CLASS":
     #     "rest_framework.pagination.PageNumberPagination",
     # "PAGE_SIZE": 20,
-
     # enable query-parameter filtering on all ViewSets
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
-
     "COERCE_DECIMAL_TO_STRING": False,
     # return numbers instead of strings
 }
@@ -204,8 +189,8 @@ REST_FRAMEWORK = {
 # SimpleJWT configuration
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": False,
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
