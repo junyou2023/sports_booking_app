@@ -33,7 +33,9 @@ void initAuthInterceptor() {
     InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _storage.read(key: 'access');
-        if (token != null) {
+        final refreshUrl = '/auth/token/refresh/';
+        final isRefreshCall = options.uri.path.endsWith(refreshUrl);
+        if (token != null && !isRefreshCall) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
