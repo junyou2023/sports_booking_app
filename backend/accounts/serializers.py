@@ -1,6 +1,11 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import VendorProfile
+from .models import (
+    VendorProfile,
+    Organization,
+    OrganizationMember,
+    CustomerProfile,
+)
 
 
 class ProfileSerializer(serializers.Serializer):
@@ -58,7 +63,7 @@ class ProfileSerializer(serializers.Serializer):
         return instance
 
 
-class ProviderRegisterSerializer(serializers.Serializer):
+class MerchantSignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
@@ -81,12 +86,19 @@ class ProviderRegisterSerializer(serializers.Serializer):
             email=validated_data["email"],
             password=validated_data["password1"],
         )
-        user.is_staff = True
-        user.save()
+        user.is_vendor = True
+        user.save(update_fields=["is_vendor"])
         VendorProfile.objects.create(
             user=user,
             company_name=company,
             phone=phone,
             address=address,
+        )
+        org = Organization.objects.create(
+            name=company or user.username,
+            slug=f"org-{user.pk}",
+        )
+        OrganizationMember.objects.create(
+            organization=org, user=user, role="owner"
         )
         return user

@@ -4,8 +4,9 @@ from .views import (
     ProfileView,
     VendorArea,
     GoogleLoginView,
-    ProviderRegisterView,
+    MerchantSignupView,
     ProviderProfileView,
+    OrganizationMemberView,
 )
 
 urlpatterns = [
@@ -13,6 +14,10 @@ urlpatterns = [
     path("me/", ProfileView.as_view()),
     path("vendor-area/", VendorArea.as_view()),
     path("auth/google/", GoogleLoginView.as_view()),
-    path("provider/register/", ProviderRegisterView.as_view()),
+    path("provider/register/", MerchantSignupView.as_view()),
     path("provider/profile/", ProviderProfileView.as_view()),
+    path(
+        "organization/<slug:slug>/members/",
+        OrganizationMemberView.as_view(),
+    ),
 ]

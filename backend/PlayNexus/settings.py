@@ -118,13 +118,21 @@ if os.getenv("DB_HOST"):
         }
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.contrib.gis.db.backends.spatialite",
-            "NAME": BASE_DIR / "db.sqlite3",
+    if os.getenv("USE_GIS", "1") == "1":
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.contrib.gis.db.backends.spatialite",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
         }
-    }
-    SPATIALITE_LIBRARY_PATH = "mod_spatialite"
+        SPATIALITE_LIBRARY_PATH = "mod_spatialite"
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 # ──────────────────────────────
 # Password validators
