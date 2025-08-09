@@ -20,15 +20,21 @@ def test_category_upload():
 def test_is_nearby_filter():
     sport = Sport.objects.create(name='Run')
     cat = Category.objects.create(name='Road')
-    act1 = Activity.objects.create(sport=sport, discipline=cat, title='A', is_nearby=True)
-    Activity.objects.create(sport=sport, discipline=cat, title='B', is_nearby=False)
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
+    act1 = Activity.objects.create(sport=sport, discipline=cat, title='A', is_nearby=True, organization=org)
+    Activity.objects.create(sport=sport, discipline=cat, title='B', is_nearby=False, organization=org)
     assert Activity.objects.filter(is_nearby=True).count() == 1
 
 def test_api_nearby_filter(client):
     sport = Sport.objects.create(name='Swim')
     cat = Category.objects.create(name='Pool')
-    Activity.objects.create(sport=sport, discipline=cat, title='X', is_nearby=True)
-    Activity.objects.create(sport=sport, discipline=cat, title='Y', is_nearby=False)
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
+    Activity.objects.create(sport=sport, discipline=cat, title='X', is_nearby=True, organization=org)
+    Activity.objects.create(sport=sport, discipline=cat, title='Y', is_nearby=False, organization=org)
     resp = client.get('/api/activities/', {'nearby': '1'})
     assert resp.status_code == 200
     assert len(resp.data) == 1

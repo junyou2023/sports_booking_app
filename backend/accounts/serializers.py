@@ -81,12 +81,19 @@ class ProviderRegisterSerializer(serializers.Serializer):
             email=validated_data["email"],
             password=validated_data["password1"],
         )
-        user.is_staff = True
-        user.save()
-        VendorProfile.objects.create(
-            user=user,
-            company_name=company,
-            phone=phone,
-            address=address,
+        vendor, _ = VendorProfile.objects.get_or_create(user=user)
+        vendor.company_name = company
+        vendor.phone = phone
+        vendor.address = address
+        vendor.save()
+        from .models import Organization, OrganizationMember
+        import shortuuid
+
+        org = Organization.objects.create(
+            name=company or user.username,
+            slug=f"{user.username}-{shortuuid.uuid()[:8]}",
+        )
+        OrganizationMember.objects.create(
+            organization=org, user=user, role="owner"
         )
         return user

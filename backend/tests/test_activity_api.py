@@ -21,7 +21,7 @@ def setup_taxonomy():
     return sport, disc, var
 
 
-def test_create_activity_invalid_taxonomy(auth_client):
+def test_create_activity_invalid_taxonomy(auth_client, provider_user):
     sport, disc, var = setup_taxonomy()
     resp = auth_client.post(
         "/api/activities/",
@@ -30,12 +30,13 @@ def test_create_activity_invalid_taxonomy(auth_client):
             "discipline": disc.id + 1,
             "variant": var.id,
             "title": "Surf 101",
+            "organization": provider_user.org.id,
         },
     )
     assert resp.status_code == 400
 
 
-def test_create_activity_success(auth_client):
+def test_create_activity_success(auth_client, provider_user):
     sport, disc, var = setup_taxonomy()
     resp = auth_client.post(
         "/api/activities/",
@@ -47,6 +48,7 @@ def test_create_activity_success(auth_client):
             "difficulty": 3,
             "duration": 90,
             "base_price": "20.00",
+            "organization": provider_user.org.id,
         },
     )
     assert resp.status_code == 201
@@ -79,9 +81,13 @@ def test_filter_activities_by_category(client):
     sport = Sport.objects.create(name="Row")
     cat1 = Category.objects.create(name="Water")
     cat2 = Category.objects.create(name="Land")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     act = Activity.objects.create(
         sport=sport,
         discipline=cat1,
+        organization=org,
         title="Rowing",
         description="",
         difficulty=1,
@@ -91,6 +97,7 @@ def test_filter_activities_by_category(client):
     Activity.objects.create(
         sport=sport,
         discipline=cat2,
+        organization=org,
         title="Biking",
         description="",
         difficulty=1,
@@ -112,10 +119,14 @@ def test_filter_activities_invalid_category(client):
 def test_list_no_pagination(client):
     sport = Sport.objects.create(name="Run")
     cat = Category.objects.create(name="Track")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     for i in range(5):
         Activity.objects.create(
             sport=sport,
             discipline=cat,
+            organization=org,
             title=f"Run {i}",
             description="",
             difficulty=1,

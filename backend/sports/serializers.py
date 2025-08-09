@@ -16,6 +16,7 @@ from .models import (
     FeaturedActivity,
     Favorite,
 )
+from accounts.models import Organization, OrganizationMember
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -105,6 +106,9 @@ class VariantSerializer(serializers.ModelSerializer):
 
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    organization = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all()
+    )
 
     class Meta:
         model = Activity
@@ -115,7 +119,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "variant",
             "image",
             "image_url",
-            "owner",
+            "organization",
             "title",
             "description",
             "difficulty",
@@ -123,7 +127,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "base_price",
             "is_nearby",
         )
-        read_only_fields = ("id", "owner", "image")
+        read_only_fields = ("id", "image")
 
     def get_image_url(self, obj):
         if obj.image:
@@ -149,6 +153,17 @@ class ActivitySerializer(serializers.ModelSerializer):
         if len(desc) > 500:
             raise serializers.ValidationError({"description": "Max 500 characters"})
         return attrs
+
+    def validate_organization(self, value):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None:
+            return value
+        if not OrganizationMember.objects.filter(
+            organization=value, user=user
+        ).exists():
+            raise serializers.ValidationError("Not a member of this organization")
+        return value
 
 
 class ActivitySimpleSerializer(serializers.ModelSerializer):

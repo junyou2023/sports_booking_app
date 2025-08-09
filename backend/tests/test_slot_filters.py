@@ -11,9 +11,13 @@ pytestmark = pytest.mark.django_db
 def test_slots_filter_by_activity_and_after_utc():
     sport = Sport.objects.create(name="Ping")
     cat = Category.objects.create(name="Gen")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     act = Activity.objects.create(
         sport=sport,
         discipline=cat,
+        organization=org,
         title="A",
         description="",
         difficulty=1,

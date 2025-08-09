@@ -18,9 +18,13 @@ def create_data():
     sport2 = Sport.objects.create(name="Bike")
     cat1 = Category.objects.create(name="Water")
     cat2 = Category.objects.create(name="Land")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     Activity.objects.create(
         sport=sport1,
         discipline=cat1,
+        organization=org,
         title="Surf Class",
         description="Learn surfing",
         difficulty=1,
@@ -30,6 +34,7 @@ def create_data():
     Activity.objects.create(
         sport=sport2,
         discipline=cat2,
+        organization=org,
         title="Mountain Biking",
         description="Ride the hills",
         difficulty=1,
@@ -77,10 +82,14 @@ def test_search_no_match(client):
 def test_search_pagination(client):
     sport = Sport.objects.create(name="Run")
     cat = Category.objects.create(name="Road")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     for i in range(25):
         Activity.objects.create(
             sport=sport,
             discipline=cat,
+            organization=org,
             title=f"Run {i}",
             description="Long run",
             difficulty=1,

@@ -12,6 +12,9 @@ pytestmark = pytest.mark.django_db
 def test_payment_webhook_updates_booking():
     sport = Sport.objects.create(name="Pay")
     cat = Category.objects.create(name="Cat")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     act = Activity.objects.create(
         sport=sport,
         discipline=cat,
@@ -20,6 +23,7 @@ def test_payment_webhook_updates_booking():
         difficulty=1,
         duration=60,
         base_price=10,
+        organization=org,
     )
     slot = Slot.objects.create(
         sport=sport,
