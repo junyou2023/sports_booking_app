@@ -3,10 +3,12 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 late Dio apiClient;
+final navigatorKey = GlobalKey<NavigatorState>();
 
 /// Call after dotenv.load to construct the client with the base URL.
 void initApiClient() {
@@ -32,24 +34,32 @@ void initAuthInterceptor() {
   apiClient.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+        if (!options.path.contains('token/refresh')) {
+          final token = await _storage.read(key: 'access');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
         }
         handler.next(options);
       },
       onError: (err, handler) async {
-        if (err.response?.statusCode == 401) {
+        if (err.response?.statusCode == 401 &&
+            !err.requestOptions.path.contains('token/refresh') &&
+            err.requestOptions.extra['retry'] != true) {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
             try {
-              final res = await apiClient.post('/auth/token/refresh/', data: {'refresh': refresh});
+              final res = await apiClient.post('/token/refresh/', data: {'refresh': refresh});
               final access = res.data['access'];
               await _storage.write(key: 'access', value: access);
               err.requestOptions.headers['Authorization'] = 'Bearer $access';
+              err.requestOptions.extra['retry'] = true;
               final cloneReq = await apiClient.fetch(err.requestOptions);
               return handler.resolve(cloneReq);
             } catch (_) {}
+            await _storage.deleteAll();
+            apiClient.options.headers.remove('Authorization');
+            navigatorKey.currentState?.pushReplacementNamed('/login');
           }
         }
         handler.next(err);
