@@ -202,10 +202,13 @@ REST_FRAMEWORK = {
 }
 
 # SimpleJWT configuration
+# SimpleJWT configuration
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": False,
+    # BUG: refresh tokens expired after 7 days and were never rotated
+    # FIX: extend lifetime and rotate so sessions survive refresh (covers: 刷新失败)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }

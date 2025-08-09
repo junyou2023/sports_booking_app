@@ -21,6 +21,9 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
+# reuse a single refresh view so both endpoints behave identically
+refresh_view = TokenRefreshView.as_view()
 from dj_rest_auth.registration.views import RegisterView
 from django.http import HttpResponse
 from django.conf import settings
@@ -45,13 +48,13 @@ urlpatterns = [
     ),
     path(
         "api/token/refresh/",
-        TokenRefreshView.as_view(),
+        refresh_view,
         name="token_refresh",
     ),
     path(
         "api/auth/token/refresh/",
-        TokenRefreshView.as_view(),
-    ),
+        refresh_view,
+    ),  # legacy alias (covers: 端点兼容)
     path(
         "password-reset-confirm/<uidb64>/<token>/",
         lambda r, uidb64, token: HttpResponse(""),

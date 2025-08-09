@@ -40,6 +40,7 @@ class SportsBookingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: apiClientNavKey, // allow interceptor to redirect to login (covers: 刷新失败)
       title: 'Sports Booking',
       theme: AppTheme.light,                    // centralised light theme
       debugShowCheckedModeBanner: false,
