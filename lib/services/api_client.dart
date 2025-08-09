@@ -66,14 +66,14 @@ void initAuthInterceptor() {
               final cloneReq = await apiClient.fetch(err.requestOptions);
               return handler.resolve(cloneReq);
             } catch (_) {
-              // BUG: redirecting to login even when user never logged in
-              // FIX: only logout when refresh token exists and refresh fails (covers: 打开首页仍停留首页)
+              // BUG: leaving interceptor without calling handler closed connection on My Bookings
+              // FIX: logout then propagate original error so caller sees failure (covers: 刷新失败)
               await _storage.deleteAll();
               apiClientNavKey.currentState?.pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginPage()),
                 (route) => false,
               );
-              return;
+              return handler.reject(err);
             }
           }
         }
