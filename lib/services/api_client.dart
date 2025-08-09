@@ -57,10 +57,10 @@ void initAuthInterceptor() {
               final cloneReq = await apiClient.fetch(err.requestOptions);
               return handler.resolve(cloneReq);
             } catch (_) {}
+            await _storage.deleteAll();
+            apiClient.options.headers.remove('Authorization');
+            navigatorKey.currentState?.pushReplacementNamed('/login');
           }
-          await _storage.deleteAll();
-          apiClient.options.headers.remove('Authorization');
-          navigatorKey.currentState?.pushReplacementNamed('/login');
         }
         handler.next(err);
       },
