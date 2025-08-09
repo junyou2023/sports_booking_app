@@ -49,10 +49,6 @@ urlpatterns = [
         name="token_refresh",
     ),
     path(
-        "api/auth/token/refresh/",
-        TokenRefreshView.as_view(),
-    ),
-    path(
         "password-reset-confirm/<uidb64>/<token>/",
         lambda r, uidb64, token: HttpResponse(""),
         name="password_reset_confirm",
