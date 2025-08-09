@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity.dart';
 import '../providers/favorite_provider.dart';
+import '../services/favorite_service.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/auth_sheet.dart';
 import '../utils/snackbar.dart';

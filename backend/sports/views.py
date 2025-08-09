@@ -42,7 +42,6 @@ from .serializers import (
     ReviewSerializer,
     SlotCreateSerializer,
     FavoriteSerializer,
-    FavoriteIdSerializer,
 )
 
 
@@ -272,9 +271,14 @@ class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Booking.objects.filter(user=self.request.user).select_related(
-            "slot",
-            "slot__facility",
+        # BUG: selecting the facility loads GeoDjango PointField which requires
+        # the GDAL/SpatiaLite stack. Missing libs caused the server to drop the
+        # connection when listing bookings (My Bookings → "connection closed").
+        # FIX: only join the Slot; facility id is enough for clients
+        # (covers: My Bookings list).
+        return (
+            Booking.objects.filter(user=self.request.user)
+            .select_related("slot")
         )
 
     @transaction.atomic
@@ -447,7 +451,9 @@ class FavoriteViewSet(viewsets.GenericViewSet,
         fav, created = Favorite.objects.get_or_create(
             user=request.user, activity_id=activity_id
         )
-        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        status_code = (
+            status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
         return Response({"favorited": True}, status=status_code)
 
     def destroy(self, request, pk=None):
