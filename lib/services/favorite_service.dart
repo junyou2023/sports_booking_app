@@ -34,7 +34,7 @@ class FavoriteService {
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) throw UnauthorizedError();
       if (e.response?.data is Map && e.response?.data['detail'] != null) {
-        throw FriendlyError(e.response?.data['detail'].toString());
+        throw FriendlyError(e.response!.data['detail'].toString());
       }
       throw FriendlyError('Network error');
     }
