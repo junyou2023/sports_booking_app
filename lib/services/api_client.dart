@@ -66,14 +66,16 @@ void initAuthInterceptor() {
               final cloneReq = await apiClient.fetch(err.requestOptions);
               return handler.resolve(cloneReq);
             } catch (_) {
-              // fall through to logout
+              // BUG: redirecting to login even when user never logged in
+              // FIX: only logout when refresh token exists and refresh fails (covers: 打开首页仍停留首页)
+              await _storage.deleteAll();
+              apiClientNavKey.currentState?.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+              return;
             }
           }
-          await _storage.deleteAll();
-          apiClientNavKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-            (route) => false,
-          );
         }
         handler.next(err);
       },
