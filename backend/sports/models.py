@@ -119,8 +119,8 @@ class Activity(models.Model):
     )
     image = models.ImageField(upload_to="activity/", blank=True)
     is_nearby = models.BooleanField(default=False)
-    owner = models.ForeignKey(
-        "auth.User",
+    organization = models.ForeignKey(
+        "accounts.Organization",
         on_delete=models.CASCADE,
         related_name="activities",
         null=True,

@@ -1,4 +1,15 @@
 import pytest
+import pytest
+import django
+import os
+import pysqlite3
+import sys
+sys.modules["sqlite3"] = pysqlite3
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PlayNexus.settings")
+os.environ.setdefault("DB_HOST", "")
+os.environ.setdefault("SPATIALITE_LIBRARY_PATH", "/usr/lib/x86_64-linux-gnu/mod_spatialite.so")
+django.setup()
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -32,6 +43,14 @@ def client():
 def provider_user(db):
     from django.contrib.auth.models import User
     user = User.objects.create_user("prov", email="prov@example.com", password="pass")
+    from accounts.models import Organization, OrganizationMember
+    from uuid import uuid4
+
+    org = Organization.objects.create(name="Org", slug=f"org-{uuid4().hex[:8]}")
+    OrganizationMember.objects.create(
+        organization=org, user=user, role="owner"
+    )
+    user.org = org
     return user
 
 

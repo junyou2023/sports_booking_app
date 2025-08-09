@@ -13,6 +13,8 @@ whitenoise==6.6.0
 Pillow==11.3.0
 stripe==9.8.0
 python-dotenv==1.0.1
+drf-spectacular==0.27.0
+shortuuid==1.0.11
 
 # Added: required for container/CI
 psycopg2-binary==2.9.9      # Postgres driver

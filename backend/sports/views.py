@@ -6,6 +6,7 @@ from django.db.models import Q
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
 from accounts.permissions import IsVendor
+from accounts.models import OrganizationMember
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -133,10 +134,12 @@ class ActivityViewSet(viewsets.ModelViewSet):
         return [p() if isinstance(p, type) else p for p in perms]
 
     def get_queryset(self):
-        qs = Activity.objects.select_related("sport", "discipline", "variant")
+        qs = Activity.objects.select_related("sport", "discipline", "variant", "organization")
+        if self.action in ("update", "partial_update", "destroy"):
+            qs = qs.filter(organization__members__user=self.request.user)
         mine = self.request.query_params.get("mine")
         if mine == "1" and self.request.user.is_authenticated:
-            qs = qs.filter(owner=self.request.user)
+            qs = qs.filter(organization__members__user=self.request.user)
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
@@ -167,7 +170,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save()
 
     @action(detail=True, methods=["post"], url_path="favorite/toggle",
             permission_classes=[permissions.IsAuthenticated])
@@ -414,7 +417,9 @@ class MerchantSlotCreateView(APIView):
         ser = SlotCreateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         activity: Activity = ser.validated_data["activity"]
-        if activity.owner != request.user:
+        if not OrganizationMember.objects.filter(
+            organization=activity.organization, user=request.user
+        ).exists():
             return Response({"detail": "Not your activity"}, status=403)
         slot = ser.save()
         return Response(SlotSerializer(slot).data, status=201)
@@ -424,10 +429,9 @@ class MerchantBookingList(APIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def get(self, request):
-        qs = (
-            Booking.objects.filter(activity__owner=request.user)
-            .select_related("slot", "user")
-        )
+        qs = Booking.objects.filter(
+            activity__organization__members__user=request.user
+        ).select_related("slot", "user")
         ser = BookingSerializer(qs, many=True)
         return Response(ser.data)
 

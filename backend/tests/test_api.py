@@ -117,6 +117,9 @@ def test_concurrent_booking_capacity(db):
 def test_slots_filter_by_activity():
     sport = Sport.objects.create(name="Yoga")
     disc = Category.objects.create(name="Flow")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     activity = Activity.objects.create(
         sport=sport,
         discipline=disc,
@@ -125,6 +128,7 @@ def test_slots_filter_by_activity():
         difficulty=1,
         duration=60,
         base_price=0,
+        organization=org,
     )
     slot = Slot.objects.create(
         sport=sport,
@@ -148,6 +152,9 @@ def test_continue_planning_endpoint():
     user = User.objects.create_user("planu")
     sport = Sport.objects.create(name="Run")
     cat = Category.objects.create(name="Aerobic")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     act = Activity.objects.create(
         sport=sport,
         discipline=cat,
@@ -156,6 +163,7 @@ def test_continue_planning_endpoint():
         difficulty=1,
         duration=30,
         base_price=5,
+        organization=org,
     )
     UserActivityHistory.objects.create(
         user=user, activity=act, action="view"
@@ -172,6 +180,9 @@ def test_continue_planning_endpoint():
 def test_webhook_updates_booking(client=None):
     sport = Sport.objects.create(name="Foot")
     cat = Category.objects.create(name="Play")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
     act = Activity.objects.create(
         sport=sport,
         discipline=cat,
@@ -180,6 +191,7 @@ def test_webhook_updates_booking(client=None):
         difficulty=1,
         duration=60,
         base_price=10,
+        organization=org,
     )
     slot = Slot.objects.create(
         sport=sport,

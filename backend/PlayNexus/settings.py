@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework.authtoken",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "allauth",
@@ -199,6 +200,7 @@ REST_FRAMEWORK = {
 
     "COERCE_DECIMAL_TO_STRING": False,
     # return numbers instead of strings
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # SimpleJWT configuration

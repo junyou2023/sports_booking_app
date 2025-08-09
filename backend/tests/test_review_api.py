@@ -11,6 +11,12 @@ def setup_activity(user):
     sport = Sport.objects.create(name="Climb")
     disc = Category.objects.create(name="Rock")
     var = Variant.objects.create(discipline=disc, name="Bouldering")
+    from accounts.models import Organization, OrganizationMember
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    OrganizationMember.objects.create(
+        organization=org, user=user, role="owner"
+    )
     client = APIClient()
     client.force_authenticate(user)
     resp = client.post(
@@ -20,6 +26,7 @@ def setup_activity(user):
             "discipline": disc.id,
             "variant": var.id,
             "title": "Climb 101",
+            "organization": org.id,
         },
     )
     return client, resp.data["id"]

@@ -23,6 +23,9 @@ def auth_client():
 def slot():
     sport = Sport.objects.create(name='X')
     cat = Category.objects.create(name='C')
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
     act = Activity.objects.create(
         sport=sport,
         discipline=cat,
@@ -31,6 +34,7 @@ def slot():
         difficulty=1,
         duration=60,
         base_price=10,
+        organization=org,
     )
     return Slot.objects.create(
         sport=sport,
