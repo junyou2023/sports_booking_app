@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
+from django.db import models
 from .models import (
     Sport,
     Slot,
@@ -31,6 +32,7 @@ class SlotSerializer(serializers.ModelSerializer):
         max_digits=3, decimal_places=1, coerce_to_string=False
     )
     seats_left = serializers.SerializerMethodField()
+    sold_out = serializers.SerializerMethodField()
     sport = SportSerializer(read_only=True)
 
     class Meta:
@@ -39,6 +41,9 @@ class SlotSerializer(serializers.ModelSerializer):
 
     def get_seats_left(self, obj):
         return obj.seats_left
+
+    def get_sold_out(self, obj):
+        return obj.seats_left <= 0
 
     def to_representation(self, instance):
         """Ensure sport is serialized even if missing on the Slot instance."""
@@ -87,6 +92,18 @@ class CategorySerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(url) if request else url
         return ""
 
+    def get_rating(self, obj):
+        rating = getattr(obj, "avg_rating", None)
+        if rating is None:
+            rating = obj.slots.aggregate(models.Avg("rating"))["rating__avg"]
+        return round(rating or 0, 1)
+
+    def get_starting_price(self, obj):
+        price = getattr(obj, "min_price", None)
+        if price is None:
+            price = obj.slots.aggregate(models.Min("price"))["price__min"]
+        return price if price is not None else obj.base_price
+
 
 class SportCategorySerializer(serializers.ModelSerializer):
     full_path = serializers.CharField(read_only=True)
@@ -104,6 +121,8 @@ class VariantSerializer(serializers.ModelSerializer):
 
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    starting_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
@@ -121,8 +140,18 @@ class ActivitySerializer(serializers.ModelSerializer):
             "duration",
             "base_price",
             "is_nearby",
+            "status",
+            "rating",
+            "starting_price",
         )
-        read_only_fields = ("id", "owner", "image")
+        read_only_fields = (
+            "id",
+            "owner",
+            "image",
+            "status",
+            "rating",
+            "starting_price",
+        )
 
     def get_image_url(self, obj):
         if obj.image:
@@ -140,22 +169,43 @@ class ActivitySerializer(serializers.ModelSerializer):
         variant = attrs.get("variant")
         discipline = attrs.get("discipline")
         if variant and discipline and variant.discipline_id != discipline.id:
-            raise serializers.ValidationError({"variant": "Mismatch discipline"})
+            raise serializers.ValidationError(
+                {"variant": "Mismatch discipline"}
+            )
         title = attrs.get("title", "")
         if len(title) > 60:
             raise serializers.ValidationError({"title": "Max 60 characters"})
         desc = attrs.get("description", "")
         if len(desc) > 500:
-            raise serializers.ValidationError({"description": "Max 500 characters"})
+            raise serializers.ValidationError(
+                {"description": "Max 500 characters"}
+            )
         return attrs
+
+    def get_rating(self, obj):
+        rating = obj.slots.aggregate(models.Avg("rating"))["rating__avg"]
+        return round(rating or 0, 1)
+
+    def get_starting_price(self, obj):
+        price = obj.slots.aggregate(models.Min("price"))["price__min"]
+        return price if price is not None else obj.base_price
 
 
 class ActivitySimpleSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
+    starting_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Activity
-        fields = ("id", "title", "image_url", "base_price")
+        fields = (
+            "id",
+            "title",
+            "image_url",
+            "base_price",
+            "rating",
+            "starting_price",
+        )
 
     def get_image_url(self, obj):
         if obj.image:
@@ -163,6 +213,14 @@ class ActivitySimpleSerializer(serializers.ModelSerializer):
             url = obj.image.url
             return request.build_absolute_uri(url) if request else url
         return ""
+
+    def get_rating(self, obj):
+        rating = obj.slots.aggregate(models.Avg("rating"))["rating__avg"]
+        return round(rating or 0, 1)
+
+    def get_starting_price(self, obj):
+        price = obj.slots.aggregate(models.Min("price"))["price__min"]
+        return price if price is not None else obj.base_price
 
 
 class FeaturedCategorySerializer(serializers.ModelSerializer):

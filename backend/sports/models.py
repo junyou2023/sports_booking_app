@@ -40,7 +40,11 @@ class SportCategory(models.Model):
 
     class Meta:
         ordering = ("name",)
-        constraints = [UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")]
+        constraints = [
+            UniqueConstraint(
+                fields=["parent", "name"], name="uniq_cat_parent_name"
+            )
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return self.full_path
@@ -55,6 +59,8 @@ class SportCategory(models.Model):
         return " / ".join(reversed(parts))
 
 # ───────────────────────────────── Category ───────────────────────────────
+
+
 class Category(models.Model):
     name = models.CharField(max_length=30, unique=True)
     image = models.ImageField(upload_to="category/", blank=True)
@@ -118,6 +124,16 @@ class Activity(models.Model):
     )
     image = models.ImageField(upload_to="activity/", blank=True)
     is_nearby = models.BooleanField(default=False)
+
+    STATUS_DRAFT = "draft"
+    STATUS_PUBLISHED = "published"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_PUBLISHED, "Published"),
+    ]
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=STATUS_DRAFT
+    )
     owner = models.ForeignKey(
         "auth.User",
         on_delete=models.CASCADE,
@@ -283,7 +299,9 @@ class Review(models.Model):
         on_delete=models.CASCADE,
     )
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -322,4 +340,3 @@ class UserActivityHistory(models.Model):
 
     class Meta:
         ordering = ("-timestamp",)
-
