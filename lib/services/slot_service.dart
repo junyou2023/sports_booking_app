@@ -111,6 +111,48 @@ class SlotService {
       'location': location,
     });
   }
+
+  Future<List<Slot>> listMerchantSlots({int? activityId}) async { // R2
+    final res = await apiClient.get('/merchant/slots/', queryParameters: { // R2
+      if (activityId != null) 'activity': activityId, // R2
+    }); // R2
+    final List data = res.data as List; // R2
+    return data.map((e) => Slot.fromJson(e as Map<String, dynamic>)).toList(); // R2
+  }
+
+  Future<void> updateSlot( // R2
+    int id, {
+    DateTime? beginsAt,
+    DateTime? endsAt,
+    double? price,
+    int? capacity,
+    String? title,
+    String? location,
+    int? facility,
+  }) async {
+    final body = <String, dynamic>{};
+    if (beginsAt != null) body['begins_at'] = _iso(beginsAt); // R2
+    if (endsAt != null) body['ends_at'] = _iso(endsAt); // R2
+    if (price != null) body['price'] = price; // R2
+    if (capacity != null) body['capacity'] = capacity; // R2
+    if (title != null) body['title'] = title; // R2
+    if (location != null) body['location'] = location; // R2
+    if (facility != null) body['facility'] = facility; // R2
+    await apiClient.patch('/merchant/slots/' + id.toString() + '/', data: body); // R2
+  }
+
+  Future<void> deleteSlot(int id) async { // R2
+    await apiClient.delete('/merchant/slots/' + id.toString() + '/'); // R2
+  }
+
+  Future<Map<String, dynamic>> bulkDeleteSlots(List<int> ids) async { // R2
+    final res = await apiClient.post('/merchant/slots/bulk-delete/', data: {'ids': ids}); // R2
+    return res.data as Map<String, dynamic>; // R2
+  }
+
+  Future<void> bulkCreateSlots(List<Map<String, dynamic>> slots) async { // R2
+    await apiClient.post('/slots/bulk/', data: {'slots': slots}); // R2
+  }
 }
 
 /// Global singleton – keep existing usage unchanged
