@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+
 import '../models/activity.dart';
 import '../models/paginated.dart';
 import 'api_client.dart';
@@ -67,18 +70,44 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.post('/activities/', data: {
+    double basePrice, {
+    required int organizationId,
+    XFile? imageFile,
+  }) async {
+    final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
+      'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (imageFile != null)
+        'image': await MultipartFile.fromFile(imageFile.path,
+            filename: p.basename(imageFile.path)),
     });
+    try {
+      await apiClient.post('/activities/', data: form);
+    } on DioException catch (e) {
+      final status = e.response?.statusCode ?? 0;
+      if (status == 400 || status == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          final errors = <String, List<String>>{};
+          data.forEach((k, v) {
+            if (v is List) {
+              errors[k] = v.map((e) => e.toString()).toList();
+            } else {
+              errors[k] = [v.toString()];
+            }
+          });
+          throw FieldErrors(errors);
+        }
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateActivity(
@@ -90,19 +119,50 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.patch('/activities/' + id.toString() + '/', data: {
+    double basePrice, {
+    required int organizationId,
+    XFile? imageFile,
+  }) async {
+    final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
-      'variant': variant,
+      if (variant != null) 'variant': variant,
+      'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (imageFile != null)
+        'image': await MultipartFile.fromFile(imageFile.path,
+            filename: p.basename(imageFile.path)),
     });
+    try {
+      await apiClient.patch('/activities/' + id.toString() + '/', data: form);
+    } on DioException catch (e) {
+      final status = e.response?.statusCode ?? 0;
+      if (status == 400 || status == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          final errors = <String, List<String>>{};
+          data.forEach((k, v) {
+            if (v is List) {
+              errors[k] = v.map((e) => e.toString()).toList();
+            } else {
+              errors[k] = [v.toString()];
+            }
+          });
+          throw FieldErrors(errors);
+        }
+      }
+      rethrow;
+    }
   }
 }
 
 final activityService = ActivityService();
+
+class FieldErrors implements Exception {
+  FieldErrors(this.errors);
+  final Map<String, List<String>> errors;
+}
