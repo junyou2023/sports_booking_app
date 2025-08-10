@@ -18,7 +18,7 @@ from .views import (
     MerchantBookingList,
     FavoriteViewSet,
 )
-from .merchant_views import MerchantSlotViewSet, MerchantSlotBulkDeleteView
+from .merchant_views import MerchantSlotViewSet, MerchantSlotBulkDeleteView, MerchantBookingListPaged, MerchantBookingCancelView
 
 router = DefaultRouter()
 router.register(r"sports",    SportViewSet,    basename="sport")
@@ -36,6 +36,8 @@ router.register(r"merchant/slots", MerchantSlotViewSet, basename="merchant-slots
 urlpatterns = router.urls + [
     path("slots/bulk/", BulkSlotCreateView.as_view(), name="slot-bulk"),
     path("merchant/bookings/", MerchantBookingList.as_view()),
+    path("merchant/bookings/paged/", MerchantBookingListPaged.as_view()),
+    path("merchant/bookings/<int:pk>/cancel/", MerchantBookingCancelView.as_view()),
     path("merchant/slots/bulk-delete/", MerchantSlotBulkDeleteView.as_view()),
     path("activities/<int:activity_id>/reviews/", ActivityReviewList.as_view(), name="activity-reviews"),
     path("home/continue-planning/", ContinuePlanningView.as_view()),
