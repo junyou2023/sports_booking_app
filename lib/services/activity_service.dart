@@ -24,8 +24,12 @@ class ActivityService {
     return _parsePage(res.data);
   }
 
-  Future<Paginated<Activity>> fetchMine() async {
-    return fetchActivities(params: {'mine': '1'});
+  Future<Paginated<Activity>> fetchMine({int page = 1, String? query}) async {
+    return fetchActivities(params: {
+      'mine': '1',
+      'page': page,
+      if (query != null && query.isNotEmpty) 'q': query,
+    });
   }
 
   Future<Paginated<Activity>> fetchNearby() async {
@@ -59,6 +63,10 @@ class ActivityService {
   Future<Activity> fetchById(int id) async {
     final Response res = await apiClient.get('/activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteActivity(int id) async {
+    await apiClient.delete('/activities/$id/');
   }
 
   Future<void> createActivity(
