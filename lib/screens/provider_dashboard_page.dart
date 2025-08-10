@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/activity_provider.dart';
 import '../models/activity.dart';
+import '../services/activity_service.dart';
 import '../services/slot_service.dart';
 
 import 'add_activity_page.dart';
@@ -11,42 +11,120 @@ import 'add_slot_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
 
-class ProviderDashboardPage extends ConsumerWidget {
+class ProviderDashboardPage extends ConsumerStatefulWidget {
   const ProviderDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncActivities = ref.watch(activitiesProvider);
+  ConsumerState<ProviderDashboardPage> createState() => _ProviderDashboardPageState();
+}
 
+class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
+  final List<Activity> _activities = [];
+  String? _next;
+  bool _loading = true;
+  bool _loadingMore = false;
+  int _page = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    setState(() => _loading = true);
+    try {
+      final page = await activityService.fetchActivities(params: {'mine': '1'});
+      setState(() {
+        _activities
+          ..clear()
+          ..addAll(page.results);
+        _next = page.next;
+        _page = 1;
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_next == null || _loadingMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _page + 1;
+      final page =
+          await activityService.fetchActivities(params: {'mine': '1', 'page': nextPage});
+      setState(() {
+        _activities.addAll(page.results);
+        _next = page.next;
+        _page = nextPage;
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        appBar: AppBar(title: Text('Merchant Dashboard')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Merchant Dashboard'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {}, // reserved for future search
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () {}, // profile quick access
+            onPressed: () {},
           ),
         ],
       ),
       drawer: _MerchantDrawer(),
-      body: asyncActivities.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (page) => ListView(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _AddActivityHero(onTap: () async {
-              final created = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
-              if (created == true) ref.invalidate(activitiesProvider);
+              final created = await Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+              if (created == true) {
+                await _refresh();
+                if (mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(const SnackBar(content: Text('Activity created')));
+                }
+              }
             }),
             const SizedBox(height: 16),
             Text('Your Activities', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            ...page.results.map((a) => _ActivityCard(activity: a, onChanged: () => ref.invalidate(activitiesProvider))),
+            if (_activities.isEmpty)
+              _EmptyState(onCreate: () async {
+                final created = await Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+                if (created == true) {
+                  await _refresh();
+                }
+              })
+            else
+              ..._activities.map(
+                (a) => _ActivityCard(activity: a, onChanged: () => _refresh()),
+              ),
+            if (_loadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_next != null)
+              TextButton(onPressed: _loadMore, child: const Text('Load more')),
             const SizedBox(height: 80),
           ],
         ),
@@ -116,6 +194,35 @@ class _AddActivityHero extends StatelessWidget {
                 padding: EdgeInsets.only(right: 12),
                 child: Icon(Icons.chevron_right),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onCreate});
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      child: SizedBox(
+        height: 120,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('No activities yet'),
+              const SizedBox(height: 8),
+              TextButton(onPressed: onCreate, child: const Text('Create Activity')),
             ],
           ),
         ),

@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+
 import '../models/activity.dart';
 import '../models/paginated.dart';
 import 'api_client.dart';
@@ -67,18 +70,29 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.post('/activities/', data: {
+    double basePrice, {
+    required int organizationId,
+    XFile? imageFile,
+  }) async {
+    final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
+      'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (imageFile != null)
+        'image': await MultipartFile.fromFile(imageFile.path,
+            filename: p.basename(imageFile.path)),
     });
+    try {
+      await apiClient.post('/activities/', data: form);
+    } on DioException catch (e) {
+      _rethrowFieldErrors(e);
+    }
   }
 
   Future<void> updateActivity(
@@ -90,18 +104,52 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.patch('/activities/' + id.toString() + '/', data: {
+    double basePrice, {
+    required int organizationId,
+    XFile? imageFile,
+  }) async {
+    final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
-      'variant': variant,
+      if (variant != null) 'variant': variant,
+      'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (imageFile != null)
+        'image': await MultipartFile.fromFile(imageFile.path,
+            filename: p.basename(imageFile.path)),
     });
+    try {
+      await apiClient.patch('/activities/$id/', data: form);
+    } on DioException catch (e) {
+      _rethrowFieldErrors(e);
+    }
+  }
+
+  void _rethrowFieldErrors(DioException e) {
+    if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        final map = <String, List<String>>{};
+        data.forEach((key, value) {
+          if (value is List) {
+            map[key] = value.map((v) => v.toString()).toList();
+          } else {
+            map[key] = [value.toString()];
+          }
+        });
+        throw DioException(
+          requestOptions: e.requestOptions,
+          response: e.response,
+          type: e.type,
+          error: map,
+        );
+      }
+    }
+    throw e;
   }
 }
 
