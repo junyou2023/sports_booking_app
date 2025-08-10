@@ -187,6 +187,20 @@ stripe listen --forward-to http://127.0.0.1:8000/api/payments/webhook/
 
 Use the test card **4242 4242 4242 4242** with any future expiry and CVC.
 
+## Booking timeout cleanup
+
+Pending bookings older than 30 minutes can be cancelled automatically:
+
+```bash
+python backend/manage.py bookings_cancel_timeouts
+```
+
+To keep the database tidy schedule the command via cron:
+
+```
+*/10 * * * * cd /path/to/project && python backend/manage.py bookings_cancel_timeouts
+```
+
 ## Image Upload Setup
 
 Install Pillow and mount the `media/` directory when running the app:
