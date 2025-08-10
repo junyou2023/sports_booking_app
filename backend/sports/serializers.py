@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
+from django.utils import timezone
 from .models import (
     Sport,
     Slot,
@@ -37,7 +38,7 @@ class SlotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Slot
-        fields = "__all__"
+        exclude = ("is_active",)
 
     def get_seats_left(self, obj):
         return obj.seats_left
@@ -72,6 +73,54 @@ class SlotCreateSerializer(serializers.ModelSerializer):
             **validated_data,
             sport=activity.sport,
         )
+
+
+class MerchantSlotSerializer(serializers.ModelSerializer):
+    """Serializer used by merchants for Slot CRUD with strict validation."""
+
+    class Meta:
+        model = Slot
+        fields = (
+            "id",
+            "activity",
+            "facility",
+            "begins_at",
+            "ends_at",
+            "capacity",
+            "price",
+            "title",
+            "location",
+        )
+        read_only_fields = ("id",)
+
+    def create(self, validated_data):
+        activity = validated_data["activity"]
+        return Slot.objects.create(**validated_data, sport=activity.sport)
+
+    def validate(self, attrs):
+        begins = attrs.get("begins_at") or getattr(self.instance, "begins_at", None)
+        ends = attrs.get("ends_at") or getattr(self.instance, "ends_at", None)
+        activity = attrs.get("activity") or getattr(self.instance, "activity", None)
+
+        errors = {}
+        now = timezone.now()
+
+        if begins and ends:
+            if begins.date() != ends.date():
+                errors["ends_at"] = ["Must not cross days"]
+            if begins < now:
+                errors["begins_at"] = ["Must be in the future"]
+
+        if activity and begins and ends:
+            qs = Slot.objects.filter(activity=activity, is_active=True)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.filter(begins_at__lt=ends, ends_at__gt=begins).exists():
+                errors.setdefault("begins_at", []).append("Overlaps another slot")
+
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
 from .models import (
     Sport,
@@ -293,6 +294,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         pax = ser.validated_data["pax"]
 
         slot = Slot.objects.select_for_update().get(pk=slot.pk)
+        if not slot.is_active:
+            return Response({"detail": "Slot inactive"}, status=400)
         if slot.current_participants + pax > slot.capacity:
             return Response(
                 {"detail": "Not enough seats left"},
@@ -375,54 +378,97 @@ class ContinuePlanningView(APIView):
 class BulkSlotCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses={
+            201: OpenApiResponse(
+                description="Slots created",
+                examples=[OpenApiExample("Success", value={"created": 1})],
+            ),
+            400: OpenApiResponse(description="Invalid parameters"),
+        }
+    )
     def post(self, request):
+        data = request.data
+        errors = {}
+
+        facility = Facility.objects.filter(pk=data.get("facility")).first()
+        if not facility:
+            errors["facility"] = "Invalid facility"
+        sport = Sport.objects.filter(pk=data.get("sport")).first()
+        if not sport:
+            errors["sport"] = "Invalid sport"
+
         try:
-            facility = Facility.objects.get(pk=request.data.get("facility"))
-            sport = Sport.objects.get(pk=request.data.get("sport"))
-            start = timezone.datetime.fromisoformat(
-                request.data.get("start_time")
-            )
-            end = timezone.datetime.fromisoformat(
-                request.data.get("end_time")
-            )
-            interval = int(request.data.get("interval"))
+            start = timezone.datetime.fromisoformat(data.get("start_time"))
         except Exception:
-            return Response({"detail": "Invalid parameters"}, status=400)
+            start = None
+            errors["start_time"] = "Invalid"
+        try:
+            end = timezone.datetime.fromisoformat(data.get("end_time"))
+        except Exception:
+            end = None
+            errors["end_time"] = "Invalid"
+        try:
+            interval = int(data.get("interval"))
+        except Exception:
+            interval = None
+            errors["interval"] = "Invalid"
+
+        if errors:
+            return Response(errors, status=400)
 
         slots = []
         current = start
         while current + timezone.timedelta(minutes=interval) <= end:
             slots.append(
-                Slot(
-                    facility=facility,
-                    sport=sport,
-                    title=f"{sport.name} {current:%H:%M}",
-                    location=facility.name,
-                    begins_at=current,
-                    ends_at=current
-                    + timezone.timedelta(minutes=interval),
-                    capacity=request.data.get("capacity", 1),
-                    price=request.data.get("price", 0),
+                (
+                    current,
+                    current + timezone.timedelta(minutes=interval),
                 )
             )
             current += timezone.timedelta(minutes=interval)
-        Slot.objects.bulk_create(slots)
-        return Response({"created": len(slots)}, status=201)
 
+        now = timezone.now()
+        conflicts = []
+        for begins, ends in slots:
+            if begins.date() != ends.date() or begins < now:
+                return Response({"detail": "invalid_time"}, status=400)
+            conflict = Slot.objects.filter(
+                facility=facility,
+                sport=sport,
+                begins_at__lt=ends,
+                ends_at__gt=begins,
+                is_active=True,
+            ).first()
+            if conflict:
+                conflicts.append(
+                    {
+                        "begins_at": begins.isoformat(),
+                        "ends_at": ends.isoformat(),
+                        "conflict_with_id": conflict.id,
+                    }
+                )
+                if len(conflicts) >= 3:
+                    break
 
-class MerchantSlotCreateView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+        if conflicts:
+            return Response({"detail": "conflict", "examples": conflicts}, status=400)
 
-    def post(self, request):
-        ser = SlotCreateSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        activity: Activity = ser.validated_data["activity"]
-        if not OrganizationMember.objects.filter(
-            organization=activity.organization, user=request.user
-        ).exists():
-            return Response({"detail": "Not your activity"}, status=403)
-        slot = ser.save()
-        return Response(SlotSerializer(slot).data, status=201)
+        objs = [
+            Slot(
+                facility=facility,
+                sport=sport,
+                title=f"{sport.name} {b:%H:%M}",
+                location=facility.name,
+                begins_at=b,
+                ends_at=e,
+                capacity=data.get("capacity", 1),
+                price=data.get("price", 0),
+            )
+            for b, e in slots
+        ]
+        Slot.objects.bulk_create(objs)
+        return Response({"created": len(objs)}, status=201)
 
 
 class MerchantBookingList(APIView):
