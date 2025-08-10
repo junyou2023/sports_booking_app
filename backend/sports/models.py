@@ -197,10 +197,15 @@ class Slot(models.Model):
         on_delete=models.CASCADE,
     )
     current_participants = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("begins_at",)
         unique_together = ("activity", "begins_at")
+        indexes = [
+            models.Index(fields=["activity", "begins_at"]),
+            models.Index(fields=["activity", "ends_at"]),
+        ]
 
     @property
     def seats_left(self) -> int:
