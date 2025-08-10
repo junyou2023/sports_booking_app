@@ -5,6 +5,7 @@ from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Q
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser  # R1
 from accounts.permissions import IsVendor
 from accounts.models import OrganizationMember
 from rest_framework.views import APIView
@@ -126,6 +127,7 @@ class VariantViewSet(viewsets.ReadOnlyModelViewSet):
 class ActivityViewSet(viewsets.ModelViewSet):
     serializer_class = ActivitySerializer
     pagination_class = DefaultPagination
+    parser_classes = (MultiPartParser, FormParser, JSONParser)  # R1
 
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):

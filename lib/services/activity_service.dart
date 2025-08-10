@@ -4,6 +4,21 @@ import '../models/paginated.dart';
 import 'api_client.dart';
 
 class ActivityService {
+  int? _cachedOrgId; // R1
+
+  Future<int?> _defaultOrg() async { // R1
+    if (_cachedOrgId != null) return _cachedOrgId;
+    final res = await apiClient.get('/merchant/orgs/me/');
+    final data = res.data as List;
+    if (data.isEmpty) {
+      throw Exception('No organizations');
+    }
+    if (data.length == 1) {
+      _cachedOrgId = data.first['id'] as int;
+      return _cachedOrgId;
+    }
+    return null;
+  }
   Paginated<Activity> _parsePage(Object data) {
     if (data is List) {
       return Paginated.fromList(
@@ -67,9 +82,12 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.post('/activities/', data: {
+    double basePrice, {
+    String? imagePath, // R1
+    int? organizationId, // R1
+  }) async {
+    final org = organizationId ?? await _defaultOrg(); // R1
+    final form = FormData.fromMap({ // R1
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
@@ -78,7 +96,15 @@ class ActivityService {
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (org != null) 'organization': org,
     });
+    if (imagePath != null) {
+      form.files.add(MapEntry(
+        'image',
+        await MultipartFile.fromFile(imagePath, filename: imagePath.split('/').last),
+      ));
+    }
+    await apiClient.post('/activities/', data: form); // R1
   }
 
   Future<void> updateActivity(
@@ -90,9 +116,12 @@ class ActivityService {
     String description,
     int difficulty,
     int duration,
-    double basePrice,
-  ) async {
-    await apiClient.patch('/activities/' + id.toString() + '/', data: {
+    double basePrice, {
+    String? imagePath, // R1
+    int? organizationId, // R1
+  }) async {
+    final org = organizationId ?? await _defaultOrg(); // R1
+    final form = FormData.fromMap({ // R1
       'sport': sport,
       'discipline': discipline,
       'variant': variant,
@@ -101,7 +130,15 @@ class ActivityService {
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      if (org != null) 'organization': org,
     });
+    if (imagePath != null) {
+      form.files.add(MapEntry(
+        'image',
+        await MultipartFile.fromFile(imagePath, filename: imagePath.split('/').last),
+      ));
+    }
+    await apiClient.patch('/activities/$id/', data: form); // R1
   }
 }
 

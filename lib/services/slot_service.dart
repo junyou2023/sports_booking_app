@@ -6,10 +6,16 @@ import 'api_client.dart';
 class SlotService {
   const SlotService();
 
-  /// Format a [DateTime] with an explicit UTC offset so Django's
-  /// `fromisoformat` can parse it as an aware datetime.
-  String _iso(DateTime dt) =>
-      dt.toUtc().toIso8601String().replaceFirst('Z', '+00:00');
+  /// Format [dt] as RFC3339 including timezone offset or Z. // R1
+  String _iso(DateTime dt) {
+    final iso = dt.toIso8601String(); // R1
+    if (iso.endsWith('Z')) return iso; // R1
+    final offset = dt.timeZoneOffset; // R1
+    final sign = offset.isNegative ? '-' : '+'; // R1
+    final hours = offset.inHours.abs().toString().padLeft(2, '0'); // R1
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0'); // R1
+    return '$iso$sign$hours:$minutes'; // R1
+  }
 
   /// GET /api/slots/?sport=<sportId>
   Future<List<Slot>> fetchBySport(int sportId) async {
@@ -97,8 +103,8 @@ class SlotService {
       String location,) async {
     await apiClient.post('/merchant/slots/', data: {
       'activity': activityId,
-      'begins_at': start.toIso8601String(),
-      'ends_at': end.toIso8601String(),
+      'begins_at': _iso(start), // R1
+      'ends_at': _iso(end), // R1
       'capacity': capacity,
       'price': price,
       'title': title,

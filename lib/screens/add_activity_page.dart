@@ -1,4 +1,6 @@
+import 'dart:io'; // R1
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // R1 requires `flutter pub add image_picker` (iOS: NSPhotoLibraryUsageDescription, Android: storage permission)
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
 import '../utils/snackbar.dart';
@@ -23,7 +25,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
   final descCtrl = TextEditingController();
   final priceCtrl = TextEditingController();
   final durationCtrl = TextEditingController(text: '60');
-  final imageCtrl = TextEditingController();
+  XFile? _image; // R1
 
   int? sportId;
   int? disciplineId;
@@ -48,7 +50,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
       descCtrl.text = a.description;
       priceCtrl.text = a.basePrice.toStringAsFixed(2);
       durationCtrl.text = a.duration.toString();
-      imageCtrl.text = a.image;
       difficulty = a.difficulty;
     }
     _loadFuture = _loadData();
@@ -66,7 +67,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
     descCtrl.dispose();
     priceCtrl.dispose();
     durationCtrl.dispose();
-    imageCtrl.dispose();
     super.dispose();
   }
 
@@ -156,9 +156,29 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     keyboardType: TextInputType.number,
                     validator: (v) => double.tryParse(v ?? '') == null ? 'Enter number' : null,
                   ),
-                  TextFormField(
-                    controller: imageCtrl,
-                    decoration: const InputDecoration(labelText: 'Image URL'),
+                  const SizedBox(height: 12), // R1
+                  if (_image != null) ...[ // R1
+                    ClipRRect( // R1
+                      borderRadius: BorderRadius.circular(8), // R1
+                      child: Image.file( // R1
+                        File(_image!.path), // R1
+                        height: 150, // R1
+                        width: 150, // R1
+                        fit: BoxFit.cover, // R1
+                      ),
+                    ),
+                    TextButton( // R1
+                      onPressed: () => setState(() => _image = null), // R1
+                      child: const Text('Remove'), // R1
+                    ),
+                  ],
+                  TextButton.icon( // R1
+                    onPressed: () async { // R1
+                      final img = await ImagePicker().pickImage(source: ImageSource.gallery); // R1
+                      if (img != null) setState(() => _image = img); // R1
+                    },
+                    icon: const Icon(Icons.image), // R1
+                    label: Text(_image == null ? 'Pick Image' : 'Change Image'), // R1
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
@@ -178,6 +198,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  imagePath: _image?.path, // R1
                                 );
                               } else {
                                 await activityService.updateActivity(
@@ -190,6 +211,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  imagePath: _image?.path, // R1
                                 );
                               }
                               if (context.mounted) {
