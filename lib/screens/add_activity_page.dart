@@ -1,35 +1,42 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../models/activity.dart';
+import '../models/category.dart';
+import '../models/sport.dart';
+import '../models/variant.dart';
+import '../providers/org_provider.dart';
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
 import '../utils/snackbar.dart';
-import 'package:dio/dio.dart';
 
-import '../models/activity.dart';
-import '../models/sport.dart';
-import '../models/category.dart';
-import '../models/variant.dart';
-
-class AddActivityPage extends StatefulWidget {
+class AddActivityPage extends ConsumerStatefulWidget {
   final Activity? activity;
   const AddActivityPage({this.activity, super.key});
 
   @override
-  State<AddActivityPage> createState() => _AddActivityPageState();
+  ConsumerState<AddActivityPage> createState() => _AddActivityPageState();
 }
 
-class _AddActivityPageState extends State<AddActivityPage> {
+class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   final _formKey = GlobalKey<FormState>();
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   final priceCtrl = TextEditingController();
   final durationCtrl = TextEditingController(text: '60');
-  final imageCtrl = TextEditingController();
 
   int? sportId;
   int? disciplineId;
   int? variantId;
   int difficulty = 1;
   bool _submitting = false;
+  XFile? _imageFile;
+  String? _existingImage;
+  Map<String, String> fieldErrors = {};
 
   late Future<void> _loadFuture;
   List<Sport> sports = [];
@@ -48,7 +55,7 @@ class _AddActivityPageState extends State<AddActivityPage> {
       descCtrl.text = a.description;
       priceCtrl.text = a.basePrice.toStringAsFixed(2);
       durationCtrl.text = a.duration.toString();
-      imageCtrl.text = a.image;
+      _existingImage = a.imageUrl?.isNotEmpty == true ? a.imageUrl : a.image;
       difficulty = a.difficulty;
     }
     _loadFuture = _loadData();
@@ -66,7 +73,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
     descCtrl.dispose();
     priceCtrl.dispose();
     durationCtrl.dispose();
-    imageCtrl.dispose();
     super.dispose();
   }
 
@@ -80,12 +86,14 @@ class _AddActivityPageState extends State<AddActivityPage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
+          final orgsAsync = ref.watch(orgsProvider);
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
+                  _buildOrgField(orgsAsync),
                   DropdownButtonFormField<int>(
                     value: sportId,
                     items: sports
@@ -95,7 +103,10 @@ class _AddActivityPageState extends State<AddActivityPage> {
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => sportId = v),
-                    decoration: const InputDecoration(labelText: 'Sport'),
+                    decoration: InputDecoration(
+                      labelText: 'Sport',
+                      errorText: fieldErrors['sport'],
+                    ),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
                   DropdownButtonFormField<int>(
@@ -107,7 +118,10 @@ class _AddActivityPageState extends State<AddActivityPage> {
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => disciplineId = v),
-                    decoration: const InputDecoration(labelText: 'Discipline'),
+                    decoration: InputDecoration(
+                      labelText: 'Discipline',
+                      errorText: fieldErrors['discipline'],
+                    ),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
                   DropdownButtonFormField<int?>(
@@ -123,21 +137,33 @@ class _AddActivityPageState extends State<AddActivityPage> {
                           .toList(),
                     ],
                     onChanged: (v) => setState(() => variantId = v),
-                    decoration: const InputDecoration(labelText: 'Variant'),
+                    decoration: InputDecoration(
+                      labelText: 'Variant',
+                      errorText: fieldErrors['variant'],
+                    ),
                   ),
                   TextFormField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      errorText: fieldErrors['title'],
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   TextFormField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      errorText: fieldErrors['description'],
+                    ),
                     maxLines: 3,
                   ),
                   DropdownButtonFormField<int>(
                     value: difficulty,
-                    decoration: const InputDecoration(labelText: 'Difficulty'),
+                    decoration: InputDecoration(
+                      labelText: 'Difficulty',
+                      errorText: fieldErrors['difficulty'],
+                    ),
                     items: List.generate(
                       5,
                       (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
@@ -146,26 +172,37 @@ class _AddActivityPageState extends State<AddActivityPage> {
                   ),
                   TextFormField(
                     controller: durationCtrl,
-                    decoration: const InputDecoration(labelText: 'Duration (min)'),
+                    decoration: InputDecoration(
+                      labelText: 'Duration (min)',
+                      errorText: fieldErrors['duration'],
+                    ),
                     keyboardType: TextInputType.number,
                     validator: (v) => int.tryParse(v ?? '') == null ? 'Enter number' : null,
                   ),
                   TextFormField(
                     controller: priceCtrl,
-                    decoration: const InputDecoration(labelText: 'Base Price'),
+                    decoration: InputDecoration(
+                      labelText: 'Base Price',
+                      errorText: fieldErrors['base_price'],
+                    ),
                     keyboardType: TextInputType.number,
                     validator: (v) => double.tryParse(v ?? '') == null ? 'Enter number' : null,
                   ),
-                  TextFormField(
-                    controller: imageCtrl,
-                    decoration: const InputDecoration(labelText: 'Image URL'),
-                  ),
+                  _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _submitting
                         ? null
                         : () async {
+                            fieldErrors = {};
                             if (!_formKey.currentState!.validate()) return;
+                            final orgId = ref.read(selectedOrgProvider);
+                            if (orgId == null) {
+                              setState(() {
+                                fieldErrors['organization'] = 'Required';
+                              });
+                              return;
+                            }
                             setState(() => _submitting = true);
                             try {
                               if (widget.activity == null) {
@@ -173,11 +210,13 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   sportId!,
                                   disciplineId!,
                                   variantId,
-                                  titleCtrl.text,
-                                  descCtrl.text,
+                                  titleCtrl.text.trim(),
+                                  descCtrl.text.trim(),
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId: orgId,
+                                  imageFile: _imageFile,
                                 );
                               } else {
                                 await activityService.updateActivity(
@@ -185,24 +224,49 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   sportId!,
                                   disciplineId!,
                                   variantId,
-                                  titleCtrl.text,
-                                  descCtrl.text,
+                                  titleCtrl.text.trim(),
+                                  descCtrl.text.trim(),
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId: orgId,
+                                  imageFile: _imageFile,
                                 );
                               }
                               if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(widget.activity == null
+                                        ? 'Activity created'
+                                        : 'Activity updated'),
+                                  ),
+                                );
                                 Navigator.pop(context, true);
                               }
                             } on DioException catch (e) {
-                              if (context.mounted) showApiError(context, e, 'Create activity');
+                              final err = e.error;
+                              if (err is Map<String, List<String>>) {
+                                setState(() {
+                                  fieldErrors = err
+                                      .map((k, v) => MapEntry(k, v.join(', ')));
+                                });
+                              } else if (context.mounted) {
+                                showApiError(
+                                    context,
+                                    e,
+                                    widget.activity == null
+                                        ? 'Create activity'
+                                        : 'Update activity');
+                              }
                             } finally {
                               if (mounted) setState(() => _submitting = false);
                             }
                           },
                     child: _submitting
-                        ? const SizedBox(height:20,width:20,child:CircularProgressIndicator(strokeWidth:2))
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : Text(widget.activity == null ? 'Create' : 'Save'),
                   ),
                 ],
@@ -211,6 +275,126 @@ class _AddActivityPageState extends State<AddActivityPage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildOrgField(AsyncValue<List<Map<String, dynamic>>> orgsAsync) {
+    return orgsAsync.when(
+      data: (orgs) {
+        final selectedOrg = ref.watch(selectedOrgProvider);
+        if (orgs.length == 1) {
+          Future.microtask(() {
+            if (ref.read(selectedOrgProvider) == null) {
+              ref.read(selectedOrgProvider.notifier).state =
+                  orgs.first['id'] as int;
+            }
+          });
+          return const SizedBox.shrink();
+        }
+        return DropdownButtonFormField<int>(
+          value: selectedOrg,
+          items: orgs
+              .map<DropdownMenuItem<int>>((e) => DropdownMenuItem(
+                    value: e['id'] as int,
+                    child: Text(e['name']?.toString() ?? ''),
+                  ))
+              .toList(),
+          onChanged: (v) => ref.read(selectedOrgProvider.notifier).state = v,
+          decoration: InputDecoration(
+            labelText: 'Organization',
+            errorText: fieldErrors['organization'],
+          ),
+          validator: (v) => v == null ? 'Required' : null,
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _imagePickerField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Image', style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _buildImagePreview(),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: () async {
+                final picker = ImagePicker();
+                final file =
+                    await picker.pickImage(source: ImageSource.gallery);
+                if (file != null) {
+                  setState(() {
+                    _imageFile = file;
+                    _existingImage = null;
+                  });
+                }
+              },
+              child:
+                  Text(_imageFile == null ? 'Select Image' : 'Change Image'),
+            ),
+          ],
+        ),
+        if (fieldErrors['image'] != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              fieldErrors['image']!,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildImagePreview() {
+    const double size = 80;
+    final radius = BorderRadius.circular(12);
+    if (_imageFile != null) {
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: radius,
+            child: Image.file(File(_imageFile!.path),
+                width: size, height: size, fit: BoxFit.cover),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: InkWell(
+              onTap: () => setState(() => _imageFile = null),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (_existingImage != null && _existingImage!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: radius,
+        child: Image.network(_existingImage!,
+            width: size, height: size, fit: BoxFit.cover),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: radius,
+      ),
+      child: const Icon(Icons.image, color: Colors.grey),
     );
   }
 }
