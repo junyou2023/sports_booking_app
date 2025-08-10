@@ -28,3 +28,8 @@ void showApiError(BuildContext context, DioException e, String action) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 }
 
+// R2: simple helper for plain messages
+void showSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
