@@ -105,6 +105,10 @@ dashboard. Simply choose a name and categories; the app will use the device's
 current location as the facility position. Once created the facility appears in
 the *Nearby Activities* list for customers near you.
 
+// R2: From the dashboard you can search your activities and tap any card to
+manage its slots. Use the receipt icon in the app bar to review and cancel
+orders.
+
 ### Provider sign-up
 
 Use `/api/provider/register/` to create a provider account. The request body

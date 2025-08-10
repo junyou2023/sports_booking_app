@@ -155,8 +155,8 @@ class VariantSerializer(serializers.ModelSerializer):
 
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-    organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all()
+    organization = serializers.PrimaryKeyRelatedField(  # R1
+        queryset=Organization.objects.all(), required=False
     )
 
     class Meta:
@@ -191,6 +191,12 @@ class ActivitySerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        request = self.context.get("request")  # R1
+        org = attrs.get("organization")  # R1
+        if org is None and request and request.user.is_authenticated:  # R1
+            members = OrganizationMember.objects.filter(user=request.user)  # R1
+            if members.count() == 1:  # R1
+                attrs["organization"] = members.first().organization  # R1
         variant = attrs.get("variant")
         discipline = attrs.get("discipline")
         if variant and discipline and variant.discipline_id != discipline.id:
@@ -201,6 +207,8 @@ class ActivitySerializer(serializers.ModelSerializer):
         desc = attrs.get("description", "")
         if len(desc) > 500:
             raise serializers.ValidationError({"description": "Max 500 characters"})
+        if attrs.get("organization") is None:  # R1
+            raise serializers.ValidationError({"organization": "This field is required."})  # R1
         return attrs
 
     def validate_organization(self, value):
