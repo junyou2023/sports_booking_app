@@ -8,6 +8,7 @@ from rest_framework import status
 
 from sports.models import Slot, Booking
 from sports.serializers import BookingSerializer
+from services.pricing import get_price
 
 stripe.api_key = os.getenv('STRIPE_API_KEY', '')
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ class StripeCheckoutView(APIView):
         if not slot_id:
             return Response({'detail': 'slot required'}, status=400)
         try:
-            slot = Slot.objects.get(pk=slot_id)
+            slot = Slot.objects.get(pk=slot_id, is_active=True)
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
 
@@ -31,6 +32,7 @@ class StripeCheckoutView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+        price = get_price(slot)
         booking, created = Booking.objects.get_or_create(
             slot=slot,
             user=request.user,
@@ -38,6 +40,7 @@ class StripeCheckoutView(APIView):
                 'activity': slot.activity,
                 'status': 'pending',
                 'paid': False,
+                'price': price,
             },
         )
 
@@ -49,14 +52,16 @@ class StripeCheckoutView(APIView):
                 return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
         else:
             try:
+                price = get_price(slot)
                 intent = stripe.PaymentIntent.create(
-                    amount=int(slot.price * 100),
+                    amount=int(price * 100),
                     currency='usd',
                     automatic_payment_methods={'enabled': True},
                     metadata={'slot_id': slot_id, 'user_id': request.user.id},
                 )
                 booking.payment_intent_id = intent.id
-                booking.save(update_fields=['payment_intent_id'])
+                booking.price = price
+                booking.save(update_fields=['payment_intent_id', 'price'])
             except stripe.error.StripeError as e:
                 logger.exception('Failed to create PaymentIntent')
                 return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)

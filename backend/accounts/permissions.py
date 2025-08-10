@@ -13,7 +13,11 @@ class IsOrgMember(BasePermission):
     """Allow access if user belongs to object's organization."""
 
     def has_object_permission(self, request, view, obj):
-        org = getattr(obj, "organization", obj)
+        org = getattr(obj, "organization", None)
+        if org is None and hasattr(obj, "activity"):
+            org = getattr(obj.activity, "organization", None)
+        if org is None:
+            org = obj
         return OrganizationMember.objects.filter(
             organization=org, user=request.user
         ).exists()
@@ -23,7 +27,11 @@ class IsOrgOwner(BasePermission):
     """Allow access only to organization owners."""
 
     def has_object_permission(self, request, view, obj):
-        org = getattr(obj, "organization", obj)
+        org = getattr(obj, "organization", None)
+        if org is None and hasattr(obj, "activity"):
+            org = getattr(obj.activity, "organization", None)
+        if org is None:
+            org = obj
         return OrganizationMember.objects.filter(
             organization=org, user=request.user, role="owner"
         ).exists()

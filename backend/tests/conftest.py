@@ -21,15 +21,28 @@ def sport(db):
 
 
 @pytest.fixture
-def slot(db, sport):
-    from sports.models import Slot
+def slot(db, sport, provider_user):
+    from sports.models import Slot, Activity, Category
+    cat = Category.objects.create(name="C")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        organization=provider_user.org,
+        title="Act",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
     return Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Morning session",
         location="Court 1",
         begins_at=timezone.now() + timezone.timedelta(hours=1),
         ends_at=timezone.now() + timezone.timedelta(hours=2),
         capacity=4,
+        price=0,
     )
 
 

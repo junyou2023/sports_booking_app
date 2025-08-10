@@ -4,12 +4,13 @@ import pytest
 from rest_framework.test import APIClient
 from django.utils import timezone
 from sports.models import Sport, Category, Activity, Slot, Booking
+from payments import views as pay_views
 
 django.setup()
 pytestmark = pytest.mark.django_db
 
 
-def test_payment_webhook_updates_booking():
+def test_payment_webhook_updates_booking(monkeypatch):
     sport = Sport.objects.create(name="Pay")
     cat = Category.objects.create(name="Cat")
     from accounts.models import Organization
@@ -36,17 +37,24 @@ def test_payment_webhook_updates_booking():
         price=10,
         rating=0,
     )
-    user_id = 1
-    booking = Booking.objects.create(slot=slot, activity=act, user_id=user_id)
+    from django.contrib.auth.models import User
+    user = User.objects.create_user('u')
+    booking = Booking.objects.create(slot=slot, activity=act, user=user)
+    user_id = user.id
     client = APIClient()
     event = {
         "type": "payment_intent.succeeded",
         "data": {
             "object": {
+                "id": "pi_1",
                 "metadata": {"slot_id": slot.id, "user_id": user_id}
             }
         },
     }
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec")
+    def fake_construct_event(payload, sig, secret):
+        return event
+    monkeypatch.setattr(pay_views.stripe.Webhook, 'construct_event', staticmethod(fake_construct_event))
     res = client.post(
         "/api/payments/webhook/",
         data=json.dumps(event),

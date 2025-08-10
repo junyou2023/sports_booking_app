@@ -1,5 +1,7 @@
 # sports/serializers.py
 from rest_framework import serializers
+from django.utils import timezone
+from accounts.models import Organization, OrganizationMember
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
 from .models import (
@@ -15,8 +17,8 @@ from .models import (
     Review,
     FeaturedActivity,
     Favorite,
+    PriceRule,
 )
-from accounts.models import Organization, OrganizationMember
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -49,7 +51,26 @@ class SlotSerializer(serializers.ModelSerializer):
         return super().to_representation(instance)
 
 
-class SlotCreateSerializer(serializers.ModelSerializer):
+class BaseSlotSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        begins_at = attrs.get("begins_at", getattr(self.instance, "begins_at", None))
+        ends_at = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        activity = attrs.get("activity", getattr(self.instance, "activity", None))
+
+        if begins_at and ends_at and begins_at.date() != ends_at.date():
+            raise serializers.ValidationError({"ends_at": "Must be on the same day"})
+        if begins_at and begins_at < timezone.now():
+            raise serializers.ValidationError({"begins_at": "Must be in the future"})
+        if begins_at and ends_at and activity:
+            qs = Slot.objects.filter(activity=activity, is_active=True)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.filter(begins_at__lt=ends_at, ends_at__gt=begins_at).exists():
+                raise serializers.ValidationError({"begins_at": "Overlaps another slot"})
+        return attrs
+
+
+class SlotCreateSerializer(BaseSlotSerializer):
     class Meta:
         model = Slot
         fields = (
@@ -62,15 +83,25 @@ class SlotCreateSerializer(serializers.ModelSerializer):
             "location",
         )
 
-    def get_seats_left(self, obj):
-        return obj.seats_left
-
     def create(self, validated_data):
-        """Populate sport from the related activity when creating a Slot."""
         activity = validated_data["activity"]
-        return Slot.objects.create(
-            **validated_data,
-            sport=activity.sport,
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user and not OrganizationMember.objects.filter(organization=activity.organization, user=user).exists():
+            raise serializers.ValidationError({"activity": "Not a member of this organization"})
+        return Slot.objects.create(**validated_data, sport=activity.sport)
+
+
+class SlotUpdateSerializer(BaseSlotSerializer):
+    class Meta:
+        model = Slot
+        fields = (
+            "begins_at",
+            "ends_at",
+            "capacity",
+            "price",
+            "title",
+            "location",
         )
 
 
@@ -248,7 +279,7 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
     slot = SlotSerializer(read_only=True)
     slot_id = serializers.PrimaryKeyRelatedField(
-        queryset=Slot.objects.all(), write_only=True, source="slot"
+        queryset=Slot.objects.filter(is_active=True), write_only=True, source="slot"
     )
     status = serializers.CharField(read_only=True)
     paid = serializers.BooleanField(read_only=True)
@@ -292,3 +323,18 @@ class FavoriteIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ("activity",)
+
+
+class PriceRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PriceRule
+        fields = (
+            "id",
+            "activity",
+            "weekday",
+            "time_start",
+            "time_end",
+            "price",
+            "created_at",
+        )
+        read_only_fields = ("id", "created_at")

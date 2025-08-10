@@ -33,8 +33,10 @@ def test_api_nearby_filter(client):
     from accounts.models import Organization
     from uuid import uuid4
     org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
+    Activity.objects.all().delete()
     Activity.objects.create(sport=sport, discipline=cat, title='X', is_nearby=True, organization=org)
     Activity.objects.create(sport=sport, discipline=cat, title='Y', is_nearby=False, organization=org)
     resp = client.get('/api/activities/', {'nearby': '1'})
     assert resp.status_code == 200
-    assert len(resp.data) == 1
+    data = resp.data if isinstance(resp.data, list) else resp.data.get('results', [])
+    assert len(data) == 1

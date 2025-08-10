@@ -197,10 +197,15 @@ class Slot(models.Model):
         on_delete=models.CASCADE,
     )
     current_participants = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("begins_at",)
         unique_together = ("activity", "begins_at")
+        indexes = [
+            models.Index(fields=["activity", "begins_at"]),
+            models.Index(fields=["activity", "ends_at"]),
+        ]
 
     @property
     def seats_left(self) -> int:
@@ -240,6 +245,7 @@ class Booking(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(20)],
         help_text="Number of people booked",
     )
+    price = models.DecimalField(max_digits=7, decimal_places=2, default=0)
 
     class Meta:
         ordering = ("-booked_at",)
@@ -247,6 +253,24 @@ class Booking(models.Model):
 
     def __str__(self) -> str:                # pragma: no cover
         return f"{self.user} → {self.slot} ({self.pax})"
+
+
+# ──────────────────────────────── PriceRule ────────────────────────────────
+class PriceRule(models.Model):
+    activity = models.ForeignKey("Activity", related_name="price_rules", on_delete=models.CASCADE)
+    weekday = models.PositiveSmallIntegerField(validators=[MinValueValidator(0), MaxValueValidator(6)])
+    time_start = models.TimeField()
+    time_end = models.TimeField()
+    price = models.DecimalField(max_digits=7, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["activity", "weekday", "time_start", "time_end"]),
+        ]
+
+    def __str__(self):  # pragma: no cover
+        return f"{self.activity} {self.weekday} {self.time_start}-{self.time_end}"
 
 
 # ————————— Homepage content —————————

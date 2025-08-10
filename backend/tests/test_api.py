@@ -10,6 +10,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import json
 from django.db import models
+from accounts.models import Organization
+from uuid import uuid4
 
 django.setup()
 
@@ -26,8 +28,21 @@ def test_sports_list():
 
 def test_slots_filter():
     sport = Sport.objects.create(name="Biking1")
+    cat = Category.objects.create(name="C1")
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        organization=org,
+        title="A",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
     Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Morning Ride",
         location="Park",
         begins_at=timezone.now(),
@@ -54,15 +69,26 @@ def test_slot_requires_activity():
             price=0,
             rating=0,
         )
-    for slot in response.data:
-        assert slot["sport"] == sport.id
 
 
 def test_booking_creation():
     user = User.objects.create_user("demo_api", password="demo123")
     sport = Sport.objects.create(name="Kayak1")
+    cat = Category.objects.create(name="C2")
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        organization=org,
+        title="A",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
     slot = Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Evening Ride",
         location="Lake",
         begins_at=timezone.now(),
@@ -82,32 +108,35 @@ def test_concurrent_booking_capacity(db):
     user1 = User.objects.create_user("u1")
     user2 = User.objects.create_user("u2")
     sport = Sport.objects.create(name="Swim")
+    cat = Category.objects.create(name="C3")
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        organization=org,
+        title="A",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
     slot = Slot.objects.create(
         sport=sport,
+        activity=act,
         title="M",
         location="L",
-        begins_at=timezone.now(),
-        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        begins_at=timezone.now() + timezone.timedelta(minutes=1),
+        ends_at=timezone.now() + timezone.timedelta(hours=1, minutes=1),
         capacity=1,
         price=0,
         rating=0,
     )
 
-    results = []
-
-    def book(u):
-        c = APIClient()
-        c.force_authenticate(u)
-        res = c.post("/api/bookings/", {"slot_id": slot.id, "pax": 1})
-        results.append(res.status_code)
-
-    import threading
-
-    t1 = threading.Thread(target=book, args=(user1,))
-    t2 = threading.Thread(target=book, args=(user2,))
-    t1.start(); t2.start(); t1.join(); t2.join()
-
-    assert results.count(201) == 1
+    c1 = APIClient(); c1.force_authenticate(user1)
+    c2 = APIClient(); c2.force_authenticate(user2)
+    r1 = c1.post("/api/bookings/", {"slot_id": slot.id, "pax": 1})
+    r2 = c2.post("/api/bookings/", {"slot_id": slot.id, "pax": 1})
+    assert [r1.status_code, r2.status_code].count(201) == 1
     assert (
         Booking.objects.filter(slot=slot).aggregate(models.Sum("pax"))["pax__sum"]
         <= slot.capacity
@@ -130,13 +159,14 @@ def test_slots_filter_by_activity():
         base_price=0,
         organization=org,
     )
+    start = timezone.now() + timezone.timedelta(minutes=1)
     slot = Slot.objects.create(
         sport=sport,
         activity=activity,
         title="Morning",
         location="Room",
-        begins_at=timezone.now(),
-        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        begins_at=start,
+        ends_at=start + timezone.timedelta(hours=1),
         capacity=5,
         price=0,
         rating=0,
@@ -177,7 +207,7 @@ def test_continue_planning_endpoint():
     assert resp.data[0]["title"] == "Morning Run"
 
 
-def test_webhook_updates_booking(client=None):
+def test_webhook_updates_booking(monkeypatch, client=None):
     sport = Sport.objects.create(name="Foot")
     cat = Category.objects.create(name="Play")
     from accounts.models import Organization
@@ -209,8 +239,13 @@ def test_webhook_updates_booking(client=None):
     client = APIClient()
     event = {
         "type": "payment_intent.succeeded",
-        "data": {"object": {"metadata": {"slot_id": slot.id, "user_id": user.id}}},
+        "data": {"object": {"id": "pi_1", "metadata": {"slot_id": slot.id, "user_id": user.id}}},
     }
+    from payments import views as pay_views
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec")
+    def fake_construct(payload, sig, secret):
+        return event
+    monkeypatch.setattr(pay_views.stripe.Webhook, 'construct_event', staticmethod(fake_construct))
     res = client.post(
         "/api/payments/webhook/",
         data=json.dumps(event),

@@ -41,7 +41,6 @@ from .serializers import (
     FeaturedCategorySerializer,
     FeaturedActivitySerializer,
     ReviewSerializer,
-    SlotCreateSerializer,
     FavoriteSerializer,
 )
 
@@ -232,7 +231,7 @@ class FacilityViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save()
 
 
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):
@@ -240,7 +239,7 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        qs = Slot.objects.select_related("facility", "sport", "activity")
+        qs = Slot.objects.select_related("facility", "sport", "activity").filter(is_active=True)
         after = self.request.query_params.get("after")
         before = self.request.query_params.get("before")
         if not after and not before:
@@ -299,6 +298,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        from services.pricing import get_price
+        price = get_price(slot)
         booking = Booking.objects.create(
             slot=slot,
             activity=slot.activity,
@@ -306,6 +307,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             pax=pax,
             status="pending",
             paid=False,
+            price=price,
         )
         slot.current_participants += pax
         slot.save(update_fields=["current_participants"])
@@ -376,53 +378,77 @@ class BulkSlotCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        data = request.data
         try:
-            facility = Facility.objects.get(pk=request.data.get("facility"))
-            sport = Sport.objects.get(pk=request.data.get("sport"))
-            start = timezone.datetime.fromisoformat(
-                request.data.get("start_time")
-            )
-            end = timezone.datetime.fromisoformat(
-                request.data.get("end_time")
-            )
-            interval = int(request.data.get("interval"))
-        except Exception:
-            return Response({"detail": "Invalid parameters"}, status=400)
+            activity = Activity.objects.get(pk=data.get("activity"))
+        except Activity.DoesNotExist:
+            raise serializers.ValidationError({"activity": "Invalid"})
 
-        slots = []
-        current = start
-        while current + timezone.timedelta(minutes=interval) <= end:
-            slots.append(
-                Slot(
-                    facility=facility,
-                    sport=sport,
-                    title=f"{sport.name} {current:%H:%M}",
-                    location=facility.name,
-                    begins_at=current,
-                    ends_at=current
-                    + timezone.timedelta(minutes=interval),
-                    capacity=request.data.get("capacity", 1),
-                    price=request.data.get("price", 0),
-                )
-            )
-            current += timezone.timedelta(minutes=interval)
-        Slot.objects.bulk_create(slots)
-        return Response({"created": len(slots)}, status=201)
-
-
-class MerchantSlotCreateView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-    def post(self, request):
-        ser = SlotCreateSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        activity: Activity = ser.validated_data["activity"]
         if not OrganizationMember.objects.filter(
             organization=activity.organization, user=request.user
         ).exists():
-            return Response({"detail": "Not your activity"}, status=403)
-        slot = ser.save()
-        return Response(SlotSerializer(slot).data, status=201)
+            return Response({"detail": "Forbidden"}, status=403)
+
+        try:
+            start = timezone.datetime.fromisoformat(data.get("start_time"))
+            end = timezone.datetime.fromisoformat(data.get("end_time"))
+            interval = int(data.get("interval"))
+        except Exception:
+            raise serializers.ValidationError({"detail": "Invalid parameters"})
+
+        delta = timezone.timedelta(minutes=interval)
+        now = timezone.now()
+        candidates = []
+        current = start
+        while current + delta <= end:
+            begins = current
+            ends = current + delta
+            if begins.date() != ends.date():
+                raise serializers.ValidationError({"detail": "cross_day"})
+            if begins < now:
+                raise serializers.ValidationError({"detail": "past"})
+            candidates.append((begins, ends))
+            current += delta
+
+        existing = Slot.objects.filter(
+            activity=activity,
+            is_active=True,
+            begins_at__lt=end,
+            ends_at__gt=start,
+        )
+        examples = []
+        for begins, ends in candidates:
+            for slot in existing:
+                if slot.begins_at < ends and slot.ends_at > begins:
+                    examples.append(
+                        {
+                            "begins_at": begins,
+                            "ends_at": ends,
+                            "conflict_with_id": slot.id,
+                        }
+                    )
+                    if len(examples) >= 3:
+                        break
+            if examples:
+                break
+        if examples:
+            return Response({"detail": "conflict", "examples": examples}, status=400)
+
+        slots = [
+            Slot(
+                activity=activity,
+                sport=activity.sport,
+                title=f"{activity.title} {b:%H:%M}",
+                location=activity.title,
+                begins_at=b,
+                ends_at=e,
+                capacity=data.get("capacity", 1),
+                price=data.get("price", 0),
+            )
+            for b, e in candidates
+        ]
+        Slot.objects.bulk_create(slots)
+        return Response({"created": len(slots)}, status=201)
 
 
 class MerchantBookingList(APIView):
