@@ -237,7 +237,21 @@ class Booking(models.Model):
     )
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
     booked_at = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=20, default="confirmed")
+    STATUS_PENDING = "pending"
+    STATUS_CONFIRMED = "confirmed"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_REFUNDED = "refunded"
+    STATUS_COMPLETED = "completed"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_CONFIRMED, "Confirmed"),
+        (STATUS_CANCELLED, "Cancelled"),
+        (STATUS_REFUNDED, "Refunded"),
+        (STATUS_COMPLETED, "Completed"),
+    ]
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     paid = models.BooleanField(default=False)
     payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
     pax = models.PositiveSmallIntegerField(

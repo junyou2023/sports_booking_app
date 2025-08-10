@@ -218,3 +218,17 @@ DJANGO_SETTINGS_MODULE=PlayNexus.settings pytest backend -q
 A helper script `scripts/run_backend_tests.sh` automates the above commands.
 Some tests require SpatiaLite which may not work on every platform. Docker is
 the recommended environment for running the full test suite.
+
+## Booking timeout cleanup
+
+Pending bookings older than 30 minutes can be cleaned up with:
+
+```
+python backend/manage.py bookings_cancel_timeouts
+```
+
+To run it periodically add a cron job such as:
+
+```
+*/10 * * * * python /path/to/backend/manage.py bookings_cancel_timeouts
+```
