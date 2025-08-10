@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../models/activity.dart';
 import '../models/paginated.dart';
 import 'api_client.dart';
@@ -22,8 +24,12 @@ class ActivityService {
     return _parsePage(res.data);
   }
 
-  Future<Paginated<Activity>> fetchMine() async {
-    return fetchActivities(params: {'mine': '1'});
+  Future<Paginated<Activity>> fetchMine({int page = 1, String? query}) async {
+    return fetchActivities(params: {
+      'mine': '1',
+      'page': page,
+      if (query != null && query.isNotEmpty) 'q': query,
+    });
   }
 
   Future<Paginated<Activity>> fetchNearby() async {
@@ -59,6 +65,10 @@ class ActivityService {
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<void> deleteActivity(int id) async {
+    await apiClient.delete('/activities/$id/');
+  }
+
   Future<void> createActivity(
     int sport,
     int discipline,
@@ -68,17 +78,26 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice,
+    int organization,
+    {XFile? image},
   ) async {
-    await apiClient.post('/activities/', data: {
+    final map = {
       'sport': sport,
       'discipline': discipline,
-      if (variant != null) 'variant': variant,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      'organization': organization,
+      if (variant != null) 'variant': variant,
+    };
+    final form = FormData.fromMap({
+      ...map,
+      if (image != null)
+        'image': await MultipartFile.fromFile(image.path, filename: image.name),
     });
+    await apiClient.post('/activities/', data: form);
   }
 
   Future<void> updateActivity(
@@ -91,17 +110,26 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice,
+    int organization,
+    {XFile? image},
   ) async {
-    await apiClient.patch('/activities/' + id.toString() + '/', data: {
+    final map = {
       'sport': sport,
       'discipline': discipline,
-      'variant': variant,
       'title': title,
       'description': description,
       'difficulty': difficulty,
       'duration': duration,
       'base_price': basePrice,
+      'organization': organization,
+      if (variant != null) 'variant': variant,
+    };
+    final form = FormData.fromMap({
+      ...map,
+      if (image != null)
+        'image': await MultipartFile.fromFile(image.path, filename: image.name),
     });
+    await apiClient.patch('/activities/' + id.toString() + '/', data: form);
   }
 }
 

@@ -2,51 +2,129 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/activity_provider.dart';
 import '../models/activity.dart';
 import '../services/slot_service.dart';
+import '../services/activity_service.dart';
 
 import 'add_activity_page.dart';
 import 'add_slot_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
 
-class ProviderDashboardPage extends ConsumerWidget {
+class ProviderDashboardPage extends ConsumerStatefulWidget {
   const ProviderDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncActivities = ref.watch(activitiesProvider);
+  ConsumerState<ProviderDashboardPage> createState() => _ProviderDashboardPageState();
+}
 
+class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
+  final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
+  final List<Activity> _activities = [];
+  bool _isLoading = false;
+  bool _hasMore = true;
+  int _page = 1;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoading &&
+          _hasMore) {
+        _fetch();
+      }
+    });
+  }
+
+  Future<void> _fetch({bool refresh = false}) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    if (refresh) {
+      _page = 1;
+      _activities.clear();
+      _hasMore = true;
+    }
+    try {
+      final page =
+          await activityService.fetchMine(page: _page, query: _query.isEmpty ? null : _query);
+      _activities.addAll(page.results);
+      _hasMore = page.next != null;
+      _page++;
+    } catch (_) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Failed to load activities')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _refresh() => _fetch(refresh: true);
+
+  void _onSearch() {
+    _query = _searchController.text;
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Merchant Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {}, // reserved for future search
-          ),
-          IconButton(
             icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () {}, // profile quick access
+            onPressed: () {},
           ),
         ],
       ),
       drawer: _MerchantDrawer(),
-      body: asyncActivities.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (page) => ListView(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
             _AddActivityHero(onTap: () async {
-              final created = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
-              if (created == true) ref.invalidate(activitiesProvider);
+              final created = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AddActivityPage()));
+              if (created == true) _refresh();
             }),
             const SizedBox(height: 16),
-            Text('Your Activities', style: Theme.of(context).textTheme.titleMedium),
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search activities',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _onSearch,
+                ),
+              ),
+              onSubmitted: (_) => _onSearch(),
+            ),
+            const SizedBox(height: 16),
+            Text('Your Activities',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            ...page.results.map((a) => _ActivityCard(activity: a, onChanged: () => ref.invalidate(activitiesProvider))),
+            ..._activities
+                .map((a) => _ActivityCard(activity: a, onChanged: _refresh)),
+            if (_isLoading) ...[
+              const SizedBox(height: 16),
+              const Center(child: CircularProgressIndicator()),
+            ],
             const SizedBox(height: 80),
           ],
         ),
@@ -168,6 +246,44 @@ class _ActivityCard extends StatelessWidget {
                 if (updated == true) onChanged();
               },
               child: const Text('Edit'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete',
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete activity?'),
+                    content: const Text('This action cannot be undone.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  try {
+                    await activityService.deleteActivity(activity.id);
+                    onChanged();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(const SnackBar(content: Text('Activity deleted')));
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(const SnackBar(content: Text('Delete failed')));
+                    }
+                  }
+                }
+              },
             ),
           ],
         ),

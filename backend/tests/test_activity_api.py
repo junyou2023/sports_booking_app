@@ -10,6 +10,9 @@ from sports.models import (  # noqa: E402
     Activity,
 )
 from django.utils import timezone  # noqa: E402
+import io
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 pytestmark = [pytest.mark.django_db]
 
@@ -53,6 +56,35 @@ def test_create_activity_success(auth_client, provider_user):
     )
     assert resp.status_code == 201
     assert resp.data["title"] == "Surf 101"
+
+
+def dummy_image(name='test.png'):
+    buf = io.BytesIO()
+    Image.new('RGB', (10, 10), 'red').save(buf, format='PNG')
+    buf.seek(0)
+    return SimpleUploadedFile(name, buf.read(), content_type='image/png')
+
+
+def test_create_activity_with_image(auth_client, provider_user):
+    sport, disc, var = setup_taxonomy()
+    img = dummy_image()
+    resp = auth_client.post(
+        "/api/activities/",
+        {
+            "sport": sport.id,
+            "discipline": disc.id,
+            "variant": var.id,
+            "title": "Surf Pic",
+            "difficulty": 2,
+            "duration": 60,
+            "base_price": "10.00",
+            "organization": provider_user.org.id,
+            "image": img,
+        },
+        format="multipart",
+    )
+    assert resp.status_code == 201
+    assert resp.data["image_url"]
 
 
 def test_bulk_slot_create(auth_client):

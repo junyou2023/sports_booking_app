@@ -1,13 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
+
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
+import '../services/organization_service.dart';
 import '../utils/snackbar.dart';
-import 'package:dio/dio.dart';
 
 import '../models/activity.dart';
 import '../models/sport.dart';
 import '../models/category.dart';
 import '../models/variant.dart';
+import '../models/organization.dart';
 
 class AddActivityPage extends StatefulWidget {
   final Activity? activity;
@@ -23,8 +29,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
   final descCtrl = TextEditingController();
   final priceCtrl = TextEditingController();
   final durationCtrl = TextEditingController(text: '60');
-  final imageCtrl = TextEditingController();
-
   int? sportId;
   int? disciplineId;
   int? variantId;
@@ -35,6 +39,10 @@ class _AddActivityPageState extends State<AddActivityPage> {
   List<Sport> sports = [];
   List<Category> categories = [];
   List<Variant> variants = [];
+  List<Organization> organizations = [];
+  int? organizationId;
+  XFile? _imageFile;
+  String? _imageUrl;
 
   @override
   void initState() {
@@ -48,8 +56,9 @@ class _AddActivityPageState extends State<AddActivityPage> {
       descCtrl.text = a.description;
       priceCtrl.text = a.basePrice.toStringAsFixed(2);
       durationCtrl.text = a.duration.toString();
-      imageCtrl.text = a.image;
       difficulty = a.difficulty;
+      organizationId = a.organization;
+      _imageUrl = a.imageUrl;
     }
     _loadFuture = _loadData();
   }
@@ -58,6 +67,10 @@ class _AddActivityPageState extends State<AddActivityPage> {
     sports = await sportsService.fetchSports();
     categories = await sportsService.fetchCategories();
     variants = await sportsService.fetchVariants();
+    organizations = await organizationService.fetchMine();
+    if (organizationId == null && organizations.isNotEmpty) {
+      organizationId = organizations.first.id;
+    }
   }
 
   @override
@@ -66,7 +79,6 @@ class _AddActivityPageState extends State<AddActivityPage> {
     descCtrl.dispose();
     priceCtrl.dispose();
     durationCtrl.dispose();
-    imageCtrl.dispose();
     super.dispose();
   }
 
@@ -86,6 +98,16 @@ class _AddActivityPageState extends State<AddActivityPage> {
               key: _formKey,
               child: ListView(
                 children: [
+                  DropdownButtonFormField<int>(
+                    value: organizationId,
+                    items: organizations
+                        .map<DropdownMenuItem<int>>(
+                            (e) => DropdownMenuItem(value: e.id, child: Text(e.name)))
+                        .toList(),
+                    onChanged: (v) => setState(() => organizationId = v),
+                    decoration: const InputDecoration(labelText: 'Organization'),
+                    validator: (v) => v == null ? 'Required' : null,
+                  ),
                   DropdownButtonFormField<int>(
                     value: sportId,
                     items: sports
@@ -156,9 +178,30 @@ class _AddActivityPageState extends State<AddActivityPage> {
                     keyboardType: TextInputType.number,
                     validator: (v) => double.tryParse(v ?? '') == null ? 'Enter number' : null,
                   ),
-                  TextFormField(
-                    controller: imageCtrl,
-                    decoration: const InputDecoration(labelText: 'Image URL'),
+                  const SizedBox(height: 10),
+                  Text('Image', style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _imageFile != null
+                          ? Image.file(File(_imageFile!.path), width: 100, height: 100, fit: BoxFit.cover)
+                          : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                              ? Image.network(_imageUrl!, width: 100, height: 100, fit: BoxFit.cover)
+                              : Container(width: 100, height: 100, color: Colors.grey[300]),
+                      const SizedBox(width: 12),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+                          if (picked != null) {
+                            setState(() {
+                              _imageFile = picked;
+                              _imageUrl = null;
+                            });
+                          }
+                        },
+                        child: const Text('Choose Image'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
@@ -178,6 +221,8 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId!,
+                                  image: _imageFile,
                                 );
                               } else {
                                 await activityService.updateActivity(
@@ -190,6 +235,8 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId!,
+                                  image: _imageFile,
                                 );
                               }
                               if (context.mounted) {

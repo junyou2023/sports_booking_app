@@ -11,6 +11,7 @@ class Activity {
     required this.difficulty,
     required this.duration,
     required this.basePrice,
+    required this.organization,
   });
 
   final int id;
@@ -24,6 +25,7 @@ class Activity {
   final int difficulty;
   final int duration;
   final double basePrice;
+  final int organization;
 
   factory Activity.fromJson(Map<String, dynamic> j) => Activity(
         id: j['id'] as int,
@@ -37,6 +39,7 @@ class Activity {
         difficulty: j['difficulty'] as int? ?? 1,
         duration: j['duration'] as int? ?? 60,
         basePrice: (j['base_price'] as num).toDouble(),
+        organization: j['organization'] as int? ?? 0,
       );
 
   /// Create an [Activity] from a simplified JSON structure used by
@@ -53,5 +56,6 @@ class Activity {
         difficulty: 1,
         duration: 60,
         basePrice: (j['base_price'] as num?)?.toDouble() ?? 0.0,
+        organization: 0,
       );
 }
