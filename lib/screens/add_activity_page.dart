@@ -1,35 +1,42 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../models/activity.dart';
+import '../models/category.dart';
+import '../models/sport.dart';
+import '../models/variant.dart';
+import '../providers/org_provider.dart';
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
 import '../utils/snackbar.dart';
-import 'package:dio/dio.dart';
 
-import '../models/activity.dart';
-import '../models/sport.dart';
-import '../models/category.dart';
-import '../models/variant.dart';
-
-class AddActivityPage extends StatefulWidget {
+class AddActivityPage extends ConsumerStatefulWidget {
   final Activity? activity;
   const AddActivityPage({this.activity, super.key});
 
   @override
-  State<AddActivityPage> createState() => _AddActivityPageState();
+  ConsumerState<AddActivityPage> createState() => _AddActivityPageState();
 }
 
-class _AddActivityPageState extends State<AddActivityPage> {
+class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   final _formKey = GlobalKey<FormState>();
   final titleCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   final priceCtrl = TextEditingController();
   final durationCtrl = TextEditingController(text: '60');
-  final imageCtrl = TextEditingController();
 
   int? sportId;
   int? disciplineId;
   int? variantId;
   int difficulty = 1;
+  int? organizationId;
   bool _submitting = false;
+  XFile? _imageFile;
+  Map<String, String> fieldErrors = {};
 
   late Future<void> _loadFuture;
   List<Sport> sports = [];
@@ -48,16 +55,19 @@ class _AddActivityPageState extends State<AddActivityPage> {
       descCtrl.text = a.description;
       priceCtrl.text = a.basePrice.toStringAsFixed(2);
       durationCtrl.text = a.duration.toString();
-      imageCtrl.text = a.image;
       difficulty = a.difficulty;
     }
     _loadFuture = _loadData();
   }
 
   Future<void> _loadData() async {
-    sports = await sportsService.fetchSports();
-    categories = await sportsService.fetchCategories();
-    variants = await sportsService.fetchVariants();
+    await Future.wait([
+      sportsService.fetchSports().then((v) => sports = v),
+      sportsService.fetchCategories().then((v) => categories = v),
+      sportsService.fetchVariants().then((v) => variants = v),
+      ref.read(orgsProvider.notifier).load(),
+    ]);
+    organizationId = ref.read(orgsProvider.notifier).selectedId;
   }
 
   @override
@@ -66,12 +76,13 @@ class _AddActivityPageState extends State<AddActivityPage> {
     descCtrl.dispose();
     priceCtrl.dispose();
     durationCtrl.dispose();
-    imageCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final orgsAsync = ref.watch(orgsProvider);
+    final orgs = orgsAsync.value ?? [];
     return Scaffold(
       appBar: AppBar(title: const Text('Create Activity')),
       body: FutureBuilder(
@@ -86,6 +97,26 @@ class _AddActivityPageState extends State<AddActivityPage> {
               key: _formKey,
               child: ListView(
                 children: [
+                  if (orgs.length > 1)
+                    DropdownButtonFormField<int>(
+                      value: organizationId,
+                      items: orgs
+                          .map<DropdownMenuItem<int>>((e) => DropdownMenuItem(
+                                value: e['id'] as int,
+                                child: Text(e['name'].toString()),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        setState(() => organizationId = v);
+                        if (v != null) {
+                          ref.read(orgsProvider.notifier).select(v);
+                        }
+                      },
+                      decoration: InputDecoration(
+                          labelText: '组织',
+                          errorText: fieldErrors['organization']),
+                      validator: (v) => v == null ? 'Required' : null,
+                    ),
                   DropdownButtonFormField<int>(
                     value: sportId,
                     items: sports
@@ -95,7 +126,8 @@ class _AddActivityPageState extends State<AddActivityPage> {
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => sportId = v),
-                    decoration: const InputDecoration(labelText: 'Sport'),
+                    decoration: InputDecoration(
+                        labelText: 'Sport', errorText: fieldErrors['sport']),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
                   DropdownButtonFormField<int>(
@@ -107,7 +139,9 @@ class _AddActivityPageState extends State<AddActivityPage> {
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => disciplineId = v),
-                    decoration: const InputDecoration(labelText: 'Discipline'),
+                    decoration: InputDecoration(
+                        labelText: 'Discipline',
+                        errorText: fieldErrors['discipline']),
                     validator: (v) => v == null ? 'Required' : null,
                   ),
                   DropdownButtonFormField<int?>(
@@ -123,21 +157,25 @@ class _AddActivityPageState extends State<AddActivityPage> {
                           .toList(),
                     ],
                     onChanged: (v) => setState(() => variantId = v),
-                    decoration: const InputDecoration(labelText: 'Variant'),
+                    decoration: InputDecoration(labelText: 'Variant', errorText: fieldErrors['variant']),
                   ),
                   TextFormField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                    decoration: InputDecoration(
+                        labelText: 'Title', errorText: fieldErrors['title']),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   TextFormField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    decoration: InputDecoration(
+                        labelText: 'Description', errorText: fieldErrors['description']),
                     maxLines: 3,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   DropdownButtonFormField<int>(
                     value: difficulty,
-                    decoration: const InputDecoration(labelText: 'Difficulty'),
+                    decoration: InputDecoration(
+                        labelText: 'Difficulty', errorText: fieldErrors['difficulty']),
                     items: List.generate(
                       5,
                       (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
@@ -146,27 +184,71 @@ class _AddActivityPageState extends State<AddActivityPage> {
                   ),
                   TextFormField(
                     controller: durationCtrl,
-                    decoration: const InputDecoration(labelText: 'Duration (min)'),
+                    decoration: InputDecoration(
+                        labelText: 'Duration (min)',
+                        errorText: fieldErrors['duration']),
                     keyboardType: TextInputType.number,
-                    validator: (v) => int.tryParse(v ?? '') == null ? 'Enter number' : null,
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n <= 0) return 'Enter positive number';
+                      return null;
+                    },
                   ),
                   TextFormField(
                     controller: priceCtrl,
-                    decoration: const InputDecoration(labelText: 'Base Price'),
+                    decoration: InputDecoration(
+                        labelText: 'Base Price', errorText: fieldErrors['base_price']),
                     keyboardType: TextInputType.number,
-                    validator: (v) => double.tryParse(v ?? '') == null ? 'Enter number' : null,
+                    validator: (v) {
+                      final n = double.tryParse(v ?? '');
+                      if (n == null || n < 0) return 'Enter number';
+                      return null;
+                    },
                   ),
-                  TextFormField(
-                    controller: imageCtrl,
-                    decoration: const InputDecoration(labelText: 'Image URL'),
-                  ),
+                  const SizedBox(height: 8),
+                  if (_imageFile != null)
+                    Stack(
+                      children: [
+                        Image.file(File(_imageFile!.path), height: 150, fit: BoxFit.cover),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => setState(() => _imageFile = null),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.image),
+                      label: const Text('选择图片'),
+                      onPressed: () async {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(source: ImageSource.gallery);
+                        if (file != null) setState(() => _imageFile = file);
+                      },
+                    ),
+                  if (fieldErrors['image'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        fieldErrors['image']!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error, fontSize: 12),
+                      ),
+                    ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _submitting
                         ? null
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
-                            setState(() => _submitting = true);
+                            setState(() {
+                              _submitting = true;
+                              fieldErrors = {};
+                            });
                             try {
                               if (widget.activity == null) {
                                 await activityService.createActivity(
@@ -178,6 +260,8 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId: organizationId!,
+                                  imageFile: _imageFile,
                                 );
                               } else {
                                 await activityService.updateActivity(
@@ -190,13 +274,24 @@ class _AddActivityPageState extends State<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
+                                  organizationId: organizationId!,
+                                  imageFile: _imageFile,
                                 );
                               }
                               if (context.mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(content: Text('创建成功')));
                                 Navigator.pop(context, true);
                               }
+                            } on FieldErrors catch (e) {
+                              setState(() {
+                                fieldErrors =
+                                    e.errors.map((k, v) => MapEntry(k, v.join(', ')));
+                              });
                             } on DioException catch (e) {
-                              if (context.mounted) showApiError(context, e, 'Create activity');
+                              if (context.mounted) {
+                                showApiError(context, e, 'Create activity');
+                              }
                             } finally {
                               if (mounted) setState(() => _submitting = false);
                             }
