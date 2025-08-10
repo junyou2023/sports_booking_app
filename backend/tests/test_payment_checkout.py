@@ -52,7 +52,7 @@ def test_checkout_no_key_returns_500(auth_client, slot, monkeypatch):
     monkeypatch.setattr(pay_views.stripe, 'api_key', '')
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
     assert resp.status_code == 500
-    assert 'misconfigured' in resp.data['detail']
+    assert 'key' in resp.data['detail']
 
 
 def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
@@ -65,7 +65,7 @@ def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
     assert resp.status_code == 200
     data = resp.data
-    assert data['intent_id'] == 'pi_123'
+    assert data['payment_intent_id'] == 'pi_123'
     booking = Booking.objects.get(id=data['booking_id'])
     assert booking.slot == slot
     assert booking.status == 'pending'

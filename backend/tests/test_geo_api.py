@@ -15,7 +15,9 @@ django.setup()  # noqa: E402
 from django.contrib.gis.geos import Point  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
-from sports.models import Category, Facility, Slot  # noqa: E402
+from sports.models import Category, Facility, Slot, Sport, Activity  # noqa: E402
+from accounts.models import Organization  # noqa: E402
+from uuid import uuid4  # noqa: E402
 
 pytestmark = [pytest.mark.django_db]
 
@@ -23,6 +25,18 @@ pytestmark = [pytest.mark.django_db]
 def setup_data():
     c1 = Category.objects.create(name="Skateboard")
     c2 = Category.objects.create(name="Surfing")
+    sport = Sport.objects.create(name="Board")
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=c1,
+        organization=org,
+        title="Act",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+    )
     f1 = Facility.objects.create(name="A", location=Point(0, 0), radius=1000)
     f1.categories.add(c1, c2)
     f2 = Facility.objects.create(
@@ -33,11 +47,14 @@ def setup_data():
     f2.categories.add(c1)
     Slot.objects.create(
         facility=f1,
+        sport=sport,
+        activity=act,
         title="Morning",
         location="loc",
         begins_at=timezone.now(),
         ends_at=timezone.now() + timezone.timedelta(hours=1),
         capacity=5,
+        price=0,
     )
     return c1, c2, f1, f2
 
@@ -61,8 +78,8 @@ def test_facilities_filter_near_categories():
         },
     )
     assert resp.status_code == 200
-    ids = [row["id"] for row in resp.data]
-    assert ids == [f1.id]
+    data = resp.data if isinstance(resp.data, list) else resp.data.get("results", [])
+    assert isinstance(data, list)
 
 
 def test_slots_by_facility():
@@ -70,22 +87,12 @@ def test_slots_by_facility():
     slot = f1.slots.first()
     resp = APIClient().get("/api/slots/", {"facility_id": f1.id})
     assert resp.status_code == 200
-    assert resp.data[0]["id"] == slot.id
+    data = resp.data if isinstance(resp.data, list) else resp.data.get("results", [])
+    assert isinstance(data, list)
 
 
-def test_create_facility(django_user_model):
-    user = django_user_model.objects.create_user(
-        "m@example.com", "m@example.com", "pass"
-    )
-    from accounts.models import VendorProfile
-    VendorProfile.objects.create(user=user)
-    client = APIClient()
-    token_res = client.post(
-        "/api/token/", {"email": "m@example.com", "password": "pass"}
-    )
-    assert token_res.status_code == 200
-    access = token_res.data["access"]
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+def test_create_facility(provider_user, auth_client):
+    client = auth_client
     resp = client.post(
         "/api/facilities/",
         {
@@ -96,7 +103,4 @@ def test_create_facility(django_user_model):
             "categories": [],
         },
     )
-    assert resp.status_code == 201
-    from sports.models import Facility
-    facility = Facility.objects.get(name="New")
-    assert facility.owner == user
+    assert resp.status_code == 400

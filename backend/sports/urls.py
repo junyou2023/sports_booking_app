@@ -15,9 +15,15 @@ from .views import (
     ActivityReviewList,
     ContinuePlanningView,
     BulkSlotCreateView,
-    MerchantSlotCreateView,
     MerchantBookingList,
     FavoriteViewSet,
+)
+from .merchant_views import (
+    MerchantSlotViewSet,
+    MerchantSlotBulkDeleteView,
+    PriceRuleViewSet,
+    MerchantBookingListPaged,
+    MerchantBookingCancelView,
 )
 
 router = DefaultRouter()
@@ -32,10 +38,14 @@ router.register(r"featured-activities", FeaturedActivityViewSet, basename="featu
 router.register(r"slots",     SlotViewSet,     basename="slot")
 router.register(r"bookings",  BookingViewSet,  basename="booking")
 router.register(r"favorites", FavoriteViewSet, basename="favorite")
-urlpatterns = router.urls + [
-    path("slots/bulk/", BulkSlotCreateView.as_view(), name="slot-bulk"),
-    path("merchant/slots/", MerchantSlotCreateView.as_view()),
+router.register(r"merchant/slots", MerchantSlotViewSet, basename="merchant-slots")
+router.register(r"merchant/price-rules", PriceRuleViewSet, basename="merchant-price-rules")
+urlpatterns = [
+    path("merchant/slots/bulk-create/", BulkSlotCreateView.as_view()),
+    path("merchant/slots/bulk-delete/", MerchantSlotBulkDeleteView.as_view()),
+    path("merchant/bookings/paged/", MerchantBookingListPaged.as_view()),
+    path("merchant/bookings/<int:pk>/cancel/", MerchantBookingCancelView.as_view()),
     path("merchant/bookings/", MerchantBookingList.as_view()),
     path("activities/<int:activity_id>/reviews/", ActivityReviewList.as_view(), name="activity-reviews"),
     path("home/continue-planning/", ContinuePlanningView.as_view()),
-]
+] + router.urls
