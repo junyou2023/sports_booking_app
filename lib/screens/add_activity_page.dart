@@ -34,6 +34,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   int? variantId;
   int difficulty = 1;
   bool _submitting = false;
+  bool _orgReady = false;
   XFile? _imageFile;
   String? _existingImage;
   Map<String, String> fieldErrors = {};
@@ -87,6 +88,8 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final orgsAsync = ref.watch(orgsProvider);
+          final selectedOrg = ref.watch(selectedOrgProvider);
+          _orgReady = orgsAsync is AsyncData && selectedOrg != null;
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -191,7 +194,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting
+                    onPressed: (!_orgReady || _submitting)
                         ? null
                         : () async {
                             fieldErrors = {};
@@ -205,8 +208,9 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                             }
                             setState(() => _submitting = true);
                             try {
+                              Activity res;
                               if (widget.activity == null) {
-                                await activityService.createActivity(
+                                res = await activityService.createActivity(
                                   sportId!,
                                   disciplineId!,
                                   variantId,
@@ -219,7 +223,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   imageFile: _imageFile,
                                 );
                               } else {
-                                await activityService.updateActivity(
+                                res = await activityService.updateActivity(
                                   widget.activity!.id,
                                   sportId!,
                                   disciplineId!,
@@ -234,21 +238,14 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                 );
                               }
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Activity created'
-                                        : 'Activity updated'),
-                                  ),
-                                );
-                                Navigator.pop(context, true);
+                                Navigator.pop(context, res);
                               }
                             } on DioException catch (e) {
                               final err = e.error;
                               if (err is Map<String, List<String>>) {
                                 setState(() {
-                                  fieldErrors = err
-                                      .map((k, v) => MapEntry(k, v.join(', ')));
+                                  fieldErrors =
+                                      err.map((k, v) => MapEntry(k, v.join(', ')));
                                 });
                               } else if (context.mounted) {
                                 showApiError(
@@ -289,7 +286,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   orgs.first['id'] as int;
             }
           });
-          return const SizedBox.shrink();
         }
         return DropdownButtonFormField<int>(
           value: selectedOrg,
@@ -299,7 +295,10 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                     child: Text(e['name']?.toString() ?? ''),
                   ))
               .toList(),
-          onChanged: (v) => ref.read(selectedOrgProvider.notifier).state = v,
+          onChanged: orgs.length == 1
+              ? null
+              : (v) =>
+                  ref.read(selectedOrgProvider.notifier).state = v,
           decoration: InputDecoration(
             labelText: 'Organization',
             errorText: fieldErrors['organization'],
@@ -307,8 +306,17 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           validator: (v) => v == null ? 'Required' : null,
         );
       },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      loading: () => const Padding(
+        padding: EdgeInsets.only(bottom: 16),
+        child: Text('Loading organization…',
+            style: TextStyle(color: Colors.grey)),
+      ),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Text('Failed to load organization.',
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.error, fontSize: 12)),
+      ),
     );
   }
 
