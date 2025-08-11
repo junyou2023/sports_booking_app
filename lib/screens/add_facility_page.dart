@@ -5,23 +5,23 @@ import 'package:geocoding/geocoding.dart';
 import '../models/facility.dart';
 import '../models/category.dart';
 import '../services/facility_service.dart';
-import '../services/sports_service.dart';
+import '../services/sports_service.dart' as sport_service;
 import '../services/location_service.dart';
 import '../utils/snackbar.dart';
 
 class AddFacilityPage extends StatefulWidget {
   final Facility? facility;
   final FacilityService service;
-  final SportsService sportsService;
+  final sport_service.SportsService sportsService;
   final Future<List<Location>> Function(String) geocode;
   AddFacilityPage({
     super.key,
     this.facility,
     FacilityService? service,
-    SportsService? sportsSvc,
+    sport_service.SportsService? sportsSvc,
     this.geocode = locationFromAddress,
   })  : service = service ?? facilityService,
-        sportsService = sportsSvc ?? sportsService;
+        sportsService = sportsSvc ?? sport_service.sportsService;
 
   @override
   State<AddFacilityPage> createState() => _AddFacilityPageState();
