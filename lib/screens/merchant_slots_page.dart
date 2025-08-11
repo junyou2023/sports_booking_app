@@ -25,7 +25,7 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
   Future<void> _refresh() async {
     setState(() => _loading = true);
     try {
-      final page = await slotService.fetchMine(page: 1);
+      final page = await slotService.fetchMineAdvanced(page: 1);
       setState(() {
         _slots
           ..clear()
@@ -43,7 +43,7 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
     setState(() => _loadingMore = true);
     try {
       final nextPage = _page + 1;
-      final page = await slotService.fetchMine(page: nextPage);
+      final page = await slotService.fetchMineAdvanced(page: nextPage);
       setState(() {
         _slots.addAll(page.results);
         _next = page.next;
