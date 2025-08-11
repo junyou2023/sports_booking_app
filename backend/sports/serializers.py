@@ -108,6 +108,8 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
         if begins and ends:
             if begins.date() != ends.date():
                 errors["ends_at"] = ["Must not cross days"]
+            if begins >= ends:
+                errors.setdefault("ends_at", []).append("Must be after begins_at")
             if begins < now:
                 errors["begins_at"] = ["Must be in the future"]
 
@@ -117,6 +119,14 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.filter(begins_at__lt=ends, ends_at__gt=begins).exists():
                 errors.setdefault("begins_at", []).append("Overlaps another slot")
+
+        capacity = attrs.get("capacity")
+        if capacity is not None and capacity <= 0:
+            errors.setdefault("capacity", []).append("Must be > 0")
+
+        price = attrs.get("price")
+        if price is not None and price < 0:
+            errors.setdefault("price", []).append("Must be >= 0")
 
         if errors:
             raise serializers.ValidationError(errors)

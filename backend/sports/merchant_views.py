@@ -5,7 +5,7 @@ from rest_framework.pagination import CursorPagination
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from django.db.models import F
+from django.db.models import F, Q
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse, OpenApiParameter, OpenApiTypes
 
 from .models import Slot, Booking
@@ -20,11 +20,43 @@ class MerchantSlotViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def get_queryset(self):
+        """Return slots belonging to the current vendor with optional filters."""
         user = self.request.user
-        return Slot.objects.filter(
-            activity__organization__members__user=user,
-            is_active=True,
-        )
+        qs = Slot.objects.filter(activity__organization__members__user=user)
+
+        params = self.request.query_params
+
+        # active filter – default to active only
+        active = params.get("active")
+        if active in ("0", "false", "False"):
+            qs = qs.filter(is_active=False)
+        else:
+            qs = qs.filter(is_active=True)
+
+        activity_id = params.get("activity")
+        if activity_id:
+            qs = qs.filter(activity_id=activity_id)
+
+        after = params.get("after")
+        if after:
+            dt = parse_datetime(after)
+            if dt:
+                qs = qs.filter(begins_at__gte=dt)
+
+        before = params.get("before")
+        if before:
+            dt = parse_datetime(before)
+            if dt:
+                qs = qs.filter(begins_at__lte=dt)
+
+        keyword = params.get("q")
+        if keyword:
+            qs = qs.filter(Q(title__icontains=keyword) | Q(location__icontains=keyword))
+
+        ordering = params.get("ordering") or "-begins_at"
+        if ordering not in ("begins_at", "-begins_at"):
+            ordering = "-begins_at"
+        return qs.order_by(ordering)
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

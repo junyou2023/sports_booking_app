@@ -138,12 +138,51 @@ class SlotService {
     return Paginated.fromJson(data, (j) => Slot.fromJson(j));
   }
 
+  Future<Paginated<Slot>> fetchMineAdvanced({
+    int page = 1,
+    int? activityId,
+    DateTime? after,
+    DateTime? before,
+    bool? active,
+    String? q,
+    String? ordering,
+  }) async {
+    final params = <String, dynamic>{'page': page};
+    if (activityId != null) params['activity'] = activityId;
+    if (after != null) params['after'] = _iso(after);
+    if (before != null) params['before'] = _iso(before);
+    if (active != null) params['active'] = active ? '1' : '0';
+    if (q != null && q.isNotEmpty) params['q'] = q;
+    if (ordering != null) params['ordering'] = ordering;
+
+    final res = await apiClient.get('/merchant/slots/', queryParameters: params);
+    final dynamic payload = res.data;
+    if (payload is Map<String, dynamic>) {
+      return Paginated.fromJson(payload, (j) => Slot.fromJson(j));
+    } else if (payload is List) {
+      // Backend without pagination support
+      return Paginated.fromJson(
+          {'next': null, 'previous': null, 'results': payload},
+          (j) => Slot.fromJson(j));
+    } else {
+      throw const FormatException('Unexpected response');
+    }
+  }
+
   Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
     await apiClient.patch('/merchant/slots/$id/', data: patch);
   }
 
   Future<void> deleteMerchantSlot(int id) async {
     await apiClient.delete('/merchant/slots/$id/');
+  }
+
+  Future<Map<String, dynamic>> bulkDelete(List<int> ids) async {
+    final res = await apiClient.delete(
+      '/merchant/slots/bulk-delete/',
+      data: {'ids': ids},
+    );
+    return Map<String, dynamic>.from(res.data as Map);
   }
 }
 
