@@ -498,7 +498,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         onPressed: () async {
           final created = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddActivityPage()),
+            MaterialPageRoute(builder: (_) => AddActivityPage()),
           );
           if (created == true) {
             ref.invalidate(nearbyActivitiesProvider);

@@ -1,6 +1,8 @@
 /// Global Dio instance configured with base-url and sane defaults.
 /// All services import this instead of creating their own client.
 
+import 'dart:io' show Platform; // needed to detect desktop platforms
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,9 +16,25 @@ late Dio apiClient;
 // unique key for navigation without BuildContext
 final apiClientNavKey = GlobalKey<NavigatorState>();
 
+/// Adjust base URL for desktop/web platforms where Android's `10.0.2.2`
+/// (emulator localhost) is unreachable.  When running on Web or desktop and
+/// the env contains `10.0.2.2`, swap to `127.0.0.1`.
+@visibleForTesting
+String adjustBaseUrl(String base,
+    {bool? webOverride, bool? desktopOverride}) {
+  final isWeb = webOverride ?? kIsWeb;
+  final isDesktop = desktopOverride ??
+      (!isWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows));
+  if ((isWeb || isDesktop) && base.contains('10.0.2.2')) {
+    return base.replaceFirst('10.0.2.2', '127.0.0.1');
+  }
+  return base;
+}
+
 /// Call after dotenv.load to construct the client with the base URL.
 void initApiClient() {
   var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
+  base = adjustBaseUrl(base);
   if (!base.endsWith('/')) base += '/';
   apiClient = Dio(
     BaseOptions(
@@ -27,7 +45,8 @@ void initApiClient() {
     ),
   );
   if (kDebugMode) {
-    apiClient.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+    apiClient.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true));
   }
 }
 

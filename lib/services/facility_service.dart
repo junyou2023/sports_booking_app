@@ -29,7 +29,7 @@ class FacilityService {
   }
 
   Future<void> createFacility(
-      String name, double lat, double lng, List<String> categories,
+      String name, double lat, double lng, List<int> categories,
       {double radius = 1000}) async {
     await apiClient.post('/facilities/', data: {
       'name': name,
@@ -45,7 +45,7 @@ class FacilityService {
   }
 
   Future<void> updateFacility(
-      int id, String name, double lat, double lng, List<String> categories,
+      int id, String name, double lat, double lng, List<int> categories,
       {double radius = 1000}) async {
     await apiClient.patch('/facilities/$id/', data: {
       'name': name,

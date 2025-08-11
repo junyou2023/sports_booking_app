@@ -10,13 +10,16 @@ import '../services/slot_service.dart';
 import 'add_activity_page.dart';
 import 'add_slot_page.dart';
 import 'add_facility_page.dart';
+import 'add_sport_page.dart';
 import 'merchant_slots_page.dart';
 import 'merchant_bookings_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
 
 class ProviderDashboardPage extends ConsumerStatefulWidget {
-  const ProviderDashboardPage({super.key});
+  final ActivityService activitySvc;
+  ProviderDashboardPage({super.key, ActivityService? activitySvc})
+      : activitySvc = activitySvc ?? activityService;
 
   @override
   ConsumerState<ProviderDashboardPage> createState() => _ProviderDashboardPageState();
@@ -38,7 +41,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
   Future<void> _refresh() async {
     setState(() => _loading = true);
     try {
-      final page = await activityService.fetchActivities(params: {'mine': '1'});
+      final page = await widget.activitySvc.fetchActivities(params: {'mine': '1'});
       setState(() {
         _activities
           ..clear()
@@ -56,8 +59,8 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
     setState(() => _loadingMore = true);
     try {
       final nextPage = _page + 1;
-      final page =
-          await activityService.fetchActivities(params: {'mine': '1', 'page': nextPage});
+      final page = await widget.activitySvc
+          .fetchActivities(params: {'mine': '1', 'page': nextPage});
       setState(() {
         _activities.addAll(page.results);
         _next = page.next;
@@ -71,9 +74,9 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Merchant Dashboard')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Merchant Dashboard')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
@@ -98,7 +101,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           children: [
             _AddActivityHero(onTap: () async {
               final created = await Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+                  context, MaterialPageRoute(builder: (_) => AddActivityPage()));
               if (created == true) {
                 await _refresh();
                 if (mounted) {
@@ -111,22 +114,53 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             _QuickLinkCard(
               label: 'Add Facility',
               icon: Icons.store_mall_directory_outlined,
-              onTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const AddFacilityPage())),
+              onTap: () async {
+                final created = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AddFacilityPage()));
+                if (created == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Facility created')));
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            _QuickLinkCard(
+              label: 'Create Sport',
+              icon: Icons.sports_soccer_outlined,
+              onTap: () async {
+                final created = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddSportPage()),
+                );
+                if (created == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sport created')));
+                }
+              },
             ),
             const SizedBox(height: 16),
             _QuickLinkCard(
               label: 'Manage Slots',
               icon: Icons.schedule,
-              onTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const MerchantSlotsPage())),
+              onTap: () async {
+                await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MerchantSlotsPage()));
+              },
             ),
             const SizedBox(height: 16),
             _QuickLinkCard(
               label: 'Merchant Bookings',
               icon: Icons.event_note,
-              onTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const MerchantBookingsPage())),
+              onTap: () async {
+                await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MerchantBookingsPage()));
+              },
             ),
             const SizedBox(height: 16),
             Text('Your Activities', style: Theme.of(context).textTheme.titleMedium),
@@ -134,14 +168,18 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             if (_activities.isEmpty)
               _EmptyState(onCreate: () async {
                 final created = await Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+                    context, MaterialPageRoute(builder: (_) => AddActivityPage()));
                 if (created == true) {
                   await _refresh();
                 }
               })
             else
               ..._activities.map(
-                (a) => _ActivityCard(activity: a, onChanged: () => _refresh()),
+                (a) => _ActivityCard(
+                  activity: a,
+                  onChanged: () => _refresh(),
+                  activitySvc: widget.activitySvc,
+                ),
               ),
             if (_loadingMore)
               const Padding(
@@ -231,7 +269,7 @@ class _QuickLinkCard extends StatelessWidget {
   const _QuickLinkCard({required this.label, required this.icon, required this.onTap});
   final String label;
   final IconData icon;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +281,9 @@ class _QuickLinkCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
+        onTap: () {
+          onTap();
+        },
         child: SizedBox(
           height: 88,
           child: Row(
@@ -305,9 +345,14 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.activity, required this.onChanged});
+  const _ActivityCard({
+    required this.activity,
+    required this.onChanged,
+    required this.activitySvc,
+  });
   final Activity activity;
   final VoidCallback onChanged;
+  final ActivityService activitySvc;
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +414,7 @@ class _ActivityCard extends StatelessWidget {
                   );
                   if (confirm == true) {
                     try {
-                      await activityService.deleteActivity(activity.id);
+                      await activitySvc.deleteActivity(activity.id);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context)
                             .showSnackBar(const SnackBar(content: Text('Activity deleted')));

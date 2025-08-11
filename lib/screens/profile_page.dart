@@ -143,7 +143,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ProviderDashboardPage()),
+                        MaterialPageRoute(builder: (_) => ProviderDashboardPage()),
                       ),
                     ),
                   ),
