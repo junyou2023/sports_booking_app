@@ -147,6 +147,13 @@ class Facility(models.Model):
         null=True,
         blank=True,
     )
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        related_name="facilities",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [

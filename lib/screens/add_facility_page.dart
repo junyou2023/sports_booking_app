@@ -37,6 +37,8 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
   List<Category> categories = [];
   bool _submitting = false;
   late Future<void> _loadFuture;
+  String? addressError;
+  Map<String, String> fieldErrors = {};
 
   @override
   void initState() {
@@ -80,6 +82,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
       final results = await widget.geocode(addressCtrl.text.trim());
       if (results.isNotEmpty) {
         setState(() {
+          addressError = null;
           lat = results.first.latitude;
           lng = results.first.longitude;
         });
@@ -89,16 +92,10 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                   'Location set to ${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}')));
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Address not found')));
-        }
+        setState(() => addressError = 'Address not found');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not geocode address: $e')));
-      }
+      setState(() => addressError = 'Could not geocode address');
     }
   }
 
@@ -128,8 +125,22 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                 children: [
                   TextFormField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Name'),
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      errorText: fieldErrors['name'],
+                    ),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  TextFormField(
+                    controller: addressCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Address (optional)',
+                      errorText: addressError,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _setFromAddress,
+                    child: const Text('Use address'),
                   ),
                   if (lat != null && lng != null)
                     Text(
@@ -137,15 +148,6 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                   TextButton(
                     onPressed: _setCurrentLocation,
                     child: const Text('Use current location'),
-                  ),
-                  TextFormField(
-                    controller: addressCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Address (optional)'),
-                  ),
-                  TextButton(
-                    onPressed: _setFromAddress,
-                    child: const Text('Use address'),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -173,10 +175,13 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                         ? null
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
+                            fieldErrors = {};
                             setState(() => _submitting = true);
                             try {
                               if (lat == null || lng == null) {
-                                await _setCurrentLocation();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Please set location')));
+                                return;
                               }
                               if (isEditing) {
                                 await widget.service.updateFacility(
@@ -196,7 +201,13 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                               }
                               if (context.mounted) Navigator.pop(context, true);
                             } on DioException catch (e) {
-                              if (context.mounted) {
+                              final err = e.error;
+                              if (err is Map<String, List<String>>) {
+                                setState(() {
+                                  fieldErrors =
+                                      err.map((k, v) => MapEntry(k, v.join(', ')));
+                                });
+                              } else if (context.mounted) {
                                 showApiError(context, e, 'Save facility');
                               }
                             } catch (e) {

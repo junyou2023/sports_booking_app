@@ -9,10 +9,8 @@ import '../models/activity.dart';
 import '../models/category.dart';
 import '../models/sport.dart';
 import '../models/variant.dart';
-import '../providers/org_provider.dart';
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
-import 'provider_registration_page.dart';
 import '../utils/snackbar.dart';
 
 class AddActivityPage extends ConsumerStatefulWidget {
@@ -89,14 +87,12 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final orgsAsync = ref.watch(orgsProvider);
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
-                  _buildOrgField(orgsAsync),
                   DropdownButtonFormField<int>(
                     value: sportId,
                     items: sports
@@ -199,17 +195,11 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                         : () async {
                             fieldErrors = {};
                             if (!_formKey.currentState!.validate()) return;
-                            final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
                             setState(() => _submitting = true);
                             try {
+                              Activity act;
                               if (widget.activity == null) {
-                                await widget.service.createActivity(
+                                act = await widget.service.createActivity(
                                   sportId!,
                                   disciplineId!,
                                   variantId,
@@ -218,11 +208,11 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  organizationId: orgId,
+                                  organizationId: null,
                                   imageFile: _imageFile,
                                 );
                               } else {
-                                await widget.service.updateActivity(
+                                act = await widget.service.updateActivity(
                                   widget.activity!.id,
                                   sportId!,
                                   disciplineId!,
@@ -232,7 +222,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  organizationId: orgId,
+                                  organizationId: null,
                                   imageFile: _imageFile,
                                 );
                               }
@@ -244,7 +234,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                         : 'Activity updated'),
                                   ),
                                 );
-                                Navigator.pop(context, true);
+                                Navigator.pop(context, act);
                               }
                             } on DioException catch (e) {
                               final err = e.error;
@@ -253,6 +243,11 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   fieldErrors =
                                       err.map((k, v) => MapEntry(k, v.join(', ')));
                                 });
+                                if (err['organization'] != null && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(err['organization']!.join(', '))),
+                                  );
+                                }
                               } else if (context.mounted) {
                                 showApiError(
                                     context,
@@ -288,74 +283,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildOrgField(AsyncValue<List<Map<String, dynamic>>> orgsAsync) {
-    return orgsAsync.when(
-      data: (orgs) {
-        final selectedOrg = ref.watch(selectedOrgProvider);
-        if (orgs.isEmpty) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                        child: Text(
-                            'No organisations found. Create or join one first.')),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () async {
-                  await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ProviderRegistrationPage()));
-                  ref.invalidate(orgsProvider);
-                },
-                child: const Text('Create/Join Organization'),
-              ),
-            ],
-          );
-        }
-        if (orgs.length == 1) {
-          Future.microtask(() {
-            if (ref.read(selectedOrgProvider) == null) {
-              ref.read(selectedOrgProvider.notifier).state =
-                  orgs.first['id'] as int;
-            }
-          });
-          return const SizedBox.shrink();
-        }
-        return DropdownButtonFormField<int>(
-          value: selectedOrg,
-          items: orgs
-              .map<DropdownMenuItem<int>>((e) => DropdownMenuItem(
-                    value: e['id'] as int,
-                    child: Text(e['name']?.toString() ?? ''),
-                  ))
-              .toList(),
-          onChanged: (v) => ref.read(selectedOrgProvider.notifier).state = v,
-          decoration: InputDecoration(
-            labelText: 'Organization',
-            errorText: fieldErrors['organization'],
-          ),
-          validator: (v) => v == null ? 'Required' : null,
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

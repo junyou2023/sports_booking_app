@@ -18,6 +18,7 @@ from .models import (
     Favorite,
 )
 from accounts.models import Organization, OrganizationMember
+from accounts.utils import get_or_create_primary_org
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -101,6 +102,7 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
         begins = attrs.get("begins_at") or getattr(self.instance, "begins_at", None)
         ends = attrs.get("ends_at") or getattr(self.instance, "ends_at", None)
         activity = attrs.get("activity") or getattr(self.instance, "activity", None)
+        facility = attrs.get("facility") or getattr(self.instance, "facility", None)
 
         errors = {}
         now = timezone.now()
@@ -117,6 +119,9 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.filter(begins_at__lt=ends, ends_at__gt=begins).exists():
                 errors.setdefault("begins_at", []).append("Overlaps another slot")
+
+        if activity and facility and activity.organization_id != facility.organization_id:
+            errors.setdefault("facility", []).append("Facility not in same organization")
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -156,7 +161,7 @@ class VariantSerializer(serializers.ModelSerializer):
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all()
+        queryset=Organization.objects.all(), required=False, allow_null=True
     )
 
     class Meta:
@@ -206,9 +211,7 @@ class ActivitySerializer(serializers.ModelSerializer):
     def validate_organization(self, value):
         request = self.context.get("request")
         user = getattr(request, "user", None)
-        if user is None:
-            return value
-        if not OrganizationMember.objects.filter(
+        if value and user and not OrganizationMember.objects.filter(
             organization=value, user=user
         ).exists():
             raise serializers.ValidationError("Not a member of this organization")
@@ -288,8 +291,9 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
         point = Point(lng, lat, srid=4326)
         request = self.context.get("request")
         owner = request.user if request else None
+        org = get_or_create_primary_org(owner) if owner else None
         facility = Facility.objects.create(
-            location=point, owner=owner, **validated_data
+            location=point, owner=owner, organization=org, **validated_data
         )
         return facility
 
