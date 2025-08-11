@@ -17,7 +17,7 @@ from .models import (
     FeaturedActivity,
     Favorite,
 )
-from accounts.models import Organization, OrganizationMember
+from accounts.models import Organization
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -155,9 +155,7 @@ class VariantSerializer(serializers.ModelSerializer):
 
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
-    organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all()
-    )
+    organization = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Activity
@@ -176,7 +174,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "base_price",
             "is_nearby",
         )
-        read_only_fields = ("id", "image")
+        read_only_fields = ("id", "image", "organization")
 
     def get_image_url(self, obj):
         if obj.image:
@@ -203,16 +201,17 @@ class ActivitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"description": "Max 500 characters"})
         return attrs
 
-    def validate_organization(self, value):
+    def create(self, validated_data):
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if user is None:
-            return value
-        if not OrganizationMember.objects.filter(
-            organization=value, user=user
-        ).exists():
-            raise serializers.ValidationError("Not a member of this organization")
-        return value
+        if not hasattr(request.user, "vendorprofile"):
+            raise serializers.ValidationError(
+                {"detail": "Only providers can create activities."}
+            )
+        from sports.utils.orgs import get_or_create_single_org_for_user
+
+        org = get_or_create_single_org_for_user(request.user)
+        validated_data["organization"] = org
+        return super().create(validated_data)
 
 
 class ActivitySimpleSerializer(serializers.ModelSerializer):
