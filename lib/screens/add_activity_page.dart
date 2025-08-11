@@ -12,11 +12,13 @@ import '../models/variant.dart';
 import '../providers/org_provider.dart';
 import '../services/activity_service.dart';
 import '../services/sports_service.dart';
+import 'provider_registration_page.dart';
 import '../utils/snackbar.dart';
 
 class AddActivityPage extends ConsumerStatefulWidget {
   final Activity? activity;
-  const AddActivityPage({this.activity, super.key});
+  final ActivityService service;
+  const AddActivityPage({this.activity, this.service = activityService, super.key});
 
   @override
   ConsumerState<AddActivityPage> createState() => _AddActivityPageState();
@@ -206,7 +208,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                             setState(() => _submitting = true);
                             try {
                               if (widget.activity == null) {
-                                await activityService.createActivity(
+                                await widget.service.createActivity(
                                   sportId!,
                                   disciplineId!,
                                   variantId,
@@ -219,7 +221,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   imageFile: _imageFile,
                                 );
                               } else {
-                                await activityService.updateActivity(
+                                await widget.service.updateActivity(
                                   widget.activity!.id,
                                   sportId!,
                                   disciplineId!,
@@ -247,8 +249,8 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                               final err = e.error;
                               if (err is Map<String, List<String>>) {
                                 setState(() {
-                                  fieldErrors = err
-                                      .map((k, v) => MapEntry(k, v.join(', ')));
+                                  fieldErrors =
+                                      err.map((k, v) => MapEntry(k, v.join(', ')));
                                 });
                               } else if (context.mounted) {
                                 showApiError(
@@ -257,6 +259,16 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                     widget.activity == null
                                         ? 'Create activity'
                                         : 'Update activity');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(widget.activity == null
+                                        ? 'Create activity failed: $e'
+                                        : 'Update activity failed: $e'),
+                                  ),
+                                );
                               }
                             } finally {
                               if (mounted) setState(() => _submitting = false);
@@ -282,6 +294,40 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
     return orgsAsync.when(
       data: (orgs) {
         final selectedOrg = ref.watch(selectedOrgProvider);
+        if (orgs.isEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                        child: Text(
+                            'No organisations found. Create or join one first.')),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () async {
+                  await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ProviderRegistrationPage()));
+                  ref.invalidate(orgsProvider);
+                },
+                child: const Text('Create/Join Organization'),
+              ),
+            ],
+          );
+        }
         if (orgs.length == 1) {
           Future.microtask(() {
             if (ref.read(selectedOrgProvider) == null) {

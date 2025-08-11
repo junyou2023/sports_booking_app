@@ -50,6 +50,9 @@ When testing on the Android emulator the correct value for `API_BASE_URL` is
 `http://10.0.2.2:8000/api`.
 `initApiClient` automatically appends a trailing slash so either form
 (`http://10.0.2.2:8000/api` or `http://10.0.2.2:8000/api/`) works.
+For Web or desktop builds the Android emulator host `10.0.2.2` is not reachable;
+the client automatically swaps it to `127.0.0.1` so the backend running on the
+same machine can be accessed without editing `.env`.
 
 If running the backend without Docker, install dependencies with
 `pip install -r requirements.txt` and apply migrations using `python manage.py migrate`.
@@ -97,6 +100,8 @@ The client uses the device's location to show nearby activities. Android
 requires `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION` to be declared in
 `AndroidManifest.xml`. iOS must include `NSLocationWhenInUseUsageDescription` in
 `Info.plist`.
+The `geocoding` package is used to translate typed addresses into coordinates;
+no additional setup is required beyond network access.
 
 ## Merchant interface
 
@@ -104,6 +109,9 @@ Logged-in providers can publish new facilities via the **Add** button on the
 dashboard. Simply choose a name and categories; the app will use the device's
 current location as the facility position. Once created the facility appears in
 the *Nearby Activities* list for customers near you.
+All create forms return to the previous screen with
+`Navigator.pop(context, true)` so the caller can `await` the result and refresh
+its data when a new item is added.
 
 ### Provider sign-up
 

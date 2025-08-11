@@ -54,10 +54,16 @@ class DefaultPagination(PageNumberPagination):
     page_size_query_param = "page_size"
 
 
-class SportViewSet(viewsets.ReadOnlyModelViewSet):
+class SportViewSet(viewsets.ModelViewSet):
     queryset = Sport.objects.all()
     serializer_class = SportSerializer
-    permission_classes = [permissions.AllowAny]
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsVendor()]
+        if self.action in ("update", "partial_update", "destroy"):
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):

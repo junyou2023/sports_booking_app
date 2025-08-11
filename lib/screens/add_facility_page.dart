@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:geocoding/geocoding.dart';
+
 import '../models/facility.dart';
 import '../models/category.dart';
 import '../services/facility_service.dart';
@@ -9,7 +11,16 @@ import '../utils/snackbar.dart';
 
 class AddFacilityPage extends StatefulWidget {
   final Facility? facility;
-  const AddFacilityPage({super.key, this.facility});
+  final FacilityService service;
+  final SportsService sportsService;
+  final Future<List<Location>> Function(String) geocode;
+  const AddFacilityPage({
+    super.key,
+    this.facility,
+    this.service = facilityService,
+    this.sportsService = sportsService,
+    this.geocode = locationFromAddress,
+  });
 
   @override
   State<AddFacilityPage> createState() => _AddFacilityPageState();
@@ -18,9 +29,10 @@ class AddFacilityPage extends StatefulWidget {
 class _AddFacilityPageState extends State<AddFacilityPage> {
   final _formKey = GlobalKey<FormState>();
   final nameCtrl = TextEditingController();
+  final addressCtrl = TextEditingController();
   double? lat;
   double? lng;
-  List<String> selectedCats = [];
+  List<int> selectedCats = [];
   List<Category> categories = [];
   bool _submitting = false;
   late Future<void> _loadFuture;
@@ -33,7 +45,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
       nameCtrl.text = f.name;
       lat = f.lat;
       lng = f.lng;
-      selectedCats = List<String>.from(f.categories);
+      selectedCats = f.categories.map(int.parse).toList();
     } else {
       _setCurrentLocation();
     }
@@ -41,7 +53,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
   }
 
   Future<void> _loadData() async {
-    categories = await sportsService.fetchCategories();
+    categories = await widget.sportsService.fetchCategories();
   }
 
   Future<void> _setCurrentLocation() async {
@@ -51,16 +63,48 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
         lat = pos.latitude;
         lng = pos.longitude;
       });
-    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location set to current position')));
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not get current location')),
+        SnackBar(content: Text('Could not get current location: $e')),
       );
+    }
+  }
+
+  Future<void> _setFromAddress() async {
+    try {
+      final results = await widget.geocode(addressCtrl.text.trim());
+      if (results.isNotEmpty) {
+        setState(() {
+          lat = results.first.latitude;
+          lng = results.first.longitude;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Location set to ${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}')));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Address not found')));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not geocode address: $e')));
+      }
     }
   }
 
   @override
   void dispose() {
     nameCtrl.dispose();
+    addressCtrl.dispose();
     super.dispose();
   }
 
@@ -93,6 +137,15 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                     onPressed: _setCurrentLocation,
                     child: const Text('Use current location'),
                   ),
+                  TextFormField(
+                    controller: addressCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Address (optional)'),
+                  ),
+                  TextButton(
+                    onPressed: _setFromAddress,
+                    child: const Text('Use address'),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -100,13 +153,13 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                       for (final c in categories)
                         FilterChip(
                           label: Text(c.name),
-                          selected: selectedCats.contains(c.id.toString()),
+                          selected: selectedCats.contains(c.id),
                           onSelected: (sel) {
                             setState(() {
                               if (sel) {
-                                selectedCats.add(c.id.toString());
+                                selectedCats.add(c.id);
                               } else {
-                                selectedCats.remove(c.id.toString());
+                                selectedCats.remove(c.id);
                               }
                             });
                           },
@@ -125,7 +178,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                                 await _setCurrentLocation();
                               }
                               if (isEditing) {
-                                await facilityService.updateFacility(
+                                await widget.service.updateFacility(
                                   widget.facility!.id,
                                   nameCtrl.text,
                                   lat!,
@@ -133,7 +186,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                                   selectedCats,
                                 );
                               } else {
-                                await facilityService.createFacility(
+                                await widget.service.createFacility(
                                   nameCtrl.text,
                                   lat!,
                                   lng!,
@@ -144,6 +197,13 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                             } on DioException catch (e) {
                               if (context.mounted) {
                                 showApiError(context, e, 'Save facility');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text('Save facility failed: $e')),
+                                );
                               }
                             } finally {
                               if (mounted) setState(() => _submitting = false);
