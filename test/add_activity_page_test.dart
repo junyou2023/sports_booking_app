@@ -8,10 +8,11 @@ import 'package:sports_booking_app/services/api_client.dart';
 import 'package:sports_booking_app/screens/add_activity_page.dart';
 import 'package:sports_booking_app/services/activity_service.dart';
 import 'package:sports_booking_app/providers/org_provider.dart';
+import 'package:sports_booking_app/models/activity.dart';
 
 class _ThrowingActivityService extends ActivityService {
   @override
-  Future<void> createActivity(
+  Future<Activity> createActivity(
       int sport,
       int discipline,
       int? variant,
@@ -20,7 +21,7 @@ class _ThrowingActivityService extends ActivityService {
       int difficulty,
       int duration,
       double basePrice,
-      {required int organizationId,
+      {int? organizationId,
       XFile? imageFile}) async {
     throw Exception('boom');
   }

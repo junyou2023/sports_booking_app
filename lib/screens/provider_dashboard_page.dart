@@ -1,4 +1,5 @@
 // lib/screens/provider_dashboard_page.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -10,7 +11,7 @@ import '../services/slot_service.dart';
 import 'add_activity_page.dart';
 import 'add_slot_page.dart';
 import 'add_facility_page.dart';
-import 'add_sport_page.dart';
+import 'edit_sport_page.dart';
 import 'merchant_slots_page.dart';
 import 'merchant_bookings_page.dart';
 import 'provider_facilities_page.dart';
@@ -100,14 +101,19 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           padding: const EdgeInsets.all(16),
           children: [
             _AddActivityHero(onTap: () async {
-              final created = await Navigator.push(
+              final result = await Navigator.push(
                   context, MaterialPageRoute(builder: (_) => AddActivityPage()));
-              if (created == true) {
-                await _refresh();
+              if (result is Activity) {
+                setState(() {
+                  _activities.insert(0, result);
+                });
                 if (mounted) {
                   ScaffoldMessenger.of(context)
                       .showSnackBar(const SnackBar(content: Text('Activity created')));
                 }
+                unawaited(_refresh());
+              } else if (result == true) {
+                await _refresh();
               }
             }),
             const SizedBox(height: 16),
@@ -128,11 +134,11 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             const SizedBox(height: 16),
             _QuickLinkCard(
               label: 'Create Sport',
-              icon: Icons.sports_soccer_outlined,
+              icon: Icons.sports_martial_arts_outlined,
               onTap: () async {
                 final created = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => AddSportPage()),
+                  MaterialPageRoute(builder: (_) => const EditSportPage()),
                 );
                 if (created == true && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -167,9 +173,14 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             const SizedBox(height: 8),
             if (_activities.isEmpty)
               _EmptyState(onCreate: () async {
-                final created = await Navigator.push(
+                final result = await Navigator.push(
                     context, MaterialPageRoute(builder: (_) => AddActivityPage()));
-                if (created == true) {
+                if (result is Activity) {
+                  setState(() {
+                    _activities.insert(0, result);
+                  });
+                  unawaited(_refresh());
+                } else if (result == true) {
                   await _refresh();
                 }
               })

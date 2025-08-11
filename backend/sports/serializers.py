@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from django.contrib.gis.geos import Point
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 from .models import (
     Sport,
     Slot,
@@ -156,7 +157,7 @@ class VariantSerializer(serializers.ModelSerializer):
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all()
+        queryset=Organization.objects.all(), required=False, allow_null=True
     )
 
     class Meta:
@@ -208,10 +209,13 @@ class ActivitySerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
         if user is None:
             return value
-        if not OrganizationMember.objects.filter(
-            organization=value, user=user
-        ).exists():
-            raise serializers.ValidationError("Not a member of this organization")
+        if (
+            value
+            and not OrganizationMember.objects.filter(
+                organization=value, user=user
+            ).exists()
+        ):
+            raise PermissionDenied("Not a member of this organization")
         return value
 
 
