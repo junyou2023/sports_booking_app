@@ -242,6 +242,8 @@ class FeaturedActivitySerializer(serializers.ModelSerializer):
 
 
 class FacilitySerializer(GeoFeatureModelSerializer):
+    lat = serializers.SerializerMethodField()
+    lng = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
 
     class Meta:
@@ -250,27 +252,8 @@ class FacilitySerializer(GeoFeatureModelSerializer):
         fields = (
             "id",
             "name",
-            "radius",
+            "address",
             "location",
-            "categories",
-            "owner",
-        )
-
-    def get_owner(self, obj):
-        return getattr(obj.owner, "email", "")
-
-
-class FacilityCreateSerializer(serializers.ModelSerializer):
-    lat = serializers.FloatField(write_only=True)
-    lng = serializers.FloatField(write_only=True)
-
-    owner = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = Facility
-        fields = (
-            "id",
-            "name",
             "lat",
             "lng",
             "radius",
@@ -281,16 +264,57 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
     def get_owner(self, obj):
         return getattr(obj.owner, "email", "")
 
-    def create(self, validated_data):
-        lat = validated_data.pop("lat")
-        lng = validated_data.pop("lng")
-        point = Point(lng, lat, srid=4326)
-        request = self.context.get("request")
-        owner = request.user if request else None
-        facility = Facility.objects.create(
-            location=point, owner=owner, **validated_data
+    def get_lat(self, obj):
+        return obj.lat
+
+    def get_lng(self, obj):
+        return obj.lng
+
+
+class FacilityCreateUpdateSerializer(serializers.ModelSerializer):
+    lat = serializers.FloatField(write_only=True, required=False, allow_null=True)
+    lng = serializers.FloatField(write_only=True, required=False, allow_null=True)
+
+    class Meta:
+        model = Facility
+        fields = (
+            "id",
+            "name",
+            "address",
+            "lat",
+            "lng",
+            "radius",
+            "categories",
         )
-        return facility
+        read_only_fields = ("id",)
+
+    def validate(self, attrs):
+        lat = self.initial_data.get("lat", None)
+        lng = self.initial_data.get("lng", None)
+        address = attrs.get("address", "")
+        if (lat is None or lng is None) and not address:
+            raise serializers.ValidationError({"address": "Provide address or coordinates."})
+        if (lat is None) ^ (lng is None):
+            raise serializers.ValidationError({"detail": "Both lat and lng are required when providing coordinates."})
+        self._coords = (float(lat), float(lng)) if lat is not None else None
+        return attrs
+
+    def create(self, validated_data):
+        point = None
+        if self._coords:
+            point = Point(self._coords[1], self._coords[0], srid=4326)
+        return Facility.objects.create(location=point, **validated_data)
+
+    def update(self, instance, validated_data):
+        lat = self.initial_data.get("lat", None)
+        lng = self.initial_data.get("lng", None)
+        if lat is not None and lng is not None:
+            instance.location = Point(float(lng), float(lat), srid=4326)
+        for f in ("name", "address", "radius", "categories"):
+            if f in validated_data:
+                setattr(instance, f, validated_data[f])
+        instance.save()
+        return instance
 
 
 class BookingSerializer(serializers.ModelSerializer):

@@ -137,7 +137,8 @@ class Activity(models.Model):
 # ───────────────────────────────── Facility ───────────────────────────────
 class Facility(models.Model):
     name = models.CharField(max_length=100)
-    location = gis_models.PointField()
+    location = gis_models.PointField(null=True, blank=True)
+    address = models.CharField(max_length=255, blank=True, default="")
     categories = models.ManyToManyField(Category, related_name="facilities")
     radius = models.PositiveIntegerField(default=1000)
     owner = models.ForeignKey(
@@ -155,6 +156,14 @@ class Facility(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.name
+
+    @property
+    def lat(self):
+        return self.location.y if self.location else None
+
+    @property
+    def lng(self):
+        return self.location.x if self.location else None
 
 
 # ───────────────────────────────── Slot ───────────────────────────────────
