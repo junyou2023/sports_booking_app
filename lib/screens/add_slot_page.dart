@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../models/facility.dart';
+import '../models/slot.dart';
 import '../services/facility_service.dart';
 import '../services/slot_service.dart';
 
 class AddSlotPage extends StatefulWidget {
-  final int activityId;
-  const AddSlotPage({super.key, required this.activityId});
+  final int? activityId;
+  final Slot? slot;
+  const AddSlotPage({super.key, this.activityId, this.slot})
+      : assert(activityId != null || slot != null,
+            'Either activityId or slot must be provided');
 
   @override
   State<AddSlotPage> createState() => _AddSlotPageState();
@@ -28,6 +32,16 @@ class _AddSlotPageState extends State<AddSlotPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.slot != null) {
+      final s = widget.slot!;
+      start = s.beginsAt;
+      end = s.endsAt;
+      capacityCtrl.text = s.capacity.toString();
+      priceCtrl.text = s.price.toStringAsFixed(2);
+      titleCtrl.text = s.title;
+      locationCtrl.text = s.location;
+      _facilityId = s.facilityId;
+    }
     facilityService.fetchMine().then((list) {
       if (mounted) setState(() => _facilities = list);
     });
@@ -45,7 +59,8 @@ class _AddSlotPageState extends State<AddSlotPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Slot')),
+      appBar: AppBar(
+          title: Text(widget.slot == null ? 'Create Slot' : 'Edit Slot')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -152,16 +167,28 @@ class _AddSlotPageState extends State<AddSlotPage> {
                         }
                         setState(() => _submitting = true);
                         try {
-                          await slotService.createSlot(
-                            widget.activityId,
-                            start!,
-                            end!,
-                            int.parse(capacityCtrl.text),
-                            double.parse(priceCtrl.text),
-                            titleCtrl.text,
-                            locationCtrl.text,
-                            facilityId: _facilityId!,
-                          );
+                          if (widget.slot == null) {
+                            await slotService.createSlot(
+                              widget.activityId!,
+                              start!,
+                              end!,
+                              int.parse(capacityCtrl.text),
+                              double.parse(priceCtrl.text),
+                              titleCtrl.text,
+                              locationCtrl.text,
+                              facilityId: _facilityId!,
+                            );
+                          } else {
+                            await slotService.updateMerchantSlot(widget.slot!.id, {
+                              'facility': _facilityId,
+                              'begins_at': start!.toIso8601String(),
+                              'ends_at': end!.toIso8601String(),
+                              'capacity': int.parse(capacityCtrl.text),
+                              'price': double.parse(priceCtrl.text),
+                              'title': titleCtrl.text,
+                              'location': locationCtrl.text,
+                            });
+                          }
                           if (context.mounted) Navigator.pop(context, true);
                         } on DioException catch (e) {
                           if (e.error is Map<String, List<String>>) {
@@ -172,7 +199,7 @@ class _AddSlotPageState extends State<AddSlotPage> {
                             });
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to create slot')));
+                                const SnackBar(content: Text('Failed to save slot')));
                           }
                         } finally {
                           if (mounted) setState(() => _submitting = false);
@@ -184,7 +211,7 @@ class _AddSlotPageState extends State<AddSlotPage> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Create'),
+                    : Text(widget.slot == null ? 'Create' : 'Save'),
               ),
             ],
           ),

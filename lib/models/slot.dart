@@ -5,6 +5,8 @@ class Slot {
   Slot({
     required this.id,
     required this.sport,
+    required this.activityId,
+    this.facilityId,
     required this.title,
     required this.location,
     required this.beginsAt,
@@ -17,6 +19,8 @@ class Slot {
 
   final int      id;
   final Sport    sport;
+  final int      activityId;
+  final int?     facilityId;
   final String   title;
   final String   location;
   final DateTime beginsAt;
@@ -42,16 +46,18 @@ class Slot {
     }
 
     return Slot(
-      id:        j['id']               as int,
-      sport:     sport,
-      title:     j['title']            as String,
-      location:  j['location']         as String,
-      beginsAt:  DateTime.parse(j['begins_at'] as String),
-      endsAt:    DateTime.parse(j['ends_at']   as String),
-      capacity:  j['capacity']         as int,
-      price:     double.parse(j['price'].toString()),
-      rating:    double.parse(j['rating'].toString()),
-      seatsLeft: j['seats_left']       as int? ?? j['capacity'] as int,
+      id:         j['id']               as int,
+      sport:      sport,
+      activityId: j['activity']         as int,
+      facilityId: j['facility']         as int?,
+      title:      j['title']            as String,
+      location:   j['location']         as String,
+      beginsAt:   DateTime.parse(j['begins_at'] as String),
+      endsAt:     DateTime.parse(j['ends_at']   as String),
+      capacity:   j['capacity']         as int,
+      price:      double.parse(j['price'].toString()),
+      rating:     double.parse(j['rating'].toString()),
+      seatsLeft:  j['seats_left']       as int? ?? j['capacity'] as int,
     );
   }
 
@@ -59,6 +65,8 @@ class Slot {
   Map<String, dynamic> toJson() => {
     'id'        : id,
     'sport'     : sport.id,
+    'activity'  : activityId,
+    if (facilityId != null) 'facility': facilityId,
     'title'     : title,
     'location'  : location,
     'begins_at' : beginsAt.toIso8601String(),
