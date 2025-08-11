@@ -89,14 +89,15 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final orgsAsync = ref.watch(orgsProvider);
+          // TODO: remove after full deprecation
+          ref.watch(selectedOrgProvider);
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
               child: ListView(
                 children: [
-                  _buildOrgField(orgsAsync),
+                  // _buildOrgField(orgsAsync), // deprecated
                   DropdownButtonFormField<int>(
                     value: sportId,
                     items: sports
@@ -199,13 +200,8 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                         : () async {
                             fieldErrors = {};
                             if (!_formKey.currentState!.validate()) return;
-                            final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
+                            // TODO: remove after full deprecation
+                            ref.read(selectedOrgProvider);
                             setState(() => _submitting = true);
                             try {
                               if (widget.activity == null) {
@@ -218,7 +214,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  organizationId: orgId,
                                   imageFile: _imageFile,
                                 );
                               } else {
@@ -232,7 +227,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   difficulty,
                                   int.parse(durationCtrl.text),
                                   double.parse(priceCtrl.text),
-                                  organizationId: orgId,
                                   imageFile: _imageFile,
                                 );
                               }
@@ -260,6 +254,26 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                     widget.activity == null
                                         ? 'Create activity'
                                         : 'Update activity');
+                                if (e.response?.statusCode == 403) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                          'You need a provider account to create activities.'),
+                                      action: SnackBarAction(
+                                        label: 'Become a Provider',
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const ProviderRegistrationPage(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
                             } catch (e) {
                               if (context.mounted) {
