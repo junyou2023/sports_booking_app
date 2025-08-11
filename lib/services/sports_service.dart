@@ -51,6 +51,10 @@ class SportsService {
         .map(Variant.fromJson)
         .toList(growable: false);
   }
+
+  Future<void> createSport(String name) async {
+    await apiClient.post('/sports/', data: {'name': name});
+  }
 }
 
 final sportsService = SportsService();

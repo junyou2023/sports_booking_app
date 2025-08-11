@@ -1,4 +1,6 @@
 // lib/screens/provider_dashboard_page.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -14,6 +16,7 @@ import 'merchant_slots_page.dart';
 import 'merchant_bookings_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
+import 'edit_sport_page.dart';
 
 class ProviderDashboardPage extends ConsumerStatefulWidget {
   const ProviderDashboardPage({super.key});
@@ -97,16 +100,20 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           padding: const EdgeInsets.all(16),
           children: [
             _AddActivityHero(onTap: () async {
-              final created = await Navigator.push(
+              final result = await Navigator.push(
                   context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
-              if (created == true) {
-                await _refresh();
-                if (mounted) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('Activity created')));
-                }
+              if (result is Activity) {
+                setState(() => _activities.insert(0, result));
+                unawaited(_refresh());
               }
             }),
+            const SizedBox(height: 16),
+            _QuickLinkCard(
+              label: 'Create Sport',
+              icon: Icons.sports_martial_arts_outlined,
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const EditSportPage())),
+            ),
             const SizedBox(height: 16),
             _QuickLinkCard(
               label: 'Add Facility',
@@ -133,10 +140,11 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             const SizedBox(height: 8),
             if (_activities.isEmpty)
               _EmptyState(onCreate: () async {
-                final created = await Navigator.push(
+                final result = await Navigator.push(
                     context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
-                if (created == true) {
-                  await _refresh();
+                if (result is Activity) {
+                  setState(() => _activities.insert(0, result));
+                  unawaited(_refresh());
                 }
               })
             else
@@ -344,8 +352,11 @@ class _ActivityCard extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                final updated = await Navigator.push(context, MaterialPageRoute(builder: (_) => AddActivityPage(activity: activity)));
-                if (updated == true) onChanged();
+                final updated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => AddActivityPage(activity: activity)));
+                if (updated is Activity) onChanged();
               },
               child: const Text('Edit'),
             ),

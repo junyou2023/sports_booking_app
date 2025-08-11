@@ -31,12 +31,14 @@ class FacilityService {
   Future<void> createFacility(
       String name, double lat, double lng, List<String> categories,
       {double radius = 1000}) async {
+    final catIds =
+        categories.map((e) => int.parse(e)).toList(growable: false);
     await apiClient.post('/facilities/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
       'radius': radius,
-      'categories': categories,
+      'categories': catIds,
     });
   }
 
@@ -47,12 +49,14 @@ class FacilityService {
   Future<void> updateFacility(
       int id, String name, double lat, double lng, List<String> categories,
       {double radius = 1000}) async {
+    final catIds =
+        categories.map((e) => int.parse(e)).toList(growable: false);
     await apiClient.patch('/facilities/$id/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
       'radius': radius,
-      'categories': categories,
+      'categories': catIds,
     });
   }
 

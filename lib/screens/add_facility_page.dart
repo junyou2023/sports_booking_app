@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:geocoding/geocoding.dart';
+
 import '../models/facility.dart';
 import '../models/category.dart';
 import '../services/facility_service.dart';
@@ -18,11 +20,13 @@ class AddFacilityPage extends StatefulWidget {
 class _AddFacilityPageState extends State<AddFacilityPage> {
   final _formKey = GlobalKey<FormState>();
   final nameCtrl = TextEditingController();
+  final addressCtrl = TextEditingController();
   double? lat;
   double? lng;
   List<String> selectedCats = [];
   List<Category> categories = [];
   bool _submitting = false;
+  String? addressError;
   late Future<void> _loadFuture;
 
   @override
@@ -61,6 +65,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
   @override
   void dispose() {
     nameCtrl.dispose();
+    addressCtrl.dispose();
     super.dispose();
   }
 
@@ -85,6 +90,39 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                     controller: nameCtrl,
                     decoration: const InputDecoration(labelText: 'Name'),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: addressCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Address',
+                            errorText: addressError,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () async {
+                          try {
+                            final list = await locationFromAddress(addressCtrl.text);
+                            if (list.isNotEmpty) {
+                              setState(() {
+                                lat = list.first.latitude;
+                                lng = list.first.longitude;
+                                addressError = null;
+                              });
+                            }
+                          } catch (_) {
+                            setState(() {
+                              addressError = 'Could not resolve address';
+                            });
+                          }
+                        },
+                        child: const Text('Resolve address'),
+                      ),
+                    ],
                   ),
                   if (lat != null && lng != null)
                     Text(
@@ -119,11 +157,13 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                         ? null
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
+                            if (lat == null || lng == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Location required')));
+                              return;
+                            }
                             setState(() => _submitting = true);
                             try {
-                              if (lat == null || lng == null) {
-                                await _setCurrentLocation();
-                              }
                               if (isEditing) {
                                 await facilityService.updateFacility(
                                   widget.facility!.id,
@@ -144,6 +184,11 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                             } on DioException catch (e) {
                               if (context.mounted) {
                                 showApiError(context, e, 'Save facility');
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Save facility failed: $e')));
                               }
                             } finally {
                               if (mounted) setState(() => _submitting = false);

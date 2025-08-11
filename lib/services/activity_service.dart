@@ -62,7 +62,7 @@ class ActivityService {
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> createActivity(
+  Future<Activity> createActivity(
     int sport,
     int discipline,
     int? variant,
@@ -89,13 +89,15 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.post('/activities/', data: form);
+      final res = await apiClient.post('/activities/', data: form);
+      return Activity.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
+      rethrow;
     }
   }
 
-  Future<void> updateActivity(
+  Future<Activity> updateActivity(
     int id,
     int sport,
     int discipline,
@@ -123,9 +125,11 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.patch('/activities/$id/', data: form);
+      final res = await apiClient.patch('/activities/$id/', data: form);
+      return Activity.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
+      rethrow;
     }
   }
 
