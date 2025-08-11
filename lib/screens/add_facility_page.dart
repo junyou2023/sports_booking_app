@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
-import 'package:geocoding/geocoding.dart';
 
 import '../models/facility.dart';
 import '../models/category.dart';
@@ -14,13 +14,11 @@ class AddFacilityPage extends StatefulWidget {
   final Facility? facility;
   final FacilityService service;
   final sport_service.SportsService sportsService;
-  final Future<List<Location>> Function(String) geocode;
   AddFacilityPage({
     super.key,
     this.facility,
     FacilityService? service,
     sport_service.SportsService? sportsSvc,
-    this.geocode = locationFromAddress,
   })  : service = service ?? facilityService,
         sportsService = sportsSvc ?? sport_service.sportsService;
 
@@ -31,9 +29,13 @@ class AddFacilityPage extends StatefulWidget {
 class _AddFacilityPageState extends State<AddFacilityPage> {
   final _formKey = GlobalKey<FormState>();
   final nameCtrl = TextEditingController();
-  final addressCtrl = TextEditingController();
+  final latCtrl = TextEditingController();
+  final lngCtrl = TextEditingController();
   double? lat;
   double? lng;
+  String? latError;
+  String? lngError;
+  bool _manual = false;
   List<int> selectedCats = [];
   List<Category> categories = [];
   bool _submitting = false;
@@ -47,11 +49,36 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
       nameCtrl.text = f.name;
       lat = f.lat;
       lng = f.lng;
+      latCtrl.text = f.lat?.toString() ?? '';
+      lngCtrl.text = f.lng?.toString() ?? '';
       selectedCats = f.categories.map(int.parse).toList();
     } else {
       _setCurrentLocation();
     }
     _loadFuture = _loadData();
+  }
+
+  void _validateCoords() {
+    final latVal = double.tryParse(latCtrl.text);
+    final lngVal = double.tryParse(lngCtrl.text);
+    String? latErr;
+    String? lngErr;
+    if (latVal == null) {
+      latErr = 'Required';
+    } else if (latVal < -90 || latVal > 90) {
+      latErr = 'Must be between -90 and 90';
+    }
+    if (lngVal == null) {
+      lngErr = 'Required';
+    } else if (lngVal < -180 || lngVal > 180) {
+      lngErr = 'Must be between -180 and 180';
+    }
+    setState(() {
+      lat = latErr == null ? latVal : null;
+      lng = lngErr == null ? lngVal : null;
+      latError = latErr;
+      lngError = lngErr;
+    });
   }
 
   Future<void> _loadData() async {
@@ -76,37 +103,11 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
     }
   }
 
-  Future<void> _setFromAddress() async {
-    try {
-      final results = await widget.geocode(addressCtrl.text.trim());
-      if (results.isNotEmpty) {
-        setState(() {
-          lat = results.first.latitude;
-          lng = results.first.longitude;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                  'Location set to ${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}')));
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Address not found')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not geocode address: $e')));
-      }
-    }
-  }
-
   @override
   void dispose() {
     nameCtrl.dispose();
-    addressCtrl.dispose();
+    latCtrl.dispose();
+    lngCtrl.dispose();
     super.dispose();
   }
 
@@ -121,6 +122,9 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
+          final nameValid = nameCtrl.text.trim().isNotEmpty;
+          final canSubmit =
+              nameValid && lat != null && lng != null && !_submitting;
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -131,23 +135,90 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                     controller: nameCtrl,
                     decoration: const InputDecoration(labelText: 'Name'),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    onChanged: (_) => setState(() {}),
                   ),
-                  if (lat != null && lng != null)
-                    Text(
-                        'Location set to ${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}'),
-                  TextButton(
-                    onPressed: _setCurrentLocation,
-                    child: const Text('Use current location'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Use current location'),
+                        selected: !_manual,
+                        onSelected: (sel) {
+                          if (sel) {
+                            setState(() {
+                              _manual = false;
+                            });
+                            _setCurrentLocation();
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Enter coordinates manually'),
+                        selected: _manual,
+                        onSelected: (sel) {
+                          if (sel) {
+                            setState(() {
+                              _manual = true;
+                              latCtrl.text = lat?.toString() ?? '';
+                              lngCtrl.text = lng?.toString() ?? '';
+                              _validateCoords();
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  TextFormField(
-                    controller: addressCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Address (optional)'),
-                  ),
-                  TextButton(
-                    onPressed: _setFromAddress,
-                    child: const Text('Use address'),
-                  ),
+                  const SizedBox(height: 8),
+                  if (_manual) ...[
+                    TextFormField(
+                      controller: latCtrl,
+                      decoration:
+                          InputDecoration(labelText: 'Latitude', errorText: latError),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]'))
+                      ],
+                      onChanged: (_) => _validateCoords(),
+                    ),
+                    TextFormField(
+                      controller: lngCtrl,
+                      decoration:
+                          InputDecoration(labelText: 'Longitude', errorText: lngError),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]'))
+                      ],
+                      onChanged: (_) => _validateCoords(),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                                  title: const Text('Paste coordinates from address'),
+                                  content: const Text(
+                                      'Use an online geocoding tool to convert an address to coordinates, then paste the latitude and longitude here.'),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('OK'))
+                                  ],
+                                ));
+                      },
+                      child: const Text('Paste coordinates from address'),
+                    ),
+                  ] else ...[
+                    if (lat != null && lng != null)
+                      Text(
+                          'Location set to ${lat?.toStringAsFixed(5)}, ${lng?.toStringAsFixed(5)}'),
+                    TextButton(
+                      onPressed: _setCurrentLocation,
+                      child: const Text('Use current location'),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -170,69 +241,95 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting
-                        ? null
-                        : () async {
-                            if (!_formKey.currentState!.validate()) return;
+                    onPressed: canSubmit
+                        ? () async {
                             setState(() => _submitting = true);
+                            final latVal = lat;
+                            final lngVal = lng;
+                            if (latVal == null || lngVal == null) {
+                              setState(() => _submitting = false);
+                              return;
+                            }
                             try {
-                              if (lat == null || lng == null) {
-                                await _setCurrentLocation();
-                              }
                               if (isEditing) {
                                 await widget.service.updateFacility(
                                   widget.facility!.id,
                                   nameCtrl.text,
-                                  lat!,
-                                  lng!,
+                                  latVal,
+                                  lngVal,
                                   selectedCats,
                                 );
                               } else {
                                 await widget.service.createFacility(
                                   nameCtrl.text,
-                                  lat!,
-                                  lng!,
+                                  latVal,
+                                  lngVal,
                                   selectedCats,
                                 );
                               }
-                              if (context.mounted) Navigator.pop(context, true);
+                              if (context.mounted) {
+                                Navigator.pop(context, true);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(isEditing ? 'Facility saved' : 'Facility created')));
+                              }
+                            } on ArgumentError catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(content: Text(e.message)));
+                              }
                             } on DioException catch (e) {
                               if (context.mounted) {
-                                showApiError(context, e, 'Save facility');
-                                if (e.response?.statusCode == 403) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                          'You need a provider account to create facilities.'),
-                                      action: SnackBarAction(
-                                        label: 'Become a Provider',
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const ProviderRegistrationPage(),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  );
+                                final status = e.response?.statusCode;
+                                String msg = '';
+                                final data = e.response?.data;
+                                if (data is Map) {
+                                  if (data['detail'] != null) {
+                                    msg = data['detail'].toString();
+                                  } else if (data.isNotEmpty) {
+                                    msg = data.entries
+                                        .map((entry) {
+                                          final val = entry.value;
+                                          final text = val is List && val.isNotEmpty
+                                              ? val.first.toString()
+                                              : val.toString();
+                                          return '${entry.key}: $text';
+                                        })
+                                        .join(' · ');
+                                  }
                                 }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
+                                msg = msg.isNotEmpty ? msg : (e.message ?? '');
+                                final text =
+                                    status != null ? 'HTTP $status · $msg' : msg;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                      content: Text('Save facility failed: $e')),
+                                    content: Text(text),
+                                    action: status == 403
+                                        ? SnackBarAction(
+                                            label: 'Become a Provider',
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      const ProviderRegistrationPage(),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : null,
+                                  ),
                                 );
                               }
                             } finally {
                               if (mounted) setState(() => _submitting = false);
                             }
-                          },
+                          }
+                        : null,
                     child: _submitting
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : Text(isEditing ? 'Save' : 'Create'),
                   ),
                   if (isEditing)

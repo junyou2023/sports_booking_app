@@ -5,7 +5,7 @@ from .models import OrganizationMember
 class IsVendor(BasePermission):
     """Allows access only to users with a VendorProfile."""
 
-    message = "You need a provider account to perform this action."
+    message = "You need a provider account to create facilities."
 
     def has_permission(self, request, view):
         return request.user and hasattr(request.user, "vendorprofile")

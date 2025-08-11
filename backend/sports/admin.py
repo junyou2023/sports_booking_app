@@ -1,4 +1,9 @@
 from django.contrib import admin
+try:  # soft fallback if GIS templates or deps are missing
+    from django.contrib.gis.admin import OSMGeoAdmin
+except Exception:  # pragma: no cover - only triggered when gis not installed
+    OSMGeoAdmin = admin.ModelAdmin
+
 from .models import (
     Sport,
     Slot,
@@ -54,7 +59,7 @@ class SportCategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Facility)
-class FacilityAdmin(admin.ModelAdmin):
+class FacilityAdmin(OSMGeoAdmin):
     list_display = ("name", "owner", "radius")
     search_fields = ("name", "owner__email")
 

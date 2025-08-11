@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_override, return_of_invalid_type_from_closure, non_type_as_type_argument
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

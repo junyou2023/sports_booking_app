@@ -281,6 +281,21 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
     def get_owner(self, obj):
         return getattr(obj.owner, "email", "")
 
+    def validate(self, attrs):
+        lat = attrs.get("lat")
+        lng = attrs.get("lng")
+        address = self.initial_data.get("address")
+
+        if address and (lat is None or lng is None):
+            raise serializers.ValidationError(
+                {
+                    "detail": "Coordinates required. Please enter both lat and lng.",
+                }
+            )
+        if lat is None or lng is None:
+            raise serializers.ValidationError({"lat": ["Required"], "lng": ["Required"]})
+        return attrs
+
     def create(self, validated_data):
         lat = validated_data.pop("lat")
         lng = validated_data.pop("lng")

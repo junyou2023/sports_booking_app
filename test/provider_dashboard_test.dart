@@ -27,7 +27,8 @@ void main() {
     expect(find.text('Create Sport'), findsOneWidget);
     await tester.tap(find.text('Create Sport'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byLabelText('Name'), 'S1');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Name'), 'S1');
     await tester.tap(find.text('Create'));
     await tester.pump();
     expect(find.text('Sport created'), findsWidgets);

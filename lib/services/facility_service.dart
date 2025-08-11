@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../models/facility.dart';
 import 'api_client.dart';
 
@@ -29,8 +28,11 @@ class FacilityService {
   }
 
   Future<void> createFacility(
-      String name, double lat, double lng, List<int> categories,
+      String name, double? lat, double? lng, List<int> categories,
       {double radius = 1000}) async {
+    if (lat == null || lng == null) {
+      throw ArgumentError('lat/lng required');
+    }
     await apiClient.post('/facilities/', data: {
       'name': name,
       'lat': lat,
