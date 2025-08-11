@@ -48,7 +48,7 @@ class _EditSportPageState extends State<EditSportPage> {
                         setState(() => _loading = true);
                         try {
                           await widget.service
-                              .createSportSimple(nameCtrl.text.trim());
+                              .createSport(name: nameCtrl.text.trim());
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Sport created')));
