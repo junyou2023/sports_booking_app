@@ -174,7 +174,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "base_price",
             "is_nearby",
         )
-        read_only_fields = ("id", "image", "organization")
+        read_only_fields = ("id", "organization")
 
     def get_image_url(self, obj):
         if obj.image:
