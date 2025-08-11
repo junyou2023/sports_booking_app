@@ -4,25 +4,21 @@ import 'package:flutter/material.dart';
 import '../services/sports_service.dart';
 import '../utils/snackbar.dart';
 
-class AddSportPage extends StatefulWidget {
-  final SportsService service;
-  AddSportPage({super.key, SportsService? service})
-      : service = service ?? sportsService;
+class EditSportPage extends StatefulWidget {
+  const EditSportPage({super.key});
 
   @override
-  State<AddSportPage> createState() => _AddSportPageState();
+  State<EditSportPage> createState() => _EditSportPageState();
 }
 
-class _AddSportPageState extends State<AddSportPage> {
+class _EditSportPageState extends State<EditSportPage> {
   final _formKey = GlobalKey<FormState>();
-  final nameCtrl = TextEditingController();
-  final descCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   bool _loading = false;
 
   @override
   void dispose() {
-    nameCtrl.dispose();
-    descCtrl.dispose();
+    _nameCtrl.dispose();
     super.dispose();
   }
 
@@ -37,14 +33,9 @@ class _AddSportPageState extends State<AddSportPage> {
           child: Column(
             children: [
               TextFormField(
-                controller: nameCtrl,
+                controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Name'),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-              ),
-              TextFormField(
-                controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -54,23 +45,29 @@ class _AddSportPageState extends State<AddSportPage> {
                         if (!_formKey.currentState!.validate()) return;
                         setState(() => _loading = true);
                         try {
-                          await widget.service
-                              .createSport(nameCtrl.text.trim());
+                          await sportsService.createSport(_nameCtrl.text.trim());
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Sport created')));
                             Navigator.pop(context, true);
                           }
                         } on DioException catch (e) {
-                          if (context.mounted) {
+                          if (e.response?.statusCode == 401 ||
+                              e.response?.statusCode == 403) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Permission denied (contact admin)')));
+                            }
+                          } else if (context.mounted) {
                             showApiError(context, e, 'Create sport');
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content:
-                                      Text('Create sport failed: $e')),
+                                  content: Text('Create sport failed: $e')),
                             );
                           }
                         } finally {

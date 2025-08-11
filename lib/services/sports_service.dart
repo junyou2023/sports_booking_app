@@ -52,11 +52,8 @@ class SportsService {
         .toList(growable: false);
   }
 
-  Future<void> createSport({required String name, String? description}) async {
-    await apiClient.post('/sports/', data: {
-      'name': name,
-      if (description != null) 'description': description,
-    });
+  Future<void> createSport(String name) async {
+    await apiClient.post('/sports/', data: {'name': name});
   }
 }
 

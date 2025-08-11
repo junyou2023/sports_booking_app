@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sports_booking_app/models/category.dart';
+import 'package:sports_booking_app/models/facility.dart';
 import 'package:sports_booking_app/screens/add_facility_page.dart';
 import 'package:sports_booking_app/services/facility_service.dart';
 import 'package:sports_booking_app/services/sports_service.dart';
@@ -10,10 +11,17 @@ import 'package:geocoding/geocoding.dart';
 class _FakeFacilityService extends FacilityService {
   List<int>? seen;
   @override
-  Future<void> createFacility(
+  Future<Facility> createFacility(
       String name, double lat, double lng, List<int> categories,
-      {double radius = 1000}) async {
+      {int radius = 1000}) async {
     seen = categories;
+    return Facility(
+        id: 1,
+        name: name,
+        lat: lat,
+        lng: lng,
+        radius: radius.toDouble(),
+        categories: categories.map((e) => e.toString()).toList());
   }
 }
 

@@ -33,6 +33,7 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
   final addressCtrl = TextEditingController();
   double? lat;
   double? lng;
+  String? addressError;
   List<int> selectedCats = [];
   List<Category> categories = [];
   bool _submitting = false;
@@ -76,12 +77,14 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
   }
 
   Future<void> _setFromAddress() async {
+    setState(() => addressError = null);
     try {
       final results = await widget.geocode(addressCtrl.text.trim());
       if (results.isNotEmpty) {
         setState(() {
           lat = results.first.latitude;
           lng = results.first.longitude;
+          addressError = null;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -89,16 +92,14 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                   'Location set to ${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}')));
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Address not found')));
-        }
+        setState(() {
+          addressError = 'Address not found';
+        });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not geocode address: $e')));
-      }
+      setState(() {
+        addressError = 'Could not geocode address';
+      });
     }
   }
 
@@ -140,8 +141,10 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                   ),
                   TextFormField(
                     controller: addressCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Address (optional)'),
+                    decoration: InputDecoration(
+                      labelText: 'Address (optional)',
+                      errorText: addressError,
+                    ),
                   ),
                   TextButton(
                     onPressed: _setFromAddress,
@@ -173,11 +176,16 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                         ? null
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
+                            if (lat == null || lng == null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please set location (current or address).')),
+                                );
+                              }
+                              return;
+                            }
                             setState(() => _submitting = true);
                             try {
-                              if (lat == null || lng == null) {
-                                await _setCurrentLocation();
-                              }
                               if (isEditing) {
                                 await widget.service.updateFacility(
                                   widget.facility!.id,
@@ -201,9 +209,11 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                               }
                             } catch (e) {
                               if (context.mounted) {
+                                final msg = e.toString().isNotEmpty
+                                    ? e.toString()
+                                    : 'Unknown error';
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text('Save facility failed: $e')),
+                                  SnackBar(content: Text('Save facility failed: $msg')),
                                 );
                               }
                             } finally {

@@ -200,16 +200,10 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                             fieldErrors = {};
                             if (!_formKey.currentState!.validate()) return;
                             final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
                             setState(() => _submitting = true);
                             try {
                               if (widget.activity == null) {
-                                await widget.service.createActivity(
+                                final created = await widget.service.createActivity(
                                   sportId!,
                                   disciplineId!,
                                   variantId,
@@ -221,6 +215,12 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   organizationId: orgId,
                                   imageFile: _imageFile,
                                 );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Activity created')),
+                                  );
+                                  Navigator.pop(context, created);
+                                }
                               } else {
                                 await widget.service.updateActivity(
                                   widget.activity!.id,
@@ -235,16 +235,12 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   organizationId: orgId,
                                   imageFile: _imageFile,
                                 );
-                              }
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Activity created'
-                                        : 'Activity updated'),
-                                  ),
-                                );
-                                Navigator.pop(context, true);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Activity updated')),
+                                  );
+                                  Navigator.pop(context, true);
+                                }
                               }
                             } on DioException catch (e) {
                               final err = e.error;
@@ -351,7 +347,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
             labelText: 'Organization',
             errorText: fieldErrors['organization'],
           ),
-          validator: (v) => v == null ? 'Required' : null,
+          validator: (_) => null,
         );
       },
       loading: () => const SizedBox.shrink(),
