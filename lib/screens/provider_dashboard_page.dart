@@ -134,7 +134,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               onTap: () async {
                 final created = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const EditSportPage()),
+                  MaterialPageRoute(builder: (_) => EditSportPage()),
                 );
                 if (created == true && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
