@@ -55,10 +55,7 @@ class _AddSportPageState extends State<AddSportPage> {
                         setState(() => _loading = true);
                         try {
                           await widget.service.createSport(
-                            name: nameCtrl.text.trim(),
-                            description: descCtrl.text.trim().isEmpty
-                                ? null
-                                : descCtrl.text.trim(),
+                            nameCtrl.text.trim(),
                           );
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
