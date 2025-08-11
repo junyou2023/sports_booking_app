@@ -58,6 +58,11 @@ class SportsService {
       if (description != null) 'description': description,
     });
   }
+
+  // Simple creator using only the name field.
+  Future<void> createSportSimple(String name) async {
+    await createSport(name: name);
+  }
 }
 
 final sportsService = SportsService();
