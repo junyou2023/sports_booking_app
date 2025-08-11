@@ -18,6 +18,7 @@ from .models import (
     Favorite,
 )
 from accounts.models import Organization, OrganizationMember
+from rest_framework.exceptions import PermissionDenied
 
 
 class SportSerializer(serializers.ModelSerializer):
@@ -156,7 +157,7 @@ class VariantSerializer(serializers.ModelSerializer):
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all()
+        queryset=Organization.objects.all(), required=False, allow_null=True
     )
 
     class Meta:
@@ -204,6 +205,8 @@ class ActivitySerializer(serializers.ModelSerializer):
         return attrs
 
     def validate_organization(self, value):
+        if value is None:
+            return value
         request = self.context.get("request")
         user = getattr(request, "user", None)
         if user is None:
@@ -211,7 +214,7 @@ class ActivitySerializer(serializers.ModelSerializer):
         if not OrganizationMember.objects.filter(
             organization=value, user=user
         ).exists():
-            raise serializers.ValidationError("Not a member of this organization")
+            raise PermissionDenied("Not a member of this organization.")
         return value
 
 

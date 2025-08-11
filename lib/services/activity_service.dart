@@ -71,14 +71,14 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice, {
-    required int organizationId,
+    int? organizationId,
     XFile? imageFile,
   }) async {
     final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
-      'organization': organizationId,
+      if (organizationId != null) 'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
@@ -107,14 +107,14 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice, {
-    required int organizationId,
+    int? organizationId,
     XFile? imageFile,
   }) async {
     final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
-      'organization': organizationId,
+      if (organizationId != null) 'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
