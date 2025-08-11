@@ -1,6 +1,7 @@
 // lib/services/slot_service.dart
 import 'package:dio/dio.dart';
 import '../models/slot.dart';
+import '../models/paginated.dart';
 import 'api_client.dart';
 
 class SlotService {
@@ -94,16 +95,55 @@ class SlotService {
       int capacity,
       double price,
       String title,
-      String location,) async {
-    await apiClient.post('/merchant/slots/', data: {
-      'activity': activityId,
-      'begins_at': start.toIso8601String(),
-      'ends_at': end.toIso8601String(),
-      'capacity': capacity,
-      'price': price,
-      'title': title,
-      'location': location,
-    });
+      String location,
+      {required int facilityId}) async {
+    try {
+      await apiClient.post('/merchant/slots/', data: {
+        'activity': activityId,
+        'facility': facilityId,
+        'begins_at': start.toIso8601String(),
+        'ends_at': end.toIso8601String(),
+        'capacity': capacity,
+        'price': price,
+        'title': title,
+        'location': location,
+      });
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          final map = <String, List<String>>{};
+          data.forEach((key, value) {
+            if (value is List) {
+              map[key] = value.map((v) => v.toString()).toList();
+            } else {
+              map[key] = [value.toString()];
+            }
+          });
+          throw DioException(
+            requestOptions: e.requestOptions,
+            response: e.response,
+            type: e.type,
+            error: map,
+          );
+        }
+      }
+      throw e;
+    }
+  }
+
+  Future<Paginated<Slot>> fetchMine({int page = 1}) async {
+    final res = await apiClient.get('/merchant/slots/', queryParameters: {'page': page});
+    final data = res.data as Map<String, dynamic>;
+    return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+  }
+
+  Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
+    await apiClient.patch('/merchant/slots/$id/', data: patch);
+  }
+
+  Future<void> deleteMerchantSlot(int id) async {
+    await apiClient.delete('/merchant/slots/$id/');
   }
 }
 

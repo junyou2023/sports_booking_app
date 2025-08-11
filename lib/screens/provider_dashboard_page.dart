@@ -1,6 +1,7 @@
 // lib/screens/provider_dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../models/activity.dart';
 import '../services/activity_service.dart';
@@ -8,6 +9,9 @@ import '../services/slot_service.dart';
 
 import 'add_activity_page.dart';
 import 'add_slot_page.dart';
+import 'add_facility_page.dart';
+import 'merchant_slots_page.dart';
+import 'merchant_bookings_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
 
@@ -103,6 +107,27 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                 }
               }
             }),
+            const SizedBox(height: 16),
+            _QuickLinkCard(
+              label: 'Add Facility',
+              icon: Icons.store_mall_directory_outlined,
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const AddFacilityPage())),
+            ),
+            const SizedBox(height: 16),
+            _QuickLinkCard(
+              label: 'Manage Slots',
+              icon: Icons.schedule,
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const MerchantSlotsPage())),
+            ),
+            const SizedBox(height: 16),
+            _QuickLinkCard(
+              label: 'Merchant Bookings',
+              icon: Icons.event_note,
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const MerchantBookingsPage())),
+            ),
             const SizedBox(height: 16),
             Text('Your Activities', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -202,6 +227,54 @@ class _AddActivityHero extends StatelessWidget {
   }
 }
 
+class _QuickLinkCard extends StatelessWidget {
+  const _QuickLinkCard({required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: SizedBox(
+          height: 88,
+          child: Row(
+            children: [
+              const SizedBox(width: 16),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(label,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onCreate});
   final VoidCallback onCreate;
@@ -275,6 +348,43 @@ class _ActivityCard extends StatelessWidget {
                 if (updated == true) onChanged();
               },
               child: const Text('Edit'),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text('Delete ${activity.title}?'),
+                      content: const Text('This action cannot be undone.'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel')),
+                        TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Delete')),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    try {
+                      await activityService.deleteActivity(activity.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(content: Text('Activity deleted')));
+                      }
+                      onChanged();
+                    } on DioException catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.message ?? 'Delete failed')));
+                    }
+                  }
+                }
+              },
+              itemBuilder: (ctx) => const [
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
             ),
           ],
         ),

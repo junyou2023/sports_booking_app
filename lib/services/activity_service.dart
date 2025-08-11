@@ -129,6 +129,14 @@ class ActivityService {
     }
   }
 
+  Future<void> deleteActivity(int id) async {
+    await apiClient.delete('/activities/$id/');
+  }
+
+  Future<void> updateActivityStatus(int id, {required bool isActive}) async {
+    await apiClient.patch('/activities/$id/', data: {'is_active': isActive});
+  }
+
   void _rethrowFieldErrors(DioException e) {
     if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
       final data = e.response?.data;

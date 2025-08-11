@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../models/facility.dart';
+import '../services/facility_service.dart';
 import '../services/slot_service.dart';
 
 class AddSlotPage extends StatefulWidget {
@@ -17,7 +20,18 @@ class _AddSlotPageState extends State<AddSlotPage> {
   final priceCtrl = TextEditingController(text: '0');
   final titleCtrl = TextEditingController();
   final locationCtrl = TextEditingController();
+  List<Facility> _facilities = [];
+  int? _facilityId;
+  Map<String, String> _errors = {};
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    facilityService.fetchMine().then((list) {
+      if (mounted) setState(() => _facilities = list);
+    });
+  }
 
   @override
   void dispose() {
@@ -47,15 +61,37 @@ class _AddSlotPageState extends State<AddSlotPage> {
                 controller: locationCtrl,
                 decoration: const InputDecoration(labelText: 'Location'),
               ),
+              DropdownButtonFormField<int>(
+                value: _facilityId,
+                decoration: InputDecoration(
+                    labelText: 'Facility', errorText: _errors['facility'] ?? null),
+                items: _facilities
+                    .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
+                    .toList(),
+                onChanged: (v) => setState(() => _facilityId = v),
+                validator: (v) => v == null ? 'Required' : null,
+              ),
               TextFormField(
                 controller: capacityCtrl,
-                decoration: const InputDecoration(labelText: 'Capacity'),
+                decoration: InputDecoration(
+                    labelText: 'Capacity', errorText: _errors['capacity']),
                 keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Invalid capacity';
+                  return null;
+                },
               ),
               TextFormField(
                 controller: priceCtrl,
-                decoration: const InputDecoration(labelText: 'Price'),
+                decoration:
+                    InputDecoration(labelText: 'Price', errorText: _errors['price']),
                 keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = double.tryParse(v ?? '');
+                  if (n == null || n < 0) return 'Invalid price';
+                  return null;
+                },
               ),
               ListTile(
                 title: Text(start == null
@@ -106,8 +142,14 @@ class _AddSlotPageState extends State<AddSlotPage> {
                 onPressed: _submitting
                     ? null
                     : () async {
+                        setState(() => _errors.clear());
                         if (!_formKey.currentState!.validate()) return;
                         if (start == null || end == null) return;
+                        if (!end!.isAfter(start!)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('End must be after start')));
+                          return;
+                        }
                         setState(() => _submitting = true);
                         try {
                           await slotService.createSlot(
@@ -118,8 +160,20 @@ class _AddSlotPageState extends State<AddSlotPage> {
                             double.parse(priceCtrl.text),
                             titleCtrl.text,
                             locationCtrl.text,
+                            facilityId: _facilityId!,
                           );
                           if (context.mounted) Navigator.pop(context, true);
+                        } on DioException catch (e) {
+                          if (e.error is Map<String, List<String>>) {
+                            final map = e.error as Map<String, List<String>>;
+                            setState(() {
+                              _errors =
+                                  map.map((k, v) => MapEntry(k, v.join(', ')));
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to create slot')));
+                          }
                         } finally {
                           if (mounted) setState(() => _submitting = false);
                         }
