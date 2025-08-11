@@ -18,7 +18,8 @@ import 'provider_categories_page.dart';
 
 class ProviderDashboardPage extends ConsumerStatefulWidget {
   final ActivityService activitySvc;
-  const ProviderDashboardPage({super.key, this.activitySvc = activityService});
+  ProviderDashboardPage({super.key, ActivityService? activitySvc})
+      : activitySvc = activitySvc ?? activityService;
 
   @override
   ConsumerState<ProviderDashboardPage> createState() => _ProviderDashboardPageState();
@@ -73,9 +74,9 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('Merchant Dashboard')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('Merchant Dashboard')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
@@ -100,7 +101,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           children: [
             _AddActivityHero(onTap: () async {
               final created = await Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+                  context, MaterialPageRoute(builder: (_) => AddActivityPage()));
               if (created == true) {
                 await _refresh();
                 if (mounted) {
@@ -117,7 +118,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                 final created = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const AddFacilityPage()));
+                        builder: (_) => AddFacilityPage()));
                 if (created == true && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Facility created')));
@@ -131,7 +132,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               onTap: () async {
                 final created = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AddSportPage()),
+                  MaterialPageRoute(builder: (_) => AddSportPage()),
                 );
                 if (created == true && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -167,14 +168,18 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
             if (_activities.isEmpty)
               _EmptyState(onCreate: () async {
                 final created = await Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const AddActivityPage()));
+                    context, MaterialPageRoute(builder: (_) => AddActivityPage()));
                 if (created == true) {
                   await _refresh();
                 }
               })
             else
               ..._activities.map(
-                (a) => _ActivityCard(activity: a, onChanged: () => _refresh()),
+                (a) => _ActivityCard(
+                  activity: a,
+                  onChanged: () => _refresh(),
+                  activitySvc: widget.activitySvc,
+                ),
               ),
             if (_loadingMore)
               const Padding(
@@ -340,9 +345,14 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.activity, required this.onChanged});
+  const _ActivityCard({
+    required this.activity,
+    required this.onChanged,
+    required this.activitySvc,
+  });
   final Activity activity;
   final VoidCallback onChanged;
+  final ActivityService activitySvc;
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +414,7 @@ class _ActivityCard extends StatelessWidget {
                   );
                   if (confirm == true) {
                     try {
-                      await widget.activitySvc.deleteActivity(activity.id);
+                      await activitySvc.deleteActivity(activity.id);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context)
                             .showSnackBar(const SnackBar(content: Text('Activity deleted')));

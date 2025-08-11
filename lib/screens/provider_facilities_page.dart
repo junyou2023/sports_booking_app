@@ -33,7 +33,7 @@ class ProviderFacilitiesPage extends ConsumerWidget {
         onPressed: () async {
           final created = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddFacilityPage()),
+            MaterialPageRoute(builder: (_) => AddFacilityPage()),
           );
           if (created == true) ref.invalidate(myFacilitiesProvider);
         },

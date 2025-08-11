@@ -6,7 +6,8 @@ import '../utils/snackbar.dart';
 
 class AddSportPage extends StatefulWidget {
   final SportsService service;
-  const AddSportPage({super.key, this.service = sportsService});
+  AddSportPage({super.key, SportsService? service})
+      : service = service ?? sportsService;
 
   @override
   State<AddSportPage> createState() => _AddSportPageState();

@@ -18,7 +18,8 @@ import '../utils/snackbar.dart';
 class AddActivityPage extends ConsumerStatefulWidget {
   final Activity? activity;
   final ActivityService service;
-  const AddActivityPage({this.activity, this.service = activityService, super.key});
+  AddActivityPage({super.key, this.activity, ActivityService? service})
+      : service = service ?? activityService;
 
   @override
   ConsumerState<AddActivityPage> createState() => _AddActivityPageState();

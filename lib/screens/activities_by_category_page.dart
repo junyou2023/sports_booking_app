@@ -102,7 +102,7 @@ class _ActivitiesByCategoryPageState
                     onPressed: () async {
                       final created = await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddActivityPage()),
+                        MaterialPageRoute(builder: (_) => AddActivityPage()),
                       );
                       if (created == true) {
                         await _refresh();
@@ -191,7 +191,7 @@ class _ActivitiesByCategoryPageState
         onPressed: () async {
           final created = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddActivityPage()),
+            MaterialPageRoute(builder: (_) => AddActivityPage()),
           );
           if (created == true) {
             await _refresh();

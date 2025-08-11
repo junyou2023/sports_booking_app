@@ -5,9 +5,9 @@ class MerchantBookingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: AppBar(title: Text('Merchant Bookings')),
-      body: Center(child: Text('No bookings yet')),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Merchant Bookings')),
+      body: const Center(child: Text('No bookings yet')),
     );
   }
 }

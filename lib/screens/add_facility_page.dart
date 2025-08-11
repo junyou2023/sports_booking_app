@@ -14,13 +14,14 @@ class AddFacilityPage extends StatefulWidget {
   final FacilityService service;
   final SportsService sportsService;
   final Future<List<Location>> Function(String) geocode;
-  const AddFacilityPage({
+  AddFacilityPage({
     super.key,
     this.facility,
-    this.service = facilityService,
-    this.sportsService = sportsService,
+    FacilityService? service,
+    SportsService? sportsSvc,
     this.geocode = locationFromAddress,
-  });
+  })  : service = service ?? facilityService,
+        sportsService = sportsSvc ?? sportsService;
 
   @override
   State<AddFacilityPage> createState() => _AddFacilityPageState();
