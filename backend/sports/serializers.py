@@ -191,6 +191,20 @@ class ActivitySerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        request = self.context.get("request")
+        if request and request.method == "POST":  # NEW: only on create
+            user = request.user
+            if not hasattr(user, "vendorprofile"):
+                raise serializers.ValidationError(
+                    {"non_field_errors": ["Only providers can create activities."]}
+                )
+            org = attrs.get("organization")
+            if org and not OrganizationMember.objects.filter(
+                organization=org, user=user
+            ).exists():
+                raise serializers.ValidationError(
+                    {"organization": "You are not a member of this organization."}
+                )
         variant = attrs.get("variant")
         discipline = attrs.get("discipline")
         if variant and discipline and variant.discipline_id != discipline.id:
@@ -202,17 +216,6 @@ class ActivitySerializer(serializers.ModelSerializer):
         if len(desc) > 500:
             raise serializers.ValidationError({"description": "Max 500 characters"})
         return attrs
-
-    def validate_organization(self, value):
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if user is None:
-            return value
-        if not OrganizationMember.objects.filter(
-            organization=value, user=user
-        ).exists():
-            raise serializers.ValidationError("Not a member of this organization")
-        return value
 
 
 class ActivitySimpleSerializer(serializers.ModelSerializer):

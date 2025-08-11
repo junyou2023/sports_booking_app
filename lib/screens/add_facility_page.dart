@@ -8,6 +8,7 @@ import '../services/facility_service.dart';
 import '../services/sports_service.dart' as sport_service;
 import '../services/location_service.dart';
 import '../utils/snackbar.dart';
+import 'provider_registration_page.dart'; // NEW: allow navigation to registration
 
 class AddFacilityPage extends StatefulWidget {
   final Facility? facility;
@@ -196,8 +197,33 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                               }
                               if (context.mounted) Navigator.pop(context, true);
                             } on DioException catch (e) {
-                              if (context.mounted) {
-                                showApiError(context, e, 'Save facility');
+                              final status = e.response?.statusCode; // NEW:
+                              final detail = () { // NEW:
+                                final d = e.response?.data;
+                                if (d is Map && d['detail'] != null) {
+                                  return d['detail'].toString();
+                                }
+                                return e.message ?? e.toString();
+                              }();
+                              if (status == 403) { // NEW: provider required
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'You need a provider account to create facilities.')),
+                                );
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const ProviderRegistrationPage()),
+                                );
+                              } else {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Save facility failed: $detail')),
+                                );
                               }
                             } catch (e) {
                               if (context.mounted) {

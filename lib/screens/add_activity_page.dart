@@ -46,6 +46,94 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   List<Category> categories = [];
   List<Variant> variants = [];
 
+  Future<void> _submit() async { // NEW: handle submission with organization check
+    fieldErrors = {};
+    if (!_formKey.currentState!.validate()) return;
+    final orgId = ref.read(selectedOrgProvider);
+    if (orgId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'You need an organization to create activities.'),
+          action: SnackBarAction(
+            label: 'Become a Provider',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ProviderRegistrationPage()),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      if (widget.activity == null) {
+        await widget.service.createActivity(
+          sportId!,
+          disciplineId!,
+          variantId,
+          titleCtrl.text.trim(),
+          descCtrl.text.trim(),
+          difficulty,
+          int.parse(durationCtrl.text),
+          double.parse(priceCtrl.text),
+          organizationId: orgId,
+          imageFile: _imageFile,
+        );
+      } else {
+        await widget.service.updateActivity(
+          widget.activity!.id,
+          sportId!,
+          disciplineId!,
+          variantId,
+          titleCtrl.text.trim(),
+          descCtrl.text.trim(),
+          difficulty,
+          int.parse(durationCtrl.text),
+          double.parse(priceCtrl.text),
+          organizationId: orgId,
+          imageFile: _imageFile,
+        );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              widget.activity == null ? 'Activity created' : 'Activity updated'),
+        ),
+      );
+      Navigator.pop(context, true);
+    } on DioException catch (e) {
+      final err = e.error;
+      if (err is Map<String, List<String>>) {
+        setState(() {
+          fieldErrors =
+              err.map((k, v) => MapEntry(k, v.join(', ')));
+        });
+      } else if (mounted) {
+        showApiError(
+            context,
+            e,
+            widget.activity == null ? 'Create activity' : 'Update activity');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.activity == null
+                ? 'Create activity failed: $e'
+                : 'Update activity failed: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +178,9 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final orgsAsync = ref.watch(orgsProvider);
+          final orgId = ref.watch(selectedOrgProvider); // NEW: watch selected org
+          final orgs = orgsAsync.value ?? [];
+          final canSubmit = !_submitting && orgId != null && orgs.isNotEmpty; // NEW: enable only when org selected
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -194,87 +285,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting
-                        ? null
-                        : () async {
-                            fieldErrors = {};
-                            if (!_formKey.currentState!.validate()) return;
-                            final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
-                            setState(() => _submitting = true);
-                            try {
-                              if (widget.activity == null) {
-                                await widget.service.createActivity(
-                                  sportId!,
-                                  disciplineId!,
-                                  variantId,
-                                  titleCtrl.text.trim(),
-                                  descCtrl.text.trim(),
-                                  difficulty,
-                                  int.parse(durationCtrl.text),
-                                  double.parse(priceCtrl.text),
-                                  organizationId: orgId,
-                                  imageFile: _imageFile,
-                                );
-                              } else {
-                                await widget.service.updateActivity(
-                                  widget.activity!.id,
-                                  sportId!,
-                                  disciplineId!,
-                                  variantId,
-                                  titleCtrl.text.trim(),
-                                  descCtrl.text.trim(),
-                                  difficulty,
-                                  int.parse(durationCtrl.text),
-                                  double.parse(priceCtrl.text),
-                                  organizationId: orgId,
-                                  imageFile: _imageFile,
-                                );
-                              }
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Activity created'
-                                        : 'Activity updated'),
-                                  ),
-                                );
-                                Navigator.pop(context, true);
-                              }
-                            } on DioException catch (e) {
-                              final err = e.error;
-                              if (err is Map<String, List<String>>) {
-                                setState(() {
-                                  fieldErrors =
-                                      err.map((k, v) => MapEntry(k, v.join(', ')));
-                                });
-                              } else if (context.mounted) {
-                                showApiError(
-                                    context,
-                                    e,
-                                    widget.activity == null
-                                        ? 'Create activity'
-                                        : 'Update activity');
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Create activity failed: $e'
-                                        : 'Update activity failed: $e'),
-                                  ),
-                                );
-                              }
-                            } finally {
-                              if (mounted) setState(() => _submitting = false);
-                            }
-                          },
+                    onPressed: canSubmit ? _submit : null,
                     child: _submitting
                         ? const SizedBox(
                             height: 20,
@@ -299,32 +310,21 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                        child: Text(
-                            'No organisations found. Create or join one first.')),
-                  ],
-                ),
-              ),
               const SizedBox(height: 8),
-              ElevatedButton(
+              const Text(
+                  'You need a provider account and an organization to create activities.'),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.store),
+                label: const Text('Become a Provider'),
                 onPressed: () async {
                   await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ProviderRegistrationPage()));
-                  ref.invalidate(orgsProvider);
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ProviderRegistrationPage()),
+                  );
+                  ref.invalidate(orgsProvider); // NEW: refresh orgs after returning
                 },
-                child: const Text('Create/Join Organization'),
               ),
             ],
           );

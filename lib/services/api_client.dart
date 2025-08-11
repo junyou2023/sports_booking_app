@@ -58,8 +58,8 @@ void initAuthInterceptor() {
   apiClient.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // BUG: sending expired access token to refresh endpoint => 401
-        if (!options.path.contains('token/refresh')) {
+        final isRefresh = options.path.contains('token/refresh'); // NEW: detect refresh
+        if (!isRefresh) { // NEW:
           final token = await _storage.read(key: 'access');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -68,8 +68,10 @@ void initAuthInterceptor() {
         handler.next(options);
       },
       onError: (err, handler) async {
+        final isRefresh =
+            err.requestOptions.path.contains('token/refresh'); // NEW: detect refresh in error
         if (err.response?.statusCode == 401 &&
-            !err.requestOptions.path.contains('token/refresh') &&
+            !isRefresh &&
             err.requestOptions.extra['__retry'] != true) {
           final refresh = await _storage.read(key: 'refresh');
           if (refresh != null) {
