@@ -40,6 +40,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   XFile? _imageFile;
   String? _existingImage;
   Map<String, String> fieldErrors = {};
+  bool _formValid = false;
 
   late Future<void> _loadFuture;
   List<Sport> sports = [];
@@ -60,6 +61,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
       durationCtrl.text = a.duration.toString();
       _existingImage = a.imageUrl?.isNotEmpty == true ? a.imageUrl : a.image;
       difficulty = a.difficulty;
+      _formValid = true;
     }
     _loadFuture = _loadData();
   }
@@ -90,10 +92,17 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final orgsAsync = ref.watch(orgsProvider);
+          final selectedOrg = ref.watch(selectedOrgProvider);
+          final canSubmit = _formValid && selectedOrg != null && !_submitting;
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
+              onChanged: () {
+                setState(() {
+                  _formValid = _formKey.currentState?.validate() ?? false;
+                });
+              },
               child: ListView(
                 children: [
                   _buildOrgField(orgsAsync),
@@ -194,87 +203,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting
-                        ? null
-                        : () async {
-                            fieldErrors = {};
-                            if (!_formKey.currentState!.validate()) return;
-                            final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
-                            setState(() => _submitting = true);
-                            try {
-                              if (widget.activity == null) {
-                                await widget.service.createActivity(
-                                  sportId!,
-                                  disciplineId!,
-                                  variantId,
-                                  titleCtrl.text.trim(),
-                                  descCtrl.text.trim(),
-                                  difficulty,
-                                  int.parse(durationCtrl.text),
-                                  double.parse(priceCtrl.text),
-                                  organizationId: orgId,
-                                  imageFile: _imageFile,
-                                );
-                              } else {
-                                await widget.service.updateActivity(
-                                  widget.activity!.id,
-                                  sportId!,
-                                  disciplineId!,
-                                  variantId,
-                                  titleCtrl.text.trim(),
-                                  descCtrl.text.trim(),
-                                  difficulty,
-                                  int.parse(durationCtrl.text),
-                                  double.parse(priceCtrl.text),
-                                  organizationId: orgId,
-                                  imageFile: _imageFile,
-                                );
-                              }
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Activity created'
-                                        : 'Activity updated'),
-                                  ),
-                                );
-                                Navigator.pop(context, true);
-                              }
-                            } on DioException catch (e) {
-                              final err = e.error;
-                              if (err is Map<String, List<String>>) {
-                                setState(() {
-                                  fieldErrors =
-                                      err.map((k, v) => MapEntry(k, v.join(', ')));
-                                });
-                              } else if (context.mounted) {
-                                showApiError(
-                                    context,
-                                    e,
-                                    widget.activity == null
-                                        ? 'Create activity'
-                                        : 'Update activity');
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(widget.activity == null
-                                        ? 'Create activity failed: $e'
-                                        : 'Update activity failed: $e'),
-                                  ),
-                                );
-                              }
-                            } finally {
-                              if (mounted) setState(() => _submitting = false);
-                            }
-                          },
+                    onPressed: canSubmit ? _submit : null,
                     child: _submitting
                         ? const SizedBox(
                             height: 20,
@@ -289,6 +218,95 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
         },
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    fieldErrors = {};
+    if (!_formKey.currentState!.validate()) return;
+    final orgId = ref.read(selectedOrgProvider);
+    if (orgId == null) {
+      setState(() {
+        fieldErrors['organization'] = 'Required';
+      });
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      if (widget.activity == null) {
+        await widget.service.createActivity(
+          sportId!,
+          disciplineId!,
+          variantId,
+          titleCtrl.text.trim(),
+          descCtrl.text.trim(),
+          difficulty,
+          int.parse(durationCtrl.text),
+          double.parse(priceCtrl.text),
+          organizationId: orgId,
+          imageFile: _imageFile,
+        );
+      } else {
+        await widget.service.updateActivity(
+          widget.activity!.id,
+          sportId!,
+          disciplineId!,
+          variantId,
+          titleCtrl.text.trim(),
+          descCtrl.text.trim(),
+          difficulty,
+          int.parse(durationCtrl.text),
+          double.parse(priceCtrl.text),
+          organizationId: orgId,
+          imageFile: _imageFile,
+        );
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                widget.activity == null ? 'Activity created' : 'Activity updated'),
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } on DioException catch (e) {
+      final err = e.error;
+      if (err is Map<String, List<String>>) {
+        setState(() {
+          fieldErrors = err.map((k, v) => MapEntry(k, v.join(', ')));
+        });
+      } else if (e.response?.statusCode == 403) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text(
+                  'You need a provider account to create activities.')));
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const ProviderRegistrationPage()),
+          );
+        }
+      } else if (context.mounted) {
+        showApiError(
+            context,
+            e,
+            widget.activity == null
+                ? 'Create activity'
+                : 'Update activity');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.activity == null
+                ? 'Create activity failed: $e'
+                : 'Update activity failed: $e'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   Widget _buildOrgField(AsyncValue<List<Map<String, dynamic>>> orgsAsync) {
@@ -310,8 +328,8 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                     const Icon(Icons.info_outline),
                     const SizedBox(width: 8),
                     const Expanded(
-                        child: Text(
-                            'No organisations found. Create or join one first.')),
+                        child:
+                            Text('No organisations found. Become a provider first.')),
                   ],
                 ),
               ),
@@ -319,12 +337,13 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
               ElevatedButton(
                 onPressed: () async {
                   await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ProviderRegistrationPage()));
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ProviderRegistrationPage()),
+                  );
                   ref.invalidate(orgsProvider);
                 },
-                child: const Text('Create/Join Organization'),
+                child: const Text('Become a Provider'),
               ),
             ],
           );

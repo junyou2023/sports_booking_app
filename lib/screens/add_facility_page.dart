@@ -8,6 +8,7 @@ import '../services/facility_service.dart';
 import '../services/sports_service.dart' as sport_service;
 import '../services/location_service.dart';
 import '../utils/snackbar.dart';
+import 'provider_registration_page.dart';
 
 class AddFacilityPage extends StatefulWidget {
   final Facility? facility;
@@ -196,7 +197,21 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                               }
                               if (context.mounted) Navigator.pop(context, true);
                             } on DioException catch (e) {
-                              if (context.mounted) {
+                              if (e.response?.statusCode == 403) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'You need a provider account to create facilities.')),
+                                  );
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ProviderRegistrationPage()),
+                                  );
+                                }
+                              } else if (context.mounted) {
                                 showApiError(context, e, 'Save facility');
                               }
                             } catch (e) {
