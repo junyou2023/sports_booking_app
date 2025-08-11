@@ -46,6 +46,16 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   List<Category> categories = [];
   List<Variant> variants = [];
 
+  bool get _orgReady {
+    final a = ref.watch(orgsProvider);
+    if (a is AsyncData<List<Map<String, dynamic>>>) {
+      final list = a.value ?? const [];
+      final sel = ref.read(selectedOrgProvider);
+      return list.isNotEmpty && sel != null;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -194,7 +204,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting
+                    onPressed: _submitting || !_orgReady
                         ? null
                         : () async {
                             fieldErrors = {};
@@ -208,8 +218,9 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                             }
                             setState(() => _submitting = true);
                             try {
+                              Activity created;
                               if (widget.activity == null) {
-                                await widget.service.createActivity(
+                                created = await widget.service.createActivity(
                                   sportId!,
                                   disciplineId!,
                                   variantId,
@@ -222,7 +233,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                   imageFile: _imageFile,
                                 );
                               } else {
-                                await widget.service.updateActivity(
+                                created = await widget.service.updateActivity(
                                   widget.activity!.id,
                                   sportId!,
                                   disciplineId!,
@@ -244,7 +255,7 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                                         : 'Activity updated'),
                                   ),
                                 );
-                                Navigator.pop(context, true);
+                                Navigator.pop(context, created);
                               }
                             } on DioException catch (e) {
                               final err = e.error;
@@ -354,8 +365,18 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
           validator: (v) => v == null ? 'Required' : null,
         );
       },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'Loading organization…',
+            style: TextStyle(color: Colors.grey),
+          )),
+      error: (_, __) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'Failed to load organization. Pull to refresh.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          )),
     );
   }
 

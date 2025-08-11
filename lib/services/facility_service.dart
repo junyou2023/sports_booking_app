@@ -28,36 +28,64 @@ class FacilityService {
         .toList(growable: false);
   }
 
-  Future<void> createFacility(
+  Future<Facility> createFacility(
       String name, double lat, double lng, List<int> categories,
-      {double radius = 1000}) async {
-    await apiClient.post('/facilities/', data: {
+      {int radius = 1000}) async {
+    final data = {
       'name': name,
       'lat': lat,
       'lng': lng,
       'radius': radius,
       'categories': categories,
-    });
+    };
+    try {
+      final res = await apiClient.post('/merchant/facilities/', data: data);
+      return Facility.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        final res = await apiClient.post('/facilities/', data: data);
+        return Facility.fromJson(res.data as Map<String, dynamic>);
+      }
+      rethrow;
+    }
   }
 
   Future<List<Facility>> fetchMine() async {
     return fetchFacilities([], 0, 0, 0, mine: true);
   }
 
-  Future<void> updateFacility(
+  Future<Facility> updateFacility(
       int id, String name, double lat, double lng, List<int> categories,
-      {double radius = 1000}) async {
-    await apiClient.patch('/facilities/$id/', data: {
+      {int radius = 1000}) async {
+    final data = {
       'name': name,
       'lat': lat,
       'lng': lng,
       'radius': radius,
       'categories': categories,
-    });
+    };
+    try {
+      final res = await apiClient.patch('/merchant/facilities/$id/', data: data);
+      return Facility.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        final res = await apiClient.patch('/facilities/$id/', data: data);
+        return Facility.fromJson(res.data as Map<String, dynamic>);
+      }
+      rethrow;
+    }
   }
 
   Future<void> deleteFacility(int id) async {
-    await apiClient.delete('/facilities/$id/');
+    try {
+      await apiClient.delete('/merchant/facilities/$id/');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        await apiClient.delete('/facilities/$id/');
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<List<Facility>> searchFacilities({required String query, int page = 1}) async {
