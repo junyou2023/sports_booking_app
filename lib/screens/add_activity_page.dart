@@ -46,16 +46,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
   List<Category> categories = [];
   List<Variant> variants = [];
 
-  bool get _orgReady {
-    final a = ref.watch(orgsProvider);
-    if (a is AsyncData<List<Map<String, dynamic>>>) {
-      final list = a.value ?? const [];
-      final sel = ref.read(selectedOrgProvider);
-      return list.isNotEmpty && sel != null;
-    }
-    return false;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -204,18 +194,12 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   _imagePickerField(),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: _submitting || !_orgReady
+                    onPressed: _submitting
                         ? null
                         : () async {
                             fieldErrors = {};
                             if (!_formKey.currentState!.validate()) return;
                             final orgId = ref.read(selectedOrgProvider);
-                            if (orgId == null) {
-                              setState(() {
-                                fieldErrors['organization'] = 'Required';
-                              });
-                              return;
-                            }
                             setState(() => _submitting = true);
                             try {
                               Activity created;
@@ -362,7 +346,6 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
             labelText: 'Organization',
             errorText: fieldErrors['organization'],
           ),
-          validator: (v) => v == null ? 'Required' : null,
         );
       },
       loading: () => const Padding(
