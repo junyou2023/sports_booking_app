@@ -1,28 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-
 import '../services/sports_service.dart';
 import '../utils/snackbar.dart';
 
-class AddSportPage extends StatefulWidget {
-  final SportsService service;
-  AddSportPage({super.key, SportsService? service})
-      : service = service ?? sportsService;
+class EditSportPage extends StatefulWidget {
+  const EditSportPage({super.key});
 
   @override
-  State<AddSportPage> createState() => _AddSportPageState();
+  State<EditSportPage> createState() => _EditSportPageState();
 }
 
-class _AddSportPageState extends State<AddSportPage> {
+class _EditSportPageState extends State<EditSportPage> {
   final _formKey = GlobalKey<FormState>();
   final nameCtrl = TextEditingController();
-  final descCtrl = TextEditingController();
-  bool _loading = false;
+  bool _submitting = false;
+  Map<String, String> fieldErrors = {};
 
   @override
   void dispose() {
     nameCtrl.dispose();
-    descCtrl.dispose();
     super.dispose();
   }
 
@@ -38,54 +34,65 @@ class _AddSportPageState extends State<AddSportPage> {
             children: [
               TextFormField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  errorText: fieldErrors['name'],
+                ),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-              ),
-              TextFormField(
-                controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _loading
+                onPressed: _submitting
                     ? null
                     : () async {
+                        fieldErrors = {};
                         if (!_formKey.currentState!.validate()) return;
-                        setState(() => _loading = true);
+                        setState(() => _submitting = true);
                         try {
-                          await widget.service.createSport(
-                            nameCtrl.text.trim(),
-                          );
-                          if (context.mounted) {
+                          await sportsService.createSport(nameCtrl.text.trim());
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Sport created')));
                             Navigator.pop(context, true);
                           }
                         } on DioException catch (e) {
-                          if (context.mounted) {
-                            showApiError(context, e, 'Create sport');
+                          if (e.response?.statusCode == 401 ||
+                              e.response?.statusCode == 403) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Permission denied (contact admin)')));
+                            }
+                          } else {
+                            final err = e.error;
+                            if (err is Map<String, List<String>>) {
+                              setState(() {
+                                fieldErrors = err
+                                    .map((k, v) => MapEntry(k, v.join(', ')));
+                              });
+                            } else if (mounted) {
+                              showApiError(context, e, 'Create sport');
+                            }
                           }
                         } catch (e) {
-                          if (context.mounted) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text('Create sport failed: $e')),
+                              SnackBar(content: Text('Create sport failed: $e')),
                             );
                           }
                         } finally {
-                          if (mounted) setState(() => _loading = false);
+                          if (mounted) setState(() => _submitting = false);
                         }
                       },
-                child: _loading
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Create'),
-              )
+              ),
             ],
           ),
         ),

@@ -62,7 +62,7 @@ class ActivityService {
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> createActivity(
+  Future<Activity> createActivity(
     int sport,
     int discipline,
     int? variant,
@@ -71,14 +71,14 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice, {
-    required int organizationId,
+    int? organizationId,
     XFile? imageFile,
   }) async {
     final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
-      'organization': organizationId,
+      if (organizationId != null) 'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
@@ -89,13 +89,15 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.post('/activities/', data: form);
+      final res = await apiClient.post('/activities/', data: form);
+      return Activity.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
     }
+    throw Exception('Failed to create');
   }
 
-  Future<void> updateActivity(
+  Future<Activity> updateActivity(
     int id,
     int sport,
     int discipline,
@@ -105,14 +107,14 @@ class ActivityService {
     int difficulty,
     int duration,
     double basePrice, {
-    required int organizationId,
+    int? organizationId,
     XFile? imageFile,
   }) async {
     final form = FormData.fromMap({
       'sport': sport,
       'discipline': discipline,
       if (variant != null) 'variant': variant,
-      'organization': organizationId,
+      if (organizationId != null) 'organization': organizationId,
       'title': title,
       'description': description,
       'difficulty': difficulty,
@@ -123,10 +125,12 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.patch('/activities/$id/', data: form);
+      final res = await apiClient.patch('/activities/$id/', data: form);
+      return Activity.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
     }
+    throw Exception('Failed to update');
   }
 
   Future<void> deleteActivity(int id) async {

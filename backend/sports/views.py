@@ -6,7 +6,9 @@ from django.db.models import Q
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
 from accounts.permissions import IsVendor
-from accounts.models import OrganizationMember
+from accounts.models import Organization, OrganizationMember
+from accounts.utils import get_or_create_primary_org
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -177,7 +179,21 @@ class ActivityViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save()
+        req = self.request
+        user = req.user
+        org_id = req.data.get("organization")
+        if not org_id:
+            org = get_or_create_primary_org(user)
+            if not OrganizationMember.objects.filter(organization=org, user=user).exists():
+                raise PermissionDenied("User is not a member of the primary organization.")
+            serializer.save(organization=org)
+        else:
+            org = Organization.objects.filter(id=org_id).first()
+            if not org:
+                raise ValidationError({"organization": ["Organization does not exist."]})
+            if not OrganizationMember.objects.filter(organization=org, user=user).exists():
+                raise PermissionDenied("Not a member of this organization.")
+            serializer.save()
 
     @action(detail=True, methods=["post"], url_path="favorite/toggle",
             permission_classes=[permissions.IsAuthenticated])

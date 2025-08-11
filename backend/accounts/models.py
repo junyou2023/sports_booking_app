@@ -58,6 +58,7 @@ class OrganizationMember(models.Model):
         on_delete=models.CASCADE,
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("organization", "user")
