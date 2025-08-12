@@ -132,10 +132,22 @@ class SlotService {
     }
   }
 
+  Paginated<Slot> _parsePage(Object data) {
+    if (data is List) {
+      return Paginated.fromList(
+        data.cast<Map<String, dynamic>>(),
+        (j) => Slot.fromJson(j),
+      );
+    }
+    if (data is Map<String, dynamic>) {
+      return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+    }
+    return Paginated(count: 0, next: null, previous: null, results: const []);
+  }
+
   Future<Paginated<Slot>> fetchMine({int page = 1}) async {
     final res = await apiClient.get('/merchant/slots/', queryParameters: {'page': page});
-    final data = res.data as Map<String, dynamic>;
-    return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+    return _parsePage(res.data);
   }
 
   Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
