@@ -8,7 +8,7 @@ def set_pending(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('sports', '0019_slot_is_active_alter_activity_organization_and_more'),
+        ('sports', '0018_activity_organization'),
     ]
 
     operations = [
