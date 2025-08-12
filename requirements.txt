@@ -1,5 +1,5 @@
 # ── requirements.txt ──
-Django==5.2.3
+Django[gis]==5.2.3
 djangorestframework==3.16.0
 djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
@@ -9,6 +9,7 @@ dj-rest-auth==5.0.1
 django-allauth==0.61.1
 google-auth==2.29.0
 djangorestframework-gis==1.2.0
+GDAL==3.8.4
 whitenoise==6.6.0
 Pillow==11.3.0
 stripe==9.8.0
