@@ -16,17 +16,23 @@ class ProviderFacilitiesPage extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (list) => ListView.builder(
           itemCount: list.length,
-          itemBuilder: (_, i) => ListTile(
-            title: Text(list[i].name),
-            subtitle: Text('${list[i].lat.toStringAsFixed(2)}, ${list[i].lng.toStringAsFixed(2)}'),
-            onTap: () async {
-              final updated = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AddFacilityPage(facility: list[i])),
-              );
-              if (updated == true) ref.invalidate(myFacilitiesProvider);
-            },
-          ),
+          itemBuilder: (_, i) {
+            final f = list[i];
+            final subtitle = f.hasLocation
+                ? '${f.lat!.toStringAsFixed(2)}, ${f.lng!.toStringAsFixed(2)}'
+                : (f.address.isNotEmpty ? f.address : 'No location');
+            return ListTile(
+              title: Text(f.name),
+              subtitle: Text(subtitle),
+              onTap: () async {
+                final updated = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddFacilityPage(facility: f)),
+                );
+                if (updated == true) ref.invalidate(myFacilitiesProvider);
+              },
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(

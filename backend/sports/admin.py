@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django import forms
+from django.contrib.gis.db.models import PointField
+
 from .models import (
     Sport,
     Slot,
@@ -12,6 +15,13 @@ from .models import (
     FeaturedActivity,
     UserActivityHistory,
 )
+
+try:  # Graceful fallback if GIS templates/deps missing
+    from django.contrib.gis.admin import OSMGeoAdmin as BaseGeoAdmin
+    GIS_OK = True
+except Exception:  # pragma: no cover - executed only without GIS
+    BaseGeoAdmin = admin.ModelAdmin
+    GIS_OK = False
 
 
 @admin.register(Sport)
@@ -54,9 +64,17 @@ class SportCategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Facility)
-class FacilityAdmin(admin.ModelAdmin):
-    list_display = ("name", "owner", "radius")
-    search_fields = ("name", "owner__email")
+class FacilityAdmin(BaseGeoAdmin):
+    list_display = ("name", "address", "owner", "radius")
+    search_fields = ("name", "address", "owner__email")
+    if not GIS_OK:
+        formfield_overrides = {
+            PointField: {
+                "widget": forms.TextInput(
+                    attrs={"placeholder": "POINT(lng lat) or leave empty"}
+                )
+            }
+        }
 
 
 @admin.register(Booking)

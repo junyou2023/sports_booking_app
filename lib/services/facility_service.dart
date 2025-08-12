@@ -29,15 +29,21 @@ class FacilityService {
   }
 
   Future<void> createFacility(
-      String name, double lat, double lng, List<int> categories,
-      {double radius = 1000}) async {
-    await apiClient.post('/facilities/', data: {
+    String name, {
+    String? address,
+    double? lat,
+    double? lng,
+    List<int> categories = const [],
+    double radius = 1000,
+  }) async {
+    final body = {
       'name': name,
-      'lat': lat,
-      'lng': lng,
       'radius': radius,
       'categories': categories,
-    });
+      if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
+      if (lat != null && lng != null) ...{'lat': lat, 'lng': lng},
+    };
+    await apiClient.post('/facilities/', data: body);
   }
 
   Future<List<Facility>> fetchMine() async {
@@ -45,15 +51,24 @@ class FacilityService {
   }
 
   Future<void> updateFacility(
-      int id, String name, double lat, double lng, List<int> categories,
-      {double radius = 1000}) async {
-    await apiClient.patch('/facilities/$id/', data: {
+    int id,
+    String name,
+    {
+      String? address,
+      double? lat,
+      double? lng,
+      List<int> categories = const [],
+      double radius = 1000,
+    }
+  ) async {
+    final body = {
       'name': name,
-      'lat': lat,
-      'lng': lng,
       'radius': radius,
       'categories': categories,
-    });
+      if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
+      if (lat != null && lng != null) ...{'lat': lat, 'lng': lng},
+    };
+    await apiClient.patch('/facilities/$id/', data: body);
   }
 
   Future<void> deleteFacility(int id) async {

@@ -34,7 +34,7 @@ from .serializers import (
     BookingSerializer,
     CategorySerializer,
     FacilitySerializer,
-    FacilityCreateSerializer,
+    FacilityCreateUpdateSerializer,
     VariantSerializer,
     ActivitySerializer,
     ActivitySimpleSerializer,
@@ -200,8 +200,8 @@ class FacilityViewSet(viewsets.ModelViewSet):
         return [p() if isinstance(p, type) else p for p in perms]
 
     def get_serializer_class(self):
-        if self.action in ("create", "update", "partial_update"):
-            return FacilityCreateSerializer
+        if self.action in ("create", "partial_update"):
+            return FacilityCreateUpdateSerializer
         return FacilitySerializer
 
     def get_queryset(self):
