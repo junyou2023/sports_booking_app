@@ -5,12 +5,13 @@ class FacilityService {
   Future<List<Facility>> fetchFacilities(
       List<String> categories, double radius, double lat, double lng,
       {bool mine = false}) async {
-    final res = await apiClient.get('/facilities/', queryParameters: {
-      'categories': categories.join(','),
+    final params = {
+      if (categories.isNotEmpty) 'categories': categories.join(','),
       if (radius > 0) 'radius': radius.toInt(),
       if (lat != 0 || lng != 0) 'near': '$lat,$lng',
       if (mine) 'mine': '1',
-    });
+    };
+    final res = await apiClient.get('/facilities/', queryParameters: params);
 
     dynamic data = res.data;
     if (data is Map) {
