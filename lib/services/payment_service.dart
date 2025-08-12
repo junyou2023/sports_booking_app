@@ -5,19 +5,41 @@ import 'api_client.dart';
 class PaymentService {
   Future<Map<String, dynamic>> createIntent(int slotId) async {
     try {
-      final res = await apiClient.post('/payments/checkout/', data: {'slot': slotId});
+      final res =
+          await apiClient.post('/payments/checkout/', data: {'slot': slotId});
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
+      if (e.response == null) {
+        final raw = e.message ?? e.error?.toString() ?? 'Connection failed';
+        final cleaned =
+            raw.replaceFirst(RegExp('HttpException:? ?'), '').split(', uri').first;
+        throw Exception('Network error: ' + cleaned);
+      }
       if (e.response?.data is Map && e.response?.data['detail'] != null) {
         throw Exception(e.response?.data['detail'].toString());
       }
-      throw Exception('HTTP ${e.response?.statusCode}: ${e.response?.data}');
+      throw Exception(
+          'HTTP ${e.response?.statusCode}: ${e.response?.statusMessage}');
     }
   }
 
   Future<Booking> confirmIntent(String intentId) async {
-    final res = await apiClient.get('/payments/confirm/$intentId/');
-    return Booking.fromJson(res.data as Map<String, dynamic>);
+    try {
+      final res = await apiClient.get('/payments/confirm/$intentId/');
+      return Booking.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response == null) {
+        final raw = e.message ?? e.error?.toString() ?? 'Connection failed';
+        final cleaned =
+            raw.replaceFirst(RegExp('HttpException:? ?'), '').split(', uri').first;
+        throw Exception('Network error: ' + cleaned);
+      }
+      if (e.response?.data is Map && e.response?.data['detail'] != null) {
+        throw Exception(e.response?.data['detail'].toString());
+      }
+      throw Exception(
+          'HTTP ${e.response?.statusCode}: ${e.response?.statusMessage}');
+    }
   }
 
   Future<Booking> fetchBooking(int bookingId) async {
