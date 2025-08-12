@@ -151,7 +151,8 @@ def test_bulk_delete_soft(auth_client, activity):
 
     resp2 = auth_client.get("/api/merchant/slots/")
     assert resp2.status_code == 200
-    assert resp2.data == []
+    assert resp2.data["count"] == 0
+    assert resp2.data["results"] == []
 
 
 def test_booking_flow_unchanged(db):
