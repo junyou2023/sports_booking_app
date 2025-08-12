@@ -10,7 +10,10 @@ class PaymentService {
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
       if (e.response == null) {
-        throw Exception('Network error: ${e.message ?? e.error}');
+        final raw = e.message ?? e.error?.toString() ?? 'Connection failed';
+        final cleaned =
+            raw.replaceFirst(RegExp('HttpException:? ?'), '').split(', uri').first;
+        throw Exception('Network error: ' + cleaned);
       }
       if (e.response?.data is Map && e.response?.data['detail'] != null) {
         throw Exception(e.response?.data['detail'].toString());
@@ -21,8 +24,22 @@ class PaymentService {
   }
 
   Future<Booking> confirmIntent(String intentId) async {
-    final res = await apiClient.get('/payments/confirm/$intentId/');
-    return Booking.fromJson(res.data as Map<String, dynamic>);
+    try {
+      final res = await apiClient.get('/payments/confirm/$intentId/');
+      return Booking.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response == null) {
+        final raw = e.message ?? e.error?.toString() ?? 'Connection failed';
+        final cleaned =
+            raw.replaceFirst(RegExp('HttpException:? ?'), '').split(', uri').first;
+        throw Exception('Network error: ' + cleaned);
+      }
+      if (e.response?.data is Map && e.response?.data['detail'] != null) {
+        throw Exception(e.response?.data['detail'].toString());
+      }
+      throw Exception(
+          'HTTP ${e.response?.statusCode}: ${e.response?.statusMessage}');
+    }
   }
 
   Future<Booking> fetchBooking(int bookingId) async {
