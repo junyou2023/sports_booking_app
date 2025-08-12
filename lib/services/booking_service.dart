@@ -13,12 +13,19 @@ class BookingService {
         .toList(growable: false);
   }
 
-  Future<Booking> create(int slotId) async {
-    final res = await apiClient.post(
-      '/bookings/',
-      data: {'slot': slotId},
-      options: Options(contentType: Headers.formUrlEncodedContentType),
-    );
-    return Booking.fromJson(res.data as Map<String, dynamic>);
+  Future<Booking> create(int slotId, {int pax = 1}) async {
+    try {
+      final res = await apiClient.post(
+        '/bookings/',
+        data: {'slot_id': slotId, 'pax': pax},
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+      return Booking.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response!.data['detail'] ?? 'Unknown error')
+          : e.message;
+      throw Exception(msg);
+    }
   }
 }

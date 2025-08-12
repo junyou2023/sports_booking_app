@@ -16,4 +16,9 @@ final slotsProvider = FutureProvider.family<List<Slot>, int>((ref, sportId) {
   return slotService.fetchBySport(sportId);
 });
 
+// ───────── Slots owned by current user ─────────
+final mySlotsProvider = FutureProvider<List<Slot>>((ref) {
+  return slotService.fetchMine();
+});
+
 final authProvider = Provider<AuthService>((ref) => authService);

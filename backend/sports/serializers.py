@@ -17,9 +17,13 @@ class SlotSerializer(serializers.ModelSerializer):
         max_digits=3, decimal_places=1, coerce_to_string=False
     )
 
+    # Owner should be read-only – set automatically from request.user
+    owner = serializers.ReadOnlyField(source="owner_id")
+
     class Meta:
         model = Slot
         fields = "__all__"
+        read_only_fields = ("id", "owner")
 
 
 class BookingSerializer(serializers.ModelSerializer):
