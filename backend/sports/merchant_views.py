@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import CursorPagination, PageNumberPagination
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -14,10 +14,17 @@ from accounts.permissions import IsVendor
 from payments.services import refund
 
 
+class MerchantSlotPagination(PageNumberPagination):
+    """Default pagination for merchant-owned slots."""
+
+    page_size = 50
+
+
 class MerchantSlotViewSet(viewsets.ModelViewSet):
     """CRUD operations for Slots owned by merchants."""
 
     permission_classes = [permissions.IsAuthenticated, IsVendor]
+    pagination_class = MerchantSlotPagination
 
     def get_queryset(self):
         user = self.request.user
