@@ -12,9 +12,11 @@ class PaymentService {
       if (data is Map && data['detail'] != null) {
         throw Exception(data['detail'].toString());
       }
-      final msg = e.message ?? e.error?.toString() ?? 'network error';
-      final code = e.response?.statusCode?.toString() ?? 'network';
-      throw Exception('HTTP $code: $msg');
+      final code = e.response?.statusCode;
+      if (code != null) {
+        throw Exception('HTTP $code');
+      }
+      throw Exception('Network error — please try again.');
     }
   }
 

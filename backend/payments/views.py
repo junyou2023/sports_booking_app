@@ -1,6 +1,7 @@
 import os
 import logging
 import stripe
+from drf_spectacular.utils import extend_schema
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -9,25 +10,31 @@ from rest_framework import status
 from sports.models import Slot, Booking
 from sports.serializers import BookingSerializer
 
-stripe.api_key = os.getenv('STRIPE_API_KEY', '')
+stripe.api_key = os.getenv("STRIPE_API_KEY", "")
 logger = logging.getLogger(__name__)
 
 
 class StripeCheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses={200: None})
     def post(self, request):
-        slot_id = request.data.get('slot')
+        slot_id = request.data.get("slot")
         if not slot_id:
-            return Response({'detail': 'slot required'}, status=400)
+            return Response({"detail": "slot required"}, status=400)
         try:
             slot = Slot.objects.get(pk=slot_id)
         except Slot.DoesNotExist:
-            return Response({'detail': 'invalid slot'}, status=400)
+            return Response({"detail": "invalid slot"}, status=400)
 
-        if not stripe.api_key or stripe.api_key.endswith('xxx'):
+        if not slot.is_active:
+            return Response({"detail": "Slot inactive"}, status=400)
+        if slot.current_participants >= slot.capacity:
+            return Response({"detail": "Not enough seats left"}, status=400)
+
+        if not stripe.api_key or stripe.api_key.endswith("xxx"):
             return Response(
-                {'detail': 'Stripe secret key is not configured'},
+                {"detail": "Stripe secret key is not configured"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -35,40 +42,67 @@ class StripeCheckoutView(APIView):
             slot=slot,
             user=request.user,
             defaults={
-                'activity': slot.activity,
-                'status': 'pending',
-                'paid': False,
+                "activity": slot.activity,
+                "status": "pending",
+                "paid": False,
             },
         )
 
+        intent = None
         if booking.payment_intent_id:
             try:
                 intent = stripe.PaymentIntent.retrieve(booking.payment_intent_id)
             except stripe.error.StripeError as e:
-                logger.exception('Failed to retrieve PaymentIntent')
-                return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+                logger.exception("Failed to retrieve PaymentIntent")
+                return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+            if intent.status in [
+                "requires_payment_method",
+                "requires_confirmation",
+                "requires_action",
+                "processing",
+            ]:
+                pass  # reuse existing intent
+            elif intent.status in ["canceled", "succeeded"] and not booking.paid:
+                try:
+                    intent = stripe.PaymentIntent.create(
+                        amount=int(slot.price * 100),
+                        currency="usd",
+                        automatic_payment_methods={"enabled": True},
+                        metadata={"slot_id": slot_id, "user_id": request.user.id},
+                        idempotency_key=f"user-{request.user.id}-slot-{slot_id}",
+                    )
+                    booking.payment_intent_id = intent.id
+                    booking.save(update_fields=["payment_intent_id"])
+                except stripe.error.StripeError as e:
+                    logger.exception("Failed to create PaymentIntent")
+                    return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
         else:
             try:
                 intent = stripe.PaymentIntent.create(
                     amount=int(slot.price * 100),
-                    currency='usd',
-                    automatic_payment_methods={'enabled': True},
-                    metadata={'slot_id': slot_id, 'user_id': request.user.id},
+                    currency="usd",
+                    automatic_payment_methods={"enabled": True},
+                    metadata={"slot_id": slot_id, "user_id": request.user.id},
+                    idempotency_key=f"user-{request.user.id}-slot-{slot_id}",
                 )
                 booking.payment_intent_id = intent.id
-                booking.save(update_fields=['payment_intent_id'])
+                booking.save(update_fields=["payment_intent_id"])
             except stripe.error.StripeError as e:
-                logger.exception('Failed to create PaymentIntent')
-                return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
-            except Exception as e:
-                logger.exception('Error creating PaymentIntent')
-                return Response({'detail': 'internal error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                logger.exception("Failed to create PaymentIntent")
+                return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+            except Exception:
+                logger.exception("Error creating PaymentIntent")
+                return Response(
+                    {"detail": "internal error"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
         return Response(
             {
-                'client_secret': intent.client_secret,
-                'payment_intent_id': intent.id,
-                'booking_id': booking.id,
+                "client_secret": intent.client_secret,
+                "payment_intent_id": intent.id,
+                "booking_id": booking.id,
             },
             status=status.HTTP_200_OK,
         )
