@@ -5,12 +5,23 @@ import 'api_client.dart';
 class PaymentService {
   Future<Map<String, dynamic>> createIntent(int slotId) async {
     try {
-      final res = await apiClient.post('/payments/checkout/', data: {'slot': slotId});
+      final res =
+          await apiClient.post('/payments/checkout/', data: {'slot': slotId});
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
+      // if backend returned a structured error message (e.g. {"detail": "..."})
       if (e.response?.data is Map && e.response?.data['detail'] != null) {
         throw Exception(e.response?.data['detail'].toString());
       }
+
+      // When no response is available Dio sets `response` to null which resulted
+      // in the unhelpful "HTTP null: null" message seen in the app.  Provide a
+      // clearer description so users know the request never reached the
+      // server (e.g. backend down / no internet).
+      if (e.response == null) {
+        throw Exception(e.message ?? 'Connection error');
+      }
+
       throw Exception('HTTP ${e.response?.statusCode}: ${e.response?.data}');
     }
   }
