@@ -16,14 +16,27 @@ class Facility {
   final List<String> categories;
 
   factory Facility.fromJson(Map<String, dynamic> j) {
-    final geom = j['geometry']['coordinates'] as List;
+    // API may return facilities either as plain objects or as GeoJSON Features
+    // where the fields live inside a `properties` map. Normalize accordingly.
+    final props = j['properties'] is Map
+        ? Map<String, dynamic>.from(j['properties'])
+        : j;
+
+    final geomSrc = j['geometry'] ?? props['geometry'];
+    if (geomSrc == null || geomSrc['coordinates'] is! List) {
+      throw ArgumentError('Invalid facility geometry');
+    }
+    final coords = (geomSrc['coordinates'] as List).cast<num>();
+
     return Facility(
-      id: j['id'] as int,
-      name: j['name'] as String,
-      lat: geom[1] as double,
-      lng: geom[0] as double,
-      radius: (j['radius'] as num).toDouble(),
-      categories: (j['categories'] as List).cast<int>().map((e) => e.toString()).toList(),
+      id: (j['id'] ?? props['id']) as int,
+      name: (props['name'] ?? j['name']) as String,
+      lat: coords[1].toDouble(),
+      lng: coords[0].toDouble(),
+      radius: ((props['radius'] ?? j['radius']) as num).toDouble(),
+      categories: ((props['categories'] ?? j['categories']) as List? ?? [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 }
