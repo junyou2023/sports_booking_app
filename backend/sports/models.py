@@ -22,7 +22,7 @@ class Sport(models.Model):
     class Meta:
         ordering = ("name",)
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return self.name
 
 
@@ -41,7 +41,9 @@ class SportCategory(models.Model):
 
     class Meta:
         ordering = ("name",)
-        constraints = [UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")]
+        constraints = [
+            UniqueConstraint(fields=["parent", "name"], name="uniq_cat_parent_name")
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return self.full_path
@@ -54,6 +56,7 @@ class SportCategory(models.Model):
             parts.append(p.name)
             p = p.parent
         return " / ".join(reversed(parts))
+
 
 # ───────────────────────────────── Category ───────────────────────────────
 class Category(models.Model):
@@ -181,20 +184,24 @@ class Slot(models.Model):
     begins_at = models.DateTimeField()
     ends_at = models.DateTimeField()
 
-    capacity = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)]
-    )
+    capacity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
     price = models.DecimalField(  # 0.00 ⇒ free
         max_digits=7, decimal_places=2, default=0
     )
     rating = models.DecimalField(  # NEW: matches serializer / seed
-        max_digits=3, decimal_places=1, default=0,
-        help_text="Average rating 0–5"
+        max_digits=3, decimal_places=1, default=0, help_text="Average rating 0–5"
     )
     activity = models.ForeignKey(
         "Activity",
         related_name="slots",
         on_delete=models.CASCADE,
+    )
+    owner = models.ForeignKey(
+        "auth.User",
+        related_name="owned_slots",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
     current_participants = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -217,7 +224,7 @@ class Slot(models.Model):
             self.sport_id = self.activity.sport_id
         super().save(*args, **kwargs)
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return f"{self.title} @ {self.begins_at:%Y-%m-%d %H:%M}"
 
 
@@ -225,9 +232,7 @@ class Slot(models.Model):
 class Booking(models.Model):
     """User reservation of a slot (unique per user+slot)."""
 
-    slot = models.ForeignKey(
-        Slot, related_name="bookings", on_delete=models.PROTECT
-    )
+    slot = models.ForeignKey(Slot, related_name="bookings", on_delete=models.PROTECT)
     activity = models.ForeignKey(
         "Activity",
         related_name="bookings",
@@ -251,7 +256,9 @@ class Booking(models.Model):
         (STATUS_COMPLETED, "Completed"),
     ]
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
+    )
     paid = models.BooleanField(default=False)
     payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
     pax = models.PositiveSmallIntegerField(
@@ -264,7 +271,7 @@ class Booking(models.Model):
         ordering = ("-booked_at",)
         unique_together = ("slot", "user")
 
-    def __str__(self) -> str:                # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return f"{self.user} → {self.slot} ({self.pax})"
 
 
@@ -304,7 +311,9 @@ class Review(models.Model):
         on_delete=models.CASCADE,
     )
     user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -360,4 +369,3 @@ class Favorite(models.Model):
 
     class Meta:
         unique_together = ("user", "activity")
-

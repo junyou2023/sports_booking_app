@@ -6,7 +6,13 @@ from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import F
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse, OpenApiParameter, OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiResponse,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 
 from .models import Slot, Booking
 from .serializers import SlotSerializer, MerchantSlotSerializer, BookingSerializer
@@ -21,10 +27,7 @@ class MerchantSlotViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Slot.objects.filter(
-            activity__organization__members__user=user,
-            is_active=True,
-        )
+        return Slot.objects.filter(owner=user, is_active=True)
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -32,19 +35,31 @@ class MerchantSlotViewSet(viewsets.ModelViewSet):
         return SlotSerializer
 
     @extend_schema(
-        responses={201: SlotSerializer, 400: OpenApiResponse(description="Validation error")}
+        responses={
+            201: SlotSerializer,
+            400: OpenApiResponse(description="Validation error"),
+        }
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
     @extend_schema(
-        responses={200: SlotSerializer, 400: OpenApiResponse(description="Validation error")}
+        responses={
+            200: SlotSerializer,
+            400: OpenApiResponse(description="Validation error"),
+        }
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
-        responses={200: SlotSerializer, 400: OpenApiResponse(description="Validation error")}
+        responses={
+            200: SlotSerializer,
+            400: OpenApiResponse(description="Validation error"),
+        }
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
@@ -79,21 +94,24 @@ class MerchantSlotBulkDeleteView(APIView):
             return Response({"ids": "Invalid"}, status=400)
 
         qs = Slot.objects.filter(id__in=ids)
-        accessible = qs.filter(activity__organization__members__user=request.user)
+        accessible = qs.filter(owner=request.user)
         deleted = accessible.update(is_active=False)
         accessible_ids = set(accessible.values_list("id", flat=True))
         existing_ids = set(qs.values_list("id", flat=True))
         forbidden = list(existing_ids - accessible_ids)
         not_found = [i for i in ids if i not in existing_ids]
-        return Response({
-            "deleted": deleted,
-            "forbidden": forbidden,
-            "not_found": not_found,
-        })
+        return Response(
+            {
+                "deleted": deleted,
+                "forbidden": forbidden,
+                "not_found": not_found,
+            }
+        )
+
 
 class BookingCursorPagination(CursorPagination):
     page_size = 50
-    ordering = '-booked_at'
+    ordering = "-booked_at"
 
 
 class MerchantBookingListPaged(generics.ListAPIView):
