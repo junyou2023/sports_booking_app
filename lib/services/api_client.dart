@@ -21,11 +21,10 @@ final apiClientNavKey = GlobalKey<NavigatorState>();
 /// the env contains `10.0.2.2`, swap to `127.0.0.1`.
 @visibleForTesting
 String adjustBaseUrl(String base,
-    {bool? webOverride, bool? desktopOverride}) {
+    {bool? webOverride, bool? desktopOverride, bool? androidOverride}) {
   final isWeb = webOverride ?? kIsWeb;
-  final isDesktop = desktopOverride ??
-      (!isWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows));
-  if ((isWeb || isDesktop) && base.contains('10.0.2.2')) {
+  final isAndroid = androidOverride ?? (!isWeb && Platform.isAndroid);
+  if (!isAndroid && base.contains('10.0.2.2')) {
     return base.replaceFirst('10.0.2.2', '127.0.0.1');
   }
   return base;
@@ -45,8 +44,8 @@ void initApiClient() {
     ),
   );
   if (kDebugMode) {
-    apiClient.interceptors.add(
-        LogInterceptor(requestBody: true, responseBody: true));
+    apiClient.interceptors
+        .add(LogInterceptor(requestBody: true, responseBody: true));
   }
 }
 
@@ -76,14 +75,14 @@ void initAuthInterceptor() {
             try {
               // BUG: concurrent 401s triggered multiple refresh calls
               // FIX: queue refresh so only one request runs at a time
-              _refreshing ??= apiClient
-                  .post('/auth/token/refresh/', data: {'refresh': refresh})
-                  .then((res) async {
+              _refreshing ??= apiClient.post('auth/token/refresh/',
+                  data: {'refresh': refresh}).then((res) async {
                 final data = res.data as Map<String, dynamic>;
                 final access = data['access'] as String;
                 await _storage.write(key: 'access', value: access);
                 if (data['refresh'] != null) {
-                  await _storage.write(key: 'refresh', value: data['refresh'] as String);
+                  await _storage.write(
+                      key: 'refresh', value: data['refresh'] as String);
                 }
               }).catchError((_) async {
                 // BUG: leaving interceptor without calling handler closed connection on My Bookings

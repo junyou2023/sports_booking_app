@@ -20,8 +20,9 @@ class ActivityService {
     return Paginated(count: 0, next: null, previous: null, results: const []);
   }
 
-  Future<Paginated<Activity>> fetchActivities({Map<String, dynamic>? params}) async {
-    final res = await apiClient.get('/activities/', queryParameters: params);
+  Future<Paginated<Activity>> fetchActivities(
+      {Map<String, dynamic>? params}) async {
+    final res = await apiClient.get('activities/', queryParameters: params);
     return _parsePage(res.data);
   }
 
@@ -58,7 +59,7 @@ class ActivityService {
   }
 
   Future<Activity> fetchById(int id) async {
-    final Response res = await apiClient.get('/activities/$id/');
+    final Response res = await apiClient.get('activities/$id/');
     return Activity.fromJson(res.data as Map<String, dynamic>);
   }
 
@@ -88,7 +89,7 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.post('/activities/', data: form);
+      await apiClient.post('activities/', data: form);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
     }
@@ -121,18 +122,18 @@ class ActivityService {
             filename: p.basename(imageFile.path)),
     });
     try {
-      await apiClient.patch('/activities/$id/', data: form);
+      await apiClient.patch('activities/$id/', data: form);
     } on DioException catch (e) {
       _rethrowFieldErrors(e);
     }
   }
 
   Future<void> deleteActivity(int id) async {
-    await apiClient.delete('/activities/$id/');
+    await apiClient.delete('activities/$id/');
   }
 
   Future<void> updateActivityStatus(int id, {required bool isActive}) async {
-    await apiClient.patch('/activities/$id/', data: {'is_active': isActive});
+    await apiClient.patch('activities/$id/', data: {'is_active': isActive});
   }
 
   void _rethrowFieldErrors(DioException e) {

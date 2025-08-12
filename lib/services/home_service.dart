@@ -6,7 +6,7 @@ import 'api_client.dart';
 
 class HomeService {
   Future<List<FeaturedCategory>> fetchFeaturedCategories() async {
-    final res = await apiClient.get('/featured-categories/');
+    final res = await apiClient.get('featured-categories/');
     return (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(FeaturedCategory.fromJson)
@@ -14,7 +14,7 @@ class HomeService {
   }
 
   Future<List<FeaturedActivity>> fetchFeaturedActivities() async {
-    final res = await apiClient.get('/featured-activities/');
+    final res = await apiClient.get('featured-activities/');
     return (res.data as List)
         .cast<Map<String, dynamic>>()
         .map(FeaturedActivity.fromJson)
@@ -35,7 +35,7 @@ class HomeService {
   }
 
   Future<Paginated<Activity>> fetchContinuePlanning() async {
-    final res = await apiClient.get('/home/continue-planning/');
+    final res = await apiClient.get('home/continue-planning/');
     final data = res.data;
     if (data is List) {
       return Paginated.fromList(

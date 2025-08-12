@@ -10,7 +10,7 @@ class AuthService {
 
   Future<void> login(String email, String password) async {
     final Response res = await apiClient.post(
-      '/auth/login/',
+      'auth/login/',
       data: {'email': email, 'password': password},
     );
     final access = res.data['access'];
@@ -20,9 +20,10 @@ class AuthService {
     apiClient.options.headers['Authorization'] = 'Bearer $access';
   }
 
-  Future<void> register(String email, String password1, String password2) async {
+  Future<void> register(
+      String email, String password1, String password2) async {
     final Response res = await apiClient.post(
-      '/auth/registration/',
+      'auth/registration/',
       data: {
         'email': email,
         'password1': password1,
@@ -36,9 +37,10 @@ class AuthService {
     apiClient.options.headers['Authorization'] = 'Bearer $access';
   }
 
-  Future<void> registerProvider(String email, String p1, String p2, String name, String phone, String address) async {
+  Future<void> registerProvider(String email, String p1, String p2, String name,
+      String phone, String address) async {
     final Response res = await apiClient.post(
-      '/provider/register/',
+      'provider/register/',
       data: {
         'email': email,
         'password1': p1,
@@ -60,7 +62,7 @@ class AuthService {
     if (account == null) return;
     final auth = await account.authentication;
     final Response res = await apiClient.post(
-      '/auth/google/',
+      'auth/google/',
       data: {'id_token': auth.idToken},
     );
     final access = res.data['access'];
@@ -73,7 +75,7 @@ class AuthService {
   Future<void> logout() async {
     try {
       final refresh = await _storage.read(key: 'refresh');
-      await apiClient.post('/auth/logout/', data: {'refresh': refresh});
+      await apiClient.post('auth/logout/', data: {'refresh': refresh});
     } finally {
       await _storage.delete(key: 'access');
       await _storage.delete(key: 'refresh');
@@ -82,14 +84,14 @@ class AuthService {
   }
 
   Future<void> requestPasswordReset(String email) async {
-    await apiClient.post('/auth/password/reset/', data: {'email': email});
+    await apiClient.post('auth/password/reset/', data: {'email': email});
   }
 
   Future<void> refresh() async {
     final refresh = await _storage.read(key: 'refresh');
     if (refresh == null) return;
     final Response res = await apiClient.post(
-      '/auth/token/refresh/',
+      'auth/token/refresh/',
       data: {'refresh': refresh},
     );
     final access = res.data['access'];
