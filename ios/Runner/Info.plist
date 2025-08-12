@@ -51,5 +51,10 @@
         <string>This app requires photo library access to select activity images.</string>
         <key>NSCameraUsageDescription</key>
         <string>This app requires camera access to take activity photos.</string>
+        <!-- Development only: allow HTTP for local backend. Remove or restrict in production. -->
+        <key>NSAppTransportSecurity</key>
+        <dict>
+                <key>NSAllowsArbitraryLoads</key><true/>
+        </dict>
 </dict>
 </plist>
