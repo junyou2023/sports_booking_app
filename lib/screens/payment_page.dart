@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import '../services/booking_service.dart';
 import '../services/payment_service.dart';
+import '../services/slot_service.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
@@ -17,6 +18,28 @@ class PaymentPage extends ConsumerStatefulWidget {
 
 class _PaymentPageState extends ConsumerState<PaymentPage> {
   bool loading = false;
+  bool _isMySlot = false;
+  bool _checking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOwnership();
+  }
+
+  Future<void> _checkOwnership() async {
+    try {
+      final mine = await slotService.fetchMerchantSlot(widget.slot.id);
+      if (mounted) {
+        setState(() {
+          _isMySlot = mine != null;
+          _checking = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +52,19 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           children: [
             Text(widget.slot.title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: loading ? null : _pay,
-              child: loading
-                  ? const CircularProgressIndicator()
-                  : const Text('Pay & Book'),
-            ),
+            if (_checking)
+              const CircularProgressIndicator()
+            else ...[
+              if (_isMySlot)
+                const Text('You cannot book your own slot.')
+              else
+                ElevatedButton(
+                  onPressed: loading ? null : _pay,
+                  child: loading
+                      ? const CircularProgressIndicator()
+                      : const Text('Pay & Book'),
+                ),
+            ],
           ],
         ),
       ),

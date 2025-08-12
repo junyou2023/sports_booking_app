@@ -179,15 +179,16 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               facilityId: _facilityId!,
                             );
                           } else {
-                            await slotService.updateMerchantSlot(widget.slot!.id, {
-                              'facility': _facilityId,
-                              'begins_at': start!.toIso8601String(),
-                              'ends_at': end!.toIso8601String(),
-                              'capacity': int.parse(capacityCtrl.text),
-                              'price': double.parse(priceCtrl.text),
-                              'title': titleCtrl.text,
-                              'location': locationCtrl.text,
-                            });
+                            await slotService.updateMerchantSlot(
+                              widget.slot!.id,
+                              facilityId: _facilityId,
+                              beginsAt: start!,
+                              endsAt: end!,
+                              capacity: int.parse(capacityCtrl.text),
+                              price: double.parse(priceCtrl.text),
+                              title: titleCtrl.text,
+                              location: locationCtrl.text,
+                            );
                           }
                           if (context.mounted) Navigator.pop(context, true);
                         } on DioException catch (e) {
