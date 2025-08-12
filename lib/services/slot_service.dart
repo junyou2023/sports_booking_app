@@ -153,12 +153,11 @@ class SlotService {
   }
 
   Future<bool> isMine(int slotId) async {
-    try {
-      await apiClient.get('/merchant/slots/$slotId/');
-      return true;
-    } on DioException {
-      return false;
-    }
+    final res = await apiClient.get(
+      '/merchant/slots/$slotId/',
+      options: Options(validateStatus: (_) => true),
+    );
+    return res.statusCode == 200;
   }
 
   Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {

@@ -40,16 +40,15 @@ class StripeCheckoutView(APIView):
         booking = Booking.objects.filter(slot=slot, user=request.user).first()
         if booking:
             try:
-                intent = stripe.PaymentIntent.retrieve(
-                    booking.payment_intent_id,
-                    request_timeout=20,
-                )
+                intent = stripe.PaymentIntent.retrieve(booking.payment_intent_id)
             except stripe.error.APIConnectionError:
                 logger.exception('Failed to retrieve PaymentIntent')
                 return Response({'detail': 'stripe_unreachable'}, status=status.HTTP_502_BAD_GATEWAY)
             except stripe.error.StripeError as e:
                 logger.exception('Failed to retrieve PaymentIntent')
-                return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+                msg = getattr(e, 'user_message', None) or str(e)
+                msg = msg.split(':', 1)[-1].strip()
+                return Response({'detail': msg}, status=status.HTTP_502_BAD_GATEWAY)
         else:
             try:
                 intent = stripe.PaymentIntent.create(
@@ -57,14 +56,15 @@ class StripeCheckoutView(APIView):
                     currency='usd',
                     automatic_payment_methods={'enabled': True},
                     metadata={'slot_id': slot_id, 'user_id': request.user.id},
-                    request_timeout=20,
                 )
             except stripe.error.APIConnectionError:
                 logger.exception('Failed to create PaymentIntent')
                 return Response({'detail': 'stripe_unreachable'}, status=status.HTTP_502_BAD_GATEWAY)
             except stripe.error.StripeError as e:
                 logger.exception('Failed to create PaymentIntent')
-                return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+                msg = getattr(e, 'user_message', None) or str(e)
+                msg = msg.split(':', 1)[-1].strip()
+                return Response({'detail': msg}, status=status.HTTP_502_BAD_GATEWAY)
             except Exception:
                 logger.exception('Error creating PaymentIntent')
                 return Response({'detail': 'internal error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -60,6 +60,7 @@ def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
         id = 'pi_123'
         client_secret = 'sec'
     def fake_create(**kwargs):
+        assert 'request_timeout' not in kwargs
         return FakeIntent()
     monkeypatch.setattr(pay_views.stripe.PaymentIntent, 'create', staticmethod(fake_create))
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
@@ -74,6 +75,7 @@ def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
 
 def test_checkout_stripe_timeout_returns_502(auth_client, slot, monkeypatch):
     def fake_create(**kwargs):
+        assert 'request_timeout' not in kwargs
         raise stripe.error.APIConnectionError('timeout')
     monkeypatch.setattr(pay_views.stripe.PaymentIntent, 'create', staticmethod(fake_create))
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
