@@ -101,8 +101,9 @@ class SlotService {
       await apiClient.post('/merchant/slots/', data: {
         'activity': activityId,
         'facility': facilityId,
-        'begins_at': start.toIso8601String(),
-        'ends_at': end.toIso8601String(),
+        // Ensure timezone aware datetimes for Django
+        'begins_at': _iso(start),
+        'ends_at': _iso(end),
         'capacity': capacity,
         'price': price,
         'title': title,
@@ -132,6 +133,30 @@ class SlotService {
     }
   }
 
+  Future<void> updateMerchantSlot(
+    int id, {
+    int? activityId,
+    int? facilityId,
+    DateTime? beginsAt,
+    DateTime? endsAt,
+    int? capacity,
+    double? price,
+    String? title,
+    String? location,
+  }) async {
+    final patch = <String, dynamic>{};
+    if (activityId != null) patch['activity'] = activityId;
+    if (facilityId != null) patch['facility'] = facilityId;
+    if (beginsAt != null) patch['begins_at'] = _iso(beginsAt);
+    if (endsAt != null) patch['ends_at'] = _iso(endsAt);
+    if (capacity != null) patch['capacity'] = capacity;
+    if (price != null) patch['price'] = price;
+    if (title != null) patch['title'] = title;
+    if (location != null) patch['location'] = location;
+
+    await apiClient.patch('/merchant/slots/$id/', data: patch);
+  }
+  
   Future<Paginated<Slot>> fetchMine({int page = 1}) async {
     final res = await apiClient.get('/merchant/slots/', queryParameters: {'page': page});
     final dynamic data = res.data;
@@ -155,10 +180,6 @@ class SlotService {
       }
       rethrow;
     }
-  }
-
-  Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
-    await apiClient.patch('/merchant/slots/$id/', data: patch);
   }
 
   Future<void> deleteMerchantSlot(int id) async {
