@@ -301,11 +301,7 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
         lng = validated_data.pop("lng")
         categories = validated_data.pop("categories", [])
         point = Point(lng, lat, srid=4326)
-        request = self.context.get("request")
-        owner = request.user if request else None
-        facility = Facility.objects.create(
-            location=point, owner=owner, **validated_data
-        )
+        facility = Facility.objects.create(location=point, **validated_data)
         if categories:
             facility.categories.set(categories)
         return facility
