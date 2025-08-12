@@ -138,7 +138,8 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
                     children: [
                       ChoiceChip(
                         label: const Text('Use current location'),
@@ -152,7 +153,6 @@ class _AddFacilityPageState extends State<AddFacilityPage> {
                           }
                         },
                       ),
-                      const SizedBox(width: 8),
                       ChoiceChip(
                         label: const Text('Enter coordinates manually'),
                         selected: _manual,
