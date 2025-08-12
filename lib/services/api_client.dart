@@ -1,7 +1,7 @@
 /// Global Dio instance configured with base-url and sane defaults.
 /// All services import this instead of creating their own client.
 
-import 'dart:io' show Platform; // needed to detect desktop platforms
+import 'dart:io' show Platform; // needed to detect desktop/iOS platforms
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
