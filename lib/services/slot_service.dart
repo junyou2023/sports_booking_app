@@ -134,8 +134,27 @@ class SlotService {
 
   Future<Paginated<Slot>> fetchMine({int page = 1}) async {
     final res = await apiClient.get('/merchant/slots/', queryParameters: {'page': page});
-    final data = res.data as Map<String, dynamic>;
-    return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+    final dynamic data = res.data;
+    if (data is Map<String, dynamic>) {
+      return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+    } else if (data is List) {
+      return Paginated.fromList(
+          data.cast<Map<String, dynamic>>(), (j) => Slot.fromJson(j));
+    } else {
+      throw const FormatException('Unsupported slots payload');
+    }
+  }
+
+  Future<Slot?> fetchMerchantSlot(int id) async {
+    try {
+      final res = await apiClient.get('/merchant/slots/$id/');
+      return Slot.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
+        return null;
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
