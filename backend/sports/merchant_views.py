@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
 from .models import Slot, Booking
 from .serializers import SlotSerializer, MerchantSlotSerializer, BookingSerializer
+from .views import DefaultPagination
 from accounts.permissions import IsVendor
 from payments.services import refund
 
@@ -18,6 +19,7 @@ class MerchantSlotViewSet(viewsets.ModelViewSet):
     """CRUD operations for Slots owned by merchants."""
 
     permission_classes = [permissions.IsAuthenticated, IsVendor]
+    pagination_class = DefaultPagination
 
     def get_queryset(self):
         user = self.request.user
