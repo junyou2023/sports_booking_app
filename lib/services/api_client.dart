@@ -4,7 +4,7 @@
 import 'dart:io' show Platform; // needed to detect desktop platforms
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,13 +19,13 @@ final apiClientNavKey = GlobalKey<NavigatorState>();
 /// Adjust base URL for desktop/web platforms where Android's `10.0.2.2`
 /// (emulator localhost) is unreachable.  When running on Web or desktop and
 /// the env contains `10.0.2.2`, swap to `127.0.0.1`.
-@visibleForTesting
-String adjustBaseUrl(String base,
-    {bool? webOverride, bool? desktopOverride}) {
-  final isWeb = webOverride ?? kIsWeb;
-  final isDesktop = desktopOverride ??
-      (!isWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows));
-  if ((isWeb || isDesktop) && base.contains('10.0.2.2')) {
+String adjustBaseUrl(String base) {
+  final isWeb = kIsWeb;
+  final isDesktop =
+      !isWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows);
+  final isIOS = !isWeb && Platform.isIOS;
+
+  if ((isWeb || isDesktop || isIOS) && base.contains('10.0.2.2')) {
     return base.replaceFirst('10.0.2.2', '127.0.0.1');
   }
   return base;
@@ -33,8 +33,7 @@ String adjustBaseUrl(String base,
 
 /// Call after dotenv.load to construct the client with the base URL.
 void initApiClient() {
-  var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
-  base = adjustBaseUrl(base);
+  var base = adjustBaseUrl(dotenv.env['API_BASE_URL'] ?? '');
   if (!base.endsWith('/')) base += '/';
   apiClient = Dio(
     BaseOptions(

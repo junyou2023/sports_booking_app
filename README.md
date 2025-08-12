@@ -46,11 +46,17 @@ its CSS correctly when deployed.
 
 `mobile/.env` must define `API_BASE_URL` so the Flutter app knows where the
 backend is. It should also include the publishable Stripe key used by the payment flow.
-When testing on the Android emulator the correct value for `API_BASE_URL` is
-`http://10.0.2.2:8000/api`.
+
+Examples:
+
+* Android emulator: `http://10.0.2.2:8000/api`
+* iOS simulator / Web / desktop: `http://10.0.2.2:8000/api` (automatically rewritten
+  to `127.0.0.1`)
+* Physical devices: `http://<your-computer-ip>:8000/api`
+
 `initApiClient` automatically appends a trailing slash so either form
 (`http://10.0.2.2:8000/api` or `http://10.0.2.2:8000/api/`) works.
-For Web or desktop builds the Android emulator host `10.0.2.2` is not reachable;
+For Web, desktop, and iOS builds the Android emulator host `10.0.2.2` is not reachable;
 the client automatically swaps it to `127.0.0.1` so the backend running on the
 same machine can be accessed without editing `.env`.
 
