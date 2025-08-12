@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 import stripe
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -17,6 +18,12 @@ class StripeCheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if not stripe.api_key or stripe.api_key.endswith('xxx'):
+            return Response(
+                {'detail': 'Stripe secret key misconfigured'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
         slot_id = request.data.get('slot')
         if not slot_id:
             return Response({'detail': 'slot required'}, status=400)
@@ -24,12 +31,6 @@ class StripeCheckoutView(APIView):
             slot = Slot.objects.get(pk=slot_id)
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
-
-        if not stripe.api_key or stripe.api_key.endswith('xxx'):
-            return Response(
-                {'detail': 'Stripe secret key is not configured'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         booking, created = Booking.objects.get_or_create(
             slot=slot,
@@ -67,7 +68,7 @@ class StripeCheckoutView(APIView):
         return Response(
             {
                 'client_secret': intent.client_secret,
-                'payment_intent_id': intent.id,
+                'intent_id': intent.id,
                 'booking_id': booking.id,
             },
             status=status.HTTP_200_OK,
@@ -85,19 +86,20 @@ class StripeWebhookView(APIView):
         secret = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 
         if not secret:
-            logger.warning('STRIPE_WEBHOOK_SECRET not set; webhook verification skipped')
-            return Response({'detail': 'webhook disabled'}, status=status.HTTP_200_OK)
+            logger.warning('STRIPE_WEBHOOK_SECRET not set; skipping verification')
+            try:
+                event = json.loads(payload.decode('utf-8'))
+            except Exception:
+                return Response({'detail': 'invalid payload'}, status=400)
+        else:
+            try:
+                event = stripe.Webhook.construct_event(payload, sig_header, secret)
+            except stripe.error.SignatureVerificationError:
+                return Response({'detail': 'invalid webhook signature'}, status=400)
+            except Exception:
+                return Response({'detail': 'invalid payload'}, status=400)
 
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, secret
-            )
-        except stripe.error.SignatureVerificationError:
-            return Response({'detail': 'invalid webhook signature'}, status=400)
-        except Exception:
-            return Response({'detail': 'invalid payload'}, status=400)
-
-        if event['type'] == 'payment_intent.succeeded':
+        if event.get('type') == 'payment_intent.succeeded':
             intent = event['data']['object']
             bid = Booking.objects.filter(payment_intent_id=intent['id']).first()
             if not bid:
