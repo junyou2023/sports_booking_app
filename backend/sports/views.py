@@ -302,6 +302,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         slot = Slot.objects.select_for_update().get(pk=slot.pk)
         if not slot.is_active:
             return Response({"detail": "Slot inactive"}, status=400)
+        if slot.activity.organization.members.filter(user=request.user).exists():
+            return Response({"detail": "cannot_book_own_slot"}, status=403)  # 兼容性增强点
         if slot.current_participants + pax > slot.capacity:
             return Response(
                 {"detail": "Not enough seats left"},

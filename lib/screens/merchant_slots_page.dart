@@ -16,7 +16,7 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
   String? _next;
   bool _loading = true;
   bool _loadingMore = false;
-  int _page = 1;
+  final ScrollController _controller = ScrollController();
 
   @override
   void initState() {
@@ -24,17 +24,23 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
     _refresh();
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _refresh() async {
     setState(() => _loading = true);
     try {
-      final page = await slotService.fetchMine(page: 1);
+      final page = await slotService.fetchMerchantPaged(page: 1);
       setState(() {
         _slots
           ..clear()
           ..addAll(page.results);
         _next = page.next;
-        _page = 1;
       });
+      _controller.jumpTo(0); // scroll to top after refresh
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -44,12 +50,10 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
     if (_next == null || _loadingMore) return;
     setState(() => _loadingMore = true);
     try {
-      final nextPage = _page + 1;
-      final page = await slotService.fetchMine(page: nextPage);
+      final page = await slotService.fetchMerchantByUrl(_next!);
       setState(() {
         _slots.addAll(page.results);
         _next = page.next;
-        _page = nextPage;
       });
     } finally {
       if (mounted) setState(() => _loadingMore = false);
@@ -104,6 +108,7 @@ class _MerchantSlotsPageState extends State<MerchantSlotsPage> {
                       ],
                     )
                   : ListView.builder(
+                      controller: _controller,
                       itemCount: _slots.length + 1,
                       itemBuilder: (context, index) {
                         if (index == _slots.length) {

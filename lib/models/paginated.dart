@@ -21,7 +21,7 @@ class Paginated<T> {
             .toList(growable: false) ??
         <T>[];
     return Paginated(
-      count: json['count'] as int? ?? 0,
+      count: json['count'] as int? ?? list.length, // 兼容性增强点
       next: json['next'] as String?,
       previous: json['previous'] as String?,
       results: list,

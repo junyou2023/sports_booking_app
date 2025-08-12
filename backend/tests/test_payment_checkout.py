@@ -52,7 +52,7 @@ def test_checkout_no_key_returns_500(auth_client, slot, monkeypatch):
     monkeypatch.setattr(pay_views.stripe, 'api_key', '')
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
     assert resp.status_code == 500
-    assert 'misconfigured' in resp.data['detail']
+    assert 'configured' in resp.data['detail']
 
 
 def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
@@ -60,13 +60,59 @@ def test_checkout_success_creates_booking(auth_client, slot, monkeypatch):
         id = 'pi_123'
         client_secret = 'sec'
     def fake_create(**kwargs):
+        assert 'request_timeout' not in kwargs
         return FakeIntent()
     monkeypatch.setattr(pay_views.stripe.PaymentIntent, 'create', staticmethod(fake_create))
     resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
     assert resp.status_code == 200
     data = resp.data
-    assert data['intent_id'] == 'pi_123'
+    assert data['payment_intent_id'] == 'pi_123'
     booking = Booking.objects.get(id=data['booking_id'])
     assert booking.slot == slot
     assert booking.status == 'pending'
     assert not booking.paid
+
+
+def test_checkout_stripe_timeout_returns_502(auth_client, slot, monkeypatch):
+    def fake_create(**kwargs):
+        assert 'request_timeout' not in kwargs
+        raise stripe.error.APIConnectionError('timeout')
+    monkeypatch.setattr(pay_views.stripe.PaymentIntent, 'create', staticmethod(fake_create))
+    resp = auth_client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
+    assert resp.status_code == 502
+    assert resp.data['detail'] == 'stripe_unreachable'
+
+
+def test_vendor_cannot_book_own_slot(monkeypatch):
+    user = User.objects.create_user('vendor')
+    sport = Sport.objects.create(name='S')
+    cat = Category.objects.create(name='C')
+    from accounts.models import Organization, OrganizationMember
+    from uuid import uuid4
+    org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
+    OrganizationMember.objects.create(organization=org, user=user, role='owner')
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        title='A',
+        description='',
+        difficulty=1,
+        duration=60,
+        base_price=10,
+        organization=org,
+    )
+    slot = Slot.objects.create(
+        sport=sport,
+        activity=act,
+        title='S',
+        location='L',
+        begins_at=timezone.now() + timezone.timedelta(hours=1),
+        ends_at=timezone.now() + timezone.timedelta(hours=2),
+        capacity=5,
+        price=10,
+    )
+    client = APIClient()
+    client.force_authenticate(user)
+    resp = client.post('/api/payments/checkout/', {'slot': slot.id}, format='json')
+    assert resp.status_code == 403
+    assert resp.data['detail'] == 'cannot_book_own_slot'

@@ -40,6 +40,26 @@ def slot(activity):
     )
 
 
+def test_vendor_cannot_book_own_slot(provider_user, activity):
+    begins = timezone.now() + timezone.timedelta(hours=1)
+    ends = begins + timezone.timedelta(hours=1)
+    slot = Slot.objects.create(
+        activity=activity,
+        sport=activity.sport,
+        title="S",
+        location="L",
+        begins_at=begins,
+        ends_at=ends,
+        capacity=5,
+        price=0,
+    )
+    client = pytest.importorskip("rest_framework.test").APIClient()
+    client.force_authenticate(provider_user)
+    resp = client.post("/api/bookings/", {"slot_id": slot.id, "pax": 1})
+    assert resp.status_code == 403
+    assert resp.data["detail"] == "cannot_book_own_slot"
+
+
 def test_paged_list_cursor_filters(auth_client, activity, slot):
     for i in range(55):
         u = User.objects.create_user(f"u{i}")

@@ -138,6 +138,28 @@ class SlotService {
     return Paginated.fromJson(data, (j) => Slot.fromJson(j));
   }
 
+  // New paged endpoint used by My Slots; old method kept for compatibility
+  Future<Paginated<Slot>> fetchMerchantPaged({int page = 1}) async {
+    final res = await apiClient
+        .get('/merchant/slots/paged/', queryParameters: {'page': page});
+    final data = res.data as Map<String, dynamic>;
+    return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+  }
+
+  Future<Paginated<Slot>> fetchMerchantByUrl(String nextUrl) async {
+    final res = await apiClient.getUri(Uri.parse(nextUrl));
+    final data = res.data as Map<String, dynamic>;
+    return Paginated.fromJson(data, (j) => Slot.fromJson(j));
+  }
+
+  Future<bool> isMine(int slotId) async {
+    final res = await apiClient.get(
+      '/merchant/slots/$slotId/',
+      options: Options(validateStatus: (_) => true),
+    );
+    return res.statusCode == 200;
+  }
+
   Future<void> updateMerchantSlot(int id, Map<String, dynamic> patch) async {
     await apiClient.patch('/merchant/slots/$id/', data: patch);
   }

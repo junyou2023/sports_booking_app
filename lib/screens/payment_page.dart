@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
 import '../services/booking_service.dart';
 import '../services/payment_service.dart';
+import '../services/slot_service.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../providers.dart';
 import 'booking_confirmation_page.dart';
@@ -17,6 +18,21 @@ class PaymentPage extends ConsumerStatefulWidget {
 
 class _PaymentPageState extends ConsumerState<PaymentPage> {
   bool loading = false;
+  bool _isMine = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOwn();
+  }
+
+  Future<void> _checkOwn() async {
+    final profile = await ref.read(profileProvider.future);
+    if (profile.isProvider) {
+      final mine = await slotService.isMine(widget.slot.id);
+      if (mounted) setState(() => _isMine = mine);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +46,16 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             Text(widget.slot.title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: loading ? null : _pay,
+              onPressed: loading || _isMine ? null : _pay,
               child: loading
                   ? const CircularProgressIndicator()
                   : const Text('Pay & Book'),
             ),
+            if (_isMine)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('商家不能预订自己的场次'),
+              ),
           ],
         ),
       ),
@@ -67,7 +88,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => loading = false);
