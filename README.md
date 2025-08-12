@@ -72,6 +72,39 @@ After signing up or using Google the app stores JWT tokens securely and the
 profile page shows your account email. Use the **Logout** button on that page to
 clear the stored token and log in with a different account.
 
+## 本次变更与回归步骤
+
+### 启动
+
+后端:
+
+```bash
+cd backend
+python manage.py runserver
+```
+
+前端:
+
+```bash
+# 确保 .env 中配置 API_BASE_URL (Android 模拟器使用 http://10.0.2.2:8000/api)
+flutter run
+```
+
+### 手工回归用例
+
+1. **创建后立即可见**
+   - Given 已登录商家, 在商家端创建 Slot
+   - When 创建成功返回
+   - Then “My Slots” 页刷新后能立即看到该 Slot
+2. **普通用户支付预订**
+   - Given 普通用户打开活动详情并选择商家 Slot
+   - When 点击支付并完成流程
+   - Then 订单创建且状态为 confirmed
+3. **商家自订拦截**
+   - Given 商家尝试预订自己创建的 Slot
+   - When 进入支付页或直接调用接口
+   - Then 前端按钮禁用且提示，API 返回 403 `cannot_book_own_slot`
+
 ## Geo setup
 
 PostGIS is required for the new facility search API. Docker uses

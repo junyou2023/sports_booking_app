@@ -19,6 +19,28 @@ def activity(provider_user, sport):
     )
 
 
+def test_paged_endpoint_returns_paginated(auth_client, activity):
+    """Ensure new paged action returns PageNumberPagination structure."""
+    now = timezone.now() + timezone.timedelta(hours=1)
+    for i in range(3):
+        auth_client.post(
+            "/api/merchant/slots/",
+            {
+                "activity": activity.id,
+                "begins_at": (now + timezone.timedelta(hours=i)).isoformat(),
+                "ends_at": (now + timezone.timedelta(hours=i + 1)).isoformat(),
+                "capacity": 5,
+                "price": "0",
+                "title": f"S{i}",
+                "location": "Loc",
+            },
+            format="json",
+        )
+    resp = auth_client.get("/api/merchant/slots/paged/")
+    assert resp.status_code == 200
+    assert set(resp.data.keys()) >= {"count", "results"}
+    assert resp.data["count"] >= 3
+
 def test_create_update_overlap_400(auth_client, activity):
     begins = timezone.now() + timezone.timedelta(hours=1)
     ends = begins + timezone.timedelta(hours=1)

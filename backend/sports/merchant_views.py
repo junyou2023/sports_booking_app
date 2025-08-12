@@ -1,7 +1,8 @@
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import CursorPagination, PageNumberPagination
+from rest_framework.decorators import action
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -52,6 +53,22 @@ class MerchantSlotViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.is_active = False
         instance.save(update_fields=["is_active"])
+
+    @action(detail=False, methods=["get"], url_path="paged")
+    def paged(self, request):
+        """List slots with page-number pagination (compat layer)."""
+        qs = self.get_queryset().order_by("-begins_at")
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page_size = request.query_params.get("page_size")
+        if page_size:
+            try:
+                paginator.page_size = int(page_size)
+            except ValueError:
+                pass
+        page = paginator.paginate_queryset(qs, request)
+        ser = SlotSerializer(page, many=True)
+        return paginator.get_paginated_response(ser.data)
 
 
 class MerchantSlotBulkDeleteView(APIView):

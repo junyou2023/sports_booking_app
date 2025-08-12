@@ -5,11 +5,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 
 from sports.models import Slot, Booking
 from sports.serializers import BookingSerializer
 
 stripe.api_key = os.getenv('STRIPE_API_KEY', '')
+stripe.default_http_client = stripe.http_client.RequestsClient(timeout=20)  # 兼容性增强点
 logger = logging.getLogger(__name__)
 
 
@@ -25,25 +27,26 @@ class StripeCheckoutView(APIView):
         except Slot.DoesNotExist:
             return Response({'detail': 'invalid slot'}, status=400)
 
+        # Disallow vendors from booking their own slots (backend hard rule)
+        if slot.activity.organization.members.filter(user=request.user).exists():
+            return Response({'detail': 'cannot_book_own_slot'}, status=403)  # 兼容性增强点
+
         if not stripe.api_key or stripe.api_key.endswith('xxx'):
             return Response(
                 {'detail': 'Stripe secret key is not configured'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        booking, created = Booking.objects.get_or_create(
-            slot=slot,
-            user=request.user,
-            defaults={
-                'activity': slot.activity,
-                'status': 'pending',
-                'paid': False,
-            },
-        )
-
-        if booking.payment_intent_id:
+        booking = Booking.objects.filter(slot=slot, user=request.user).first()
+        if booking:
             try:
-                intent = stripe.PaymentIntent.retrieve(booking.payment_intent_id)
+                intent = stripe.PaymentIntent.retrieve(
+                    booking.payment_intent_id,
+                    request_timeout=20,
+                )
+            except stripe.error.APIConnectionError:
+                logger.exception('Failed to retrieve PaymentIntent')
+                return Response({'detail': 'stripe_unreachable'}, status=status.HTTP_502_BAD_GATEWAY)
             except stripe.error.StripeError as e:
                 logger.exception('Failed to retrieve PaymentIntent')
                 return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
@@ -54,15 +57,27 @@ class StripeCheckoutView(APIView):
                     currency='usd',
                     automatic_payment_methods={'enabled': True},
                     metadata={'slot_id': slot_id, 'user_id': request.user.id},
+                    request_timeout=20,
                 )
-                booking.payment_intent_id = intent.id
-                booking.save(update_fields=['payment_intent_id'])
+            except stripe.error.APIConnectionError:
+                logger.exception('Failed to create PaymentIntent')
+                return Response({'detail': 'stripe_unreachable'}, status=status.HTTP_502_BAD_GATEWAY)
             except stripe.error.StripeError as e:
                 logger.exception('Failed to create PaymentIntent')
                 return Response({'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
-            except Exception as e:
+            except Exception:
                 logger.exception('Error creating PaymentIntent')
                 return Response({'detail': 'internal error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            with transaction.atomic():
+                booking = Booking.objects.create(
+                    slot=slot,
+                    activity=slot.activity,
+                    user=request.user,
+                    status='pending',
+                    paid=False,
+                    payment_intent_id=intent.id,
+                )
 
         return Response(
             {

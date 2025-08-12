@@ -95,6 +95,8 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         activity = validated_data["activity"]
+        # ensure new slots start active for compatibility
+        validated_data.setdefault("is_active", True)  # 兼容性增强点
         return Slot.objects.create(**validated_data, sport=activity.sport)
 
     def validate(self, attrs):
@@ -110,6 +112,8 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
                 errors["ends_at"] = ["Must not cross days"]
             if begins < now:
                 errors["begins_at"] = ["Must be in the future"]
+            if ends <= begins:
+                errors.setdefault("ends_at", []).append("Must be after begins_at")
 
         if activity and begins and ends:
             qs = Slot.objects.filter(activity=activity, is_active=True)
@@ -118,9 +122,17 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
             if qs.filter(begins_at__lt=ends, ends_at__gt=begins).exists():
                 errors.setdefault("begins_at", []).append("Overlaps another slot")
 
+        capacity = attrs.get("capacity")
+        if capacity is not None and capacity <= 0:
+            errors.setdefault("capacity", []).append("Must be > 0")
+
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
+
+    def to_representation(self, instance):
+        """Return full Slot payload for merchant operations."""  # 兼容性增强点
+        return SlotSerializer(instance).data
 
 
 class CategorySerializer(serializers.ModelSerializer):
