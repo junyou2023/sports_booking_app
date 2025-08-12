@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
-import '../services/booking_service.dart';
 import '../services/payment_service.dart';
 import '../services/slot_service.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -59,7 +58,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 const Text('You cannot book your own slot.')
               else
                 ElevatedButton(
-                  onPressed: loading ? null : _pay,
+                  onPressed: loading ? null : _payAndBook,
                   child: loading
                       ? const CircularProgressIndicator()
                       : const Text('Pay & Book'),
@@ -71,7 +70,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     );
   }
 
-  Future<void> _pay() async {
+  Future<void> _payAndBook() async {
     setState(() => loading = true);
     try {
       final data = await paymentService.createIntent(widget.slot.id);
@@ -82,10 +81,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         ),
       );
       await Stripe.instance.presentPaymentSheet();
-      await Future.delayed(const Duration(seconds: 2));
-      final booking = await paymentService.confirmIntent(
-        data['payment_intent_id'] as String,
-      );
+      final booking = await paymentService
+          .confirmIntent(data['payment_intent_id'] as String);
       ref.invalidate(bookingsProvider);
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -94,10 +91,17 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           builder: (_) => BookingConfirmationPage(booking: booking),
         ),
       );
-    } catch (e) {
+    } on StripeException catch (e) {
+      final msg = e.error.message ?? 'Payment canceled';
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(msg)));
+      }
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => loading = false);
