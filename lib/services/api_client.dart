@@ -69,6 +69,18 @@ void initAuthInterceptor() {
         handler.next(options);
       },
       onError: (err, handler) async {
+        if (err.message == null ||
+            err.message!.isEmpty ||
+            err.message == 'null' ||
+            err.type == DioExceptionType.unknown) {
+          err = DioException(
+            requestOptions: err.requestOptions,
+            response: err.response,
+            type: err.type,
+            error: 'Network error — please try again.',
+          );
+        }
+
         if (err.response?.statusCode == 401 &&
             !err.requestOptions.path.contains('token/refresh') &&
             err.requestOptions.extra['__retry'] != true) {

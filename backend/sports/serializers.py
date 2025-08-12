@@ -314,6 +314,8 @@ class BookingSerializer(serializers.ModelSerializer):
     )
     status = serializers.CharField(read_only=True)
     paid = serializers.BooleanField(read_only=True)
+    user_name = serializers.SerializerMethodField()
+    user_email = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -325,8 +327,17 @@ class BookingSerializer(serializers.ModelSerializer):
             "booked_at",
             "status",
             "paid",
+            "user_name",
+            "user_email",
         )
         read_only_fields = ("id", "booked_at", "status", "paid")
+
+    def get_user_name(self, obj):
+        name = obj.user.get_full_name()
+        return name or getattr(obj.user, "username", "")
+
+    def get_user_email(self, obj):
+        return getattr(obj.user, "email", "")
 
 
 class ReviewSerializer(serializers.ModelSerializer):
