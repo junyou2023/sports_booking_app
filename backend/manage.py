@@ -4,6 +4,13 @@ import os
 import sys
 from dotenv import load_dotenv
 
+# Ensure pysqlite3 is used for SpatiaLite support
+try:  # pragma: no cover - fallback for environments without pysqlite3
+    import pysqlite3 as sqlite3  # type: ignore
+    sys.modules["sqlite3"] = sqlite3
+except Exception:  # pragma: no cover
+    pass
+
 # Load environment variables for local runs (project root .env)
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
