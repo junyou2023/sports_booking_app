@@ -141,7 +141,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
         return [p() if isinstance(p, type) else p for p in perms]
 
     def get_queryset(self):
-        qs = Activity.objects.select_related("sport", "discipline", "variant", "organization")
+        qs = Activity.objects.select_related(
+            "sport", "discipline", "variant", "organization"
+        )
         if self.action in ("update", "partial_update", "destroy"):
             qs = qs.filter(organization__members__user=self.request.user)
         mine = self.request.query_params.get("mine")
@@ -179,12 +181,14 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
-    @action(detail=True, methods=["post"], url_path="favorite/toggle",
-            permission_classes=[permissions.IsAuthenticated])
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="favorite/toggle",
+        permission_classes=[permissions.IsAuthenticated],
+    )
     def favorite_toggle(self, request, pk=None):
-        fav, created = Favorite.objects.get_or_create(
-            user=request.user, activity_id=pk
-        )
+        fav, created = Favorite.objects.get_or_create(user=request.user, activity_id=pk)
         if not created:
             fav.delete()
             return Response({"favorited": False})
@@ -261,6 +265,9 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
         activity_id = self.request.query_params.get("activity")
         if activity_id:
             qs = qs.filter(activity_id=activity_id)
+        owner_id = self.request.query_params.get("owner")
+        if owner_id:
+            qs = qs.filter(owner_id=owner_id)
         if after:
             try:
                 dt = timezone.datetime.fromisoformat(after)
@@ -286,10 +293,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # connection when listing bookings (My Bookings → "connection closed").
         # FIX: only join the Slot; facility id is enough for clients
         # (covers: My Bookings list).
-        return (
-            Booking.objects.filter(user=self.request.user)
-            .select_related("slot")
-        )
+        return Booking.objects.filter(user=self.request.user).select_related("slot")
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -300,6 +304,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         pax = ser.validated_data["pax"]
 
         slot = Slot.objects.select_for_update().get(pk=slot.pk)
+        if slot.owner_id == request.user.id:
+            return Response({"detail": "cannot_book_own_slot"}, status=400)
         if not slot.is_active:
             return Response({"detail": "Slot inactive"}, status=400)
         if slot.current_participants + pax > slot.capacity:
@@ -356,18 +362,16 @@ class ContinuePlanningView(APIView):
 
     def get(self, request):
         user = request.user
-        histories = (
-            UserActivityHistory.objects.filter(user=user)
-            .order_by("-timestamp")[:20]
-        )
+        histories = UserActivityHistory.objects.filter(user=user).order_by(
+            "-timestamp"
+        )[:20]
         act_ids = []
         for h in histories:
             if h.activity_id not in act_ids:
                 act_ids.append(h.activity_id)
 
-        unfinished = (
-            Booking.objects.filter(user=user, paid=False)
-            .values_list("activity_id", flat=True)
+        unfinished = Booking.objects.filter(user=user, paid=False).values_list(
+            "activity_id", flat=True
         )
         for aid in unfinished:
             if aid and aid not in act_ids:
@@ -375,9 +379,7 @@ class ContinuePlanningView(APIView):
 
         acts = {a.id: a for a in Activity.objects.filter(id__in=act_ids)}
         ordered = [acts[a] for a in act_ids if a in acts]
-        ser = ActivitySimpleSerializer(
-            ordered, many=True, context={"request": request}
-        )
+        ser = ActivitySimpleSerializer(ordered, many=True, context={"request": request})
         return Response(ser.data)
 
 
@@ -470,6 +472,7 @@ class BulkSlotCreateView(APIView):
                 ends_at=e,
                 capacity=data.get("capacity", 1),
                 price=data.get("price", 0),
+                owner=request.user,
             )
             for b, e in slots
         ]
@@ -488,17 +491,20 @@ class MerchantBookingList(APIView):
         return Response(ser.data)
 
 
-class FavoriteViewSet(viewsets.GenericViewSet,
-                      mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin):
+class FavoriteViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = FavoriteSerializer
     pagination_class = DefaultPagination
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user).select_related(
-            "activity")
+            "activity"
+        )
 
     def create(self, request, *args, **kwargs):
         activity_id = request.data.get("activity")
@@ -507,9 +513,7 @@ class FavoriteViewSet(viewsets.GenericViewSet,
         fav, created = Favorite.objects.get_or_create(
             user=request.user, activity_id=activity_id
         )
-        status_code = (
-            status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response({"favorited": True}, status=status_code)
 
     def destroy(self, request, pk=None):

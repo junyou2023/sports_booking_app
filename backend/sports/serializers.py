@@ -67,11 +67,16 @@ class SlotCreateSerializer(serializers.ModelSerializer):
         return obj.seats_left
 
     def create(self, validated_data):
-        """Populate sport from the related activity when creating a Slot."""
+        """Populate sport and owner from context when creating a Slot."""
         activity = validated_data["activity"]
+        owner = None
+        request = self.context.get("request")
+        if request:
+            owner = request.user
         return Slot.objects.create(
             **validated_data,
             sport=activity.sport,
+            owner=owner,
         )
 
 
@@ -95,7 +100,8 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         activity = validated_data["activity"]
-        return Slot.objects.create(**validated_data, sport=activity.sport)
+        owner = validated_data.pop("owner", None)
+        return Slot.objects.create(**validated_data, sport=activity.sport, owner=owner)
 
     def validate(self, attrs):
         begins = attrs.get("begins_at") or getattr(self.instance, "begins_at", None)
@@ -293,7 +299,9 @@ class FacilityCreateSerializer(serializers.ModelSerializer):
                 }
             )
         if lat is None or lng is None:
-            raise serializers.ValidationError({"lat": ["Required"], "lng": ["Required"]})
+            raise serializers.ValidationError(
+                {"lat": ["Required"], "lng": ["Required"]}
+            )
         return attrs
 
     def create(self, validated_data):

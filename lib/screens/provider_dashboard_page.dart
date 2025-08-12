@@ -11,7 +11,7 @@ import 'add_activity_page.dart';
 import 'add_slot_page.dart';
 import 'add_facility_page.dart';
 import 'add_sport_page.dart';
-import 'merchant_slots_page.dart';
+import 'my_slots_page.dart';
 import 'merchant_bookings_page.dart';
 import 'provider_facilities_page.dart';
 import 'provider_categories_page.dart';
@@ -148,7 +148,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                 await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const MerchantSlotsPage()));
+                      builder: (_) => const MySlotsPage()));
               },
             ),
             const SizedBox(height: 16),
