@@ -5,16 +5,23 @@ class FacilityService {
   Future<List<Facility>> fetchFacilities(
       List<String> categories, double radius, double lat, double lng,
       {bool mine = false}) async {
-    final res = await apiClient.get('/facilities/', queryParameters: {
-      'categories': categories.join(','),
+    final params = {
+      if (categories.isNotEmpty) 'categories': categories.join(','),
       if (radius > 0) 'radius': radius.toInt(),
       if (lat != 0 || lng != 0) 'near': '$lat,$lng',
       if (mine) 'mine': '1',
-    });
+    };
+    final res = await apiClient.get('/facilities/', queryParameters: params);
 
     dynamic data = res.data;
-    if (data is Map && data['features'] is List) {
-      data = data['features'];
+    if (data is Map) {
+      if (data['features'] is List) {
+        // GeoJSON FeatureCollection format
+        data = data['features'];
+      } else if (data['results'] is List) {
+        // DRF paginated response
+        data = data['results'];
+      }
     }
 
     if (data is! List) {
@@ -68,8 +75,12 @@ class FacilityService {
       'page': page,
     });
     dynamic data = res.data;
-    if (data is Map && data['results'] is List) {
-      data = data['results'];
+    if (data is Map) {
+      if (data['features'] is List) {
+        data = data['features'];
+      } else if (data['results'] is List) {
+        data = data['results'];
+      }
     }
     if (data is! List) {
       throw Exception('Unexpected response format');
