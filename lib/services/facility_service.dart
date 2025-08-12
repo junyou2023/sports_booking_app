@@ -13,8 +13,14 @@ class FacilityService {
     });
 
     dynamic data = res.data;
-    if (data is Map && data['features'] is List) {
-      data = data['features'];
+    if (data is Map) {
+      if (data['features'] is List) {
+        // GeoJSON FeatureCollection format
+        data = data['features'];
+      } else if (data['results'] is List) {
+        // DRF paginated response
+        data = data['results'];
+      }
     }
 
     if (data is! List) {
