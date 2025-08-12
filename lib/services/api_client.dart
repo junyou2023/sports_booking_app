@@ -16,16 +16,17 @@ late Dio apiClient;
 // unique key for navigation without BuildContext
 final apiClientNavKey = GlobalKey<NavigatorState>();
 
-/// Adjust base URL for desktop/web platforms where Android's `10.0.2.2`
-/// (emulator localhost) is unreachable.  When running on Web or desktop and
-/// the env contains `10.0.2.2`, swap to `127.0.0.1`.
+/// Adjust base URL for non-Android platforms where Android's `10.0.2.2`
+/// (emulator localhost) is unreachable. When running on Web, desktop or iOS
+/// and the env contains `10.0.2.2`, swap to `127.0.0.1`.
 @visibleForTesting
 String adjustBaseUrl(String base,
-    {bool? webOverride, bool? desktopOverride}) {
+    {bool? webOverride, bool? desktopOverride, bool? iosOverride}) {
   final isWeb = webOverride ?? kIsWeb;
   final isDesktop = desktopOverride ??
       (!isWeb && (Platform.isLinux || Platform.isMacOS || Platform.isWindows));
-  if ((isWeb || isDesktop) && base.contains('10.0.2.2')) {
+  final isIOS = iosOverride ?? (!isWeb && Platform.isIOS);
+  if ((isWeb || isDesktop || isIOS) && base.contains('10.0.2.2')) {
     return base.replaceFirst('10.0.2.2', '127.0.0.1');
   }
   return base;

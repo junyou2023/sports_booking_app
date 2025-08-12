@@ -8,10 +8,13 @@ class PaymentService {
       final res = await apiClient.post('/payments/checkout/', data: {'slot': slotId});
       return res.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      if (e.response?.data is Map && e.response?.data['detail'] != null) {
-        throw Exception(e.response?.data['detail'].toString());
+      final data = e.response?.data;
+      if (data is Map && data['detail'] != null) {
+        throw Exception(data['detail'].toString());
       }
-      throw Exception('HTTP ${e.response?.statusCode}: ${e.response?.data}');
+      final msg = e.message ?? e.error?.toString() ?? 'network error';
+      final code = e.response?.statusCode?.toString() ?? 'network';
+      throw Exception('HTTP $code: $msg');
     }
   }
 
