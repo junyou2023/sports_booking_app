@@ -61,9 +61,9 @@ class AppBottomNav extends StatelessWidget {
           label: 'Home',
         ),
         NavigationDestination(
-          icon: _icon(Icons.favorite_outline, Icons.favorite,
-              selected: index == 1, badge: 2), // 示范红点
-          label: 'Favorites',
+          icon: _icon(Icons.event_note_outlined, Icons.event_note,
+              selected: index == 1),
+          label: 'My Slots',
         ),
         NavigationDestination(
           icon: _icon(Icons.inbox_outlined, Icons.inbox,

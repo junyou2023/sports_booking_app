@@ -27,6 +27,15 @@ class Slot(models.Model):
     """A single bookable time-window for one sport."""
 
     sport = models.ForeignKey(Sport, related_name="slots", on_delete=models.CASCADE)
+    # New: track which user created/owns this slot so merchants can manage their own
+    # slots and are prevented from booking them.  Using auth.User keeps compatibility
+    # with existing tests and avoids custom user model complexity.
+    owner = models.ForeignKey(
+        "auth.User",
+        related_name="owned_slots",
+        on_delete=models.CASCADE,
+        null=True,
+    )
     title = models.CharField(max_length=60)
     location = models.CharField(max_length=80)
     begins_at = models.DateTimeField()

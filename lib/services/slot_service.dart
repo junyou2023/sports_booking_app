@@ -22,6 +22,23 @@ class SlotService {
         .map((e) => Slot.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
   }
+
+  /// GET /api/my-slots/ - slots created by current user
+  Future<List<Slot>> fetchMine() async {
+    final Response res = await apiClient.get('/my-slots/');
+    final dynamic payload = res.data;
+    final List data = payload is Map ? payload['results'] as List : payload as List;
+    return data
+        .cast<dynamic>()
+        .map((e) => Slot.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  /// POST /api/my-slots/ - create a new slot
+  Future<Slot> create(Slot slot) async {
+    final Response res = await apiClient.post('/my-slots/', data: slot.toJson());
+    return Slot.fromJson(res.data as Map<String, dynamic>);
+  }
 }
 
 /// Global singleton – keep existing usage unchanged

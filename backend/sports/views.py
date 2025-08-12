@@ -23,6 +23,19 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(sport_id=sport_id) if sport_id else qs
 
 
+class MySlotViewSet(viewsets.ModelViewSet):
+    """CRUD for slots owned by the authenticated merchant."""
+
+    serializer_class = SlotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Slot.objects.filter(owner=self.request.user).select_related("sport")
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
 class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -39,6 +52,13 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         slot: Slot = ser.validated_data["slot"]
         pax = ser.validated_data["pax"]
+
+        # Prevent merchants from booking their own slots
+        if slot.owner_id == request.user.id:
+            return Response(
+                {"detail": "Cannot book your own slot"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         slot = Slot.objects.select_for_update().get(pk=slot.pk)
         taken = slot.bookings.aggregate(t=models.Sum("pax"))["t"] or 0

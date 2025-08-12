@@ -13,6 +13,7 @@ import 'categories_page.dart';
 
 import '../providers.dart';                                   // ← new (sportsProvider)
 import 'login_page.dart';                                     // for login navigation
+import 'my_slots_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {               // Stateful → ConsumerStateful
   const HomePage({super.key});
@@ -314,6 +315,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const LoginPage()),
+            );
+          } else if (i == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MySlotsPage()),
             );
           } else {
             setState(() => _navIndex = i);
