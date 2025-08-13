@@ -5,7 +5,7 @@ import '../models/booking.dart';
 import '../models/activity.dart';
 import '../services/activity_service.dart';
 import '../widgets/booking_card.dart';
-import 'activity_detail_page.dart';
+import 'booking_detail_page.dart';
 
 class BookingsPage extends ConsumerWidget {
   const BookingsPage({super.key});
@@ -38,7 +38,8 @@ class BookingsPage extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ActivityDetailPage(activity: activity),
+                          builder: (_) =>
+                              BookingDetailPage(booking: b, activity: activity),
                         ),
                       );
                     }
