@@ -18,15 +18,10 @@ class ProjectCard extends StatelessWidget {
   });
 
   Widget _buildImage() {
-    final path = resolveImageUrl(imageUrl);
-    if (path.startsWith('http')) {
-      return Image.network(
-        path,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black12),
-      );
-    }
-    return Image.asset(path, fit: BoxFit.cover);
+    return appImage(
+      imageUrl,
+      fit: BoxFit.cover,
+    );
   }
 
   @override

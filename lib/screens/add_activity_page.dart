@@ -445,8 +445,8 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
     if (_existingImage != null && _existingImage!.isNotEmpty) {
       return ClipRRect(
         borderRadius: radius,
-        child: Image.network(
-          resolveImageUrl(_existingImage!),
+        child: appImage(
+          _existingImage!,
           width: size,
           height: size,
           fit: BoxFit.cover,

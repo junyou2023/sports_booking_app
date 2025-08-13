@@ -32,22 +32,7 @@ class ActivityCard extends StatelessWidget {
   // ----- Private: build image widget, automatically choose network/local ------
   Widget _buildHeroImage() {
     var path = asset.isNotEmpty ? asset : 'assets/images/default.jpg';
-    path = resolveImageUrl(path);
-    if (path.startsWith('http')) {
-      return Image.network(
-        path,
-        height: 140,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/default.jpg',
-          height: 140,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    return Image.asset(
+    return appImage(
       path,
       height: 140,
       width: double.infinity,

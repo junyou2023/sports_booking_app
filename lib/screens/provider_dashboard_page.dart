@@ -468,8 +468,8 @@ class _ActivityThumb extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Image.network(
-        resolveImageUrl(imageUrl),
+      child: appImage(
+        imageUrl,
         width: 50,
         height: 50,
         fit: BoxFit.cover,

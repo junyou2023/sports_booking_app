@@ -62,24 +62,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final featuredActsAsync = ref.watch(featuredActivitiesProvider);
     final continuePlanningAsync = ref.watch(continuePlanningProvider);
 
-    // Pre-cache images so that they appear immediately when widgets build.
-    if (featuredCatsAsync.hasValue) {
-      for (final f in featuredCatsAsync.value!) {
-        precacheImage(
-          NetworkImage(resolveImageUrl(f.image)),
-          context,
-        );
-      }
-    }
-    if (featuredActsAsync.hasValue) {
-      for (final f in featuredActsAsync.value!) {
-        precacheImage(
-          NetworkImage(resolveImageUrl(f.image)),
-          context,
-        );
-      }
-    }
-
     final Widget body = _navIndex == 1
         ? const FavoritesPage()
         : _navIndex == 2
@@ -111,8 +93,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   builder: (_) => const CategoriesPage(),
                                 ),
                               ),
-                              child: Image.network(
-                                resolveImageUrl(f.image),
+                              child: appImage(
+                                f.image,
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -130,8 +112,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                 );
                               },
-                              child: Image.network(
-                                resolveImageUrl(f.image),
+                              child: appImage(
+                                f.image,
                                 fit: BoxFit.cover,
                               ),
                             ),

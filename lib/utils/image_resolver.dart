@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Resolve relative media paths returned by the backend into absolute URLs.
@@ -14,4 +16,32 @@ String resolveImageUrl(String path) {
     path = '/$path';
   }
   return '$origin$path';
+}
+
+/// Build an image widget that supports both local assets and network images.
+/// Network images are cached and show a placeholder while loading to prevent
+/// blank spaces when the connection is slow.
+Widget appImage(
+  String path, {
+  double? width,
+  double? height,
+  BoxFit? fit,
+}) {
+  if (path.isEmpty) {
+    return const SizedBox.shrink();
+  }
+  if (path.startsWith('assets/')) {
+    return Image.asset(path, width: width, height: height, fit: fit);
+  }
+  final url = resolveImageUrl(path);
+  return CachedNetworkImage(
+    imageUrl: url,
+    width: width,
+    height: height,
+    fit: fit,
+    placeholder: (context, _) => const Center(
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+    errorWidget: (context, _, __) => const Icon(Icons.broken_image),
+  );
 }
