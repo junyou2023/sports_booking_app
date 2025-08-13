@@ -315,6 +315,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             pax=pax,
             status="pending",
             paid=False,
+            price=slot.price * pax,
         )
         slot.current_participants += pax
         slot.save(update_fields=["current_participants"])

@@ -257,6 +257,13 @@ class Booking(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     paid = models.BooleanField(default=False)
     payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Booking price at time of reservation",
+    )
     pax = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(20)],

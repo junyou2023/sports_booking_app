@@ -58,7 +58,12 @@ class StripeCheckoutView(APIView):
                 booking, _ = Booking.objects.get_or_create(
                     slot=slot,
                     user=request.user,
-                    defaults={"activity": slot.activity, "status": "pending", "paid": False},
+                    defaults={
+                        "activity": slot.activity,
+                        "status": "pending",
+                        "paid": False,
+                        "price": slot.price,
+                    },
                 )
         except IntegrityError:
             booking = Booking.objects.filter(slot=slot, user=request.user).first()
@@ -71,6 +76,7 @@ class StripeCheckoutView(APIView):
                     activity=slot.activity,
                     status="pending",
                     paid=False,
+                    price=slot.price,
                 )
             except Exception as e:
                 logger.exception("Booking creation failed")

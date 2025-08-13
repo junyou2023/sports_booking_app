@@ -314,6 +314,7 @@ class BookingSerializer(serializers.ModelSerializer):
     )
     status = serializers.CharField(read_only=True)
     paid = serializers.BooleanField(read_only=True)
+    price = serializers.DecimalField(max_digits=8, decimal_places=2, read_only=True)
 
     class Meta:
         model = Booking
@@ -325,8 +326,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "booked_at",
             "status",
             "paid",
+            "price",
         )
-        read_only_fields = ("id", "booked_at", "status", "paid")
+        read_only_fields = ("id", "booked_at", "status", "paid", "price")
 
 
 class ReviewSerializer(serializers.ModelSerializer):
