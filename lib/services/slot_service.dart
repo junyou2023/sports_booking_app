@@ -15,7 +15,7 @@ class SlotService {
   /// GET /api/slots/?sport=<sportId>
   Future<List<Slot>> fetchBySport(int sportId) async {
     final Response res = await apiClient.get(
-      '/slots/',
+      'slots/',
       queryParameters: {'sport': sportId},
     );
 
@@ -33,7 +33,7 @@ class SlotService {
   /// only return slots from now onwards.
   Future<List<Slot>> fetchByActivity(int activityId) async {
     final Response res = await apiClient.get(
-      '/slots/',
+      'slots/',
       queryParameters: {
         'activity': activityId,
         'after': _iso(DateTime.now()),
@@ -51,7 +51,7 @@ class SlotService {
 
   Future<List<Slot>> fetchBySportDate(int sportId, DateTime after) async {
     final Response res = await apiClient.get(
-      '/slots/',
+      'slots/',
       queryParameters: {
         'sport': sportId,
         'after': _iso(after),
@@ -71,7 +71,7 @@ class SlotService {
     final start = DateTime.utc(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
     final Response res = await apiClient.get(
-      '/slots/',
+      'slots/',
       queryParameters: {
         'activity': activityId,
         'after': _iso(start),
@@ -98,7 +98,7 @@ class SlotService {
       String location,
       {required int facilityId}) async {
     try {
-      await apiClient.post('/merchant/slots/', data: {
+      await apiClient.post('merchant/slots/', data: {
         'activity': activityId,
         'facility': facilityId,
         // Ensure timezone aware datetimes for Django
@@ -154,11 +154,11 @@ class SlotService {
     if (title != null) patch['title'] = title;
     if (location != null) patch['location'] = location;
 
-    await apiClient.patch('/merchant/slots/$id/', data: patch);
+    await apiClient.patch('merchant/slots/$id/', data: patch);
   }
   
   Future<Paginated<Slot>> fetchMine({int page = 1}) async {
-    final res = await apiClient.get('/merchant/slots/', queryParameters: {'page': page});
+    final res = await apiClient.get('merchant/slots/', queryParameters: {'page': page});
     final dynamic data = res.data;
     if (data is Map<String, dynamic>) {
       return Paginated.fromJson(data, (j) => Slot.fromJson(j));
@@ -172,7 +172,7 @@ class SlotService {
 
   Future<Slot?> fetchMerchantSlot(int id) async {
     try {
-      final res = await apiClient.get('/merchant/slots/$id/');
+      final res = await apiClient.get('merchant/slots/$id/');
       return Slot.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
@@ -183,7 +183,7 @@ class SlotService {
   }
 
   Future<void> deleteMerchantSlot(int id) async {
-    await apiClient.delete('/merchant/slots/$id/');
+    await apiClient.delete('merchant/slots/$id/');
   }
 }
 

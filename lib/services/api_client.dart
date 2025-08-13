@@ -33,21 +33,25 @@ String adjustBaseUrl(String base,
 }
 
 /// Call after dotenv.load to construct the client with the base URL.
-void initApiClient() {
-  var base = dotenv.env['API_BASE_URL']!; // e.g. http://10.0.2.2:8000/api
+Future<void> initApiClient() async {
+  var base = dotenv.env['API_BASE_URL'] ?? '';
+  if (base.isEmpty) {
+    throw Exception('API_BASE_URL missing in mobile/.env');
+  }
   base = adjustBaseUrl(base);
   if (!base.endsWith('/')) base += '/';
   apiClient = Dio(
     BaseOptions(
       baseUrl: base,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {'Content-Type': 'application/json'},
       responseType: ResponseType.json,
     ),
   );
   if (kDebugMode) {
-    apiClient.interceptors.add(
-        LogInterceptor(requestBody: true, responseBody: true));
+    apiClient.interceptors
+        .add(LogInterceptor(requestBody: true, responseBody: true));
   }
 }
 
@@ -78,7 +82,7 @@ void initAuthInterceptor() {
               // BUG: concurrent 401s triggered multiple refresh calls
               // FIX: queue refresh so only one request runs at a time
               _refreshing ??= apiClient
-                  .post('/auth/token/refresh/', data: {'refresh': refresh})
+                  .post('auth/token/refresh/', data: {'refresh': refresh})
                   .then((res) async {
                 final data = res.data as Map<String, dynamic>;
                 final access = data['access'] as String;

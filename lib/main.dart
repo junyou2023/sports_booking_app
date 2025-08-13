@@ -19,15 +19,12 @@ import 'services/api_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: 'mobile/.env');
-  // <-- load .env variables
-
+  await initApiClient();
   Stripe.publishableKey = dotenv.env['STRIPE_PUBLIC_KEY'] ?? '';
-
-  initApiClient();
   initAuthInterceptor();
 
   runApp(
-    const ProviderScope(                        // <-- Riverpod root scope
+    const ProviderScope( // <-- Riverpod root scope
       child: SportsBookingApp(),
     ),
   );

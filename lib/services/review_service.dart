@@ -5,7 +5,7 @@ import 'api_client.dart';
 class ReviewService {
   Future<List<Review>> fetchReviews(int activityId, {int? limit}) async {
     final Response res = await apiClient.get(
-      '/activities/$activityId/reviews/',
+      'activities/$activityId/reviews/',
       queryParameters: limit != null ? {'limit': limit} : null,
     );
     return (res.data as List)
@@ -17,7 +17,7 @@ class ReviewService {
   Future<Review> createReview(
       int activityId, int rating, String comment) async {
     final Response res = await apiClient.post(
-      '/activities/$activityId/reviews/',
+      'activities/$activityId/reviews/',
       data: {'rating': rating, 'comment': comment},
     );
     return Review.fromJson(res.data as Map<String, dynamic>);
