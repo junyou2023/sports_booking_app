@@ -8,6 +8,7 @@ from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
 )
+from decimal import Decimal
 from django.contrib.gis.db import models as gis_models
 from django.contrib.postgres.indexes import GistIndex
 from django.db.models import UniqueConstraint
@@ -184,8 +185,10 @@ class Slot(models.Model):
     capacity = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1)]
     )
-    price = models.DecimalField(  # 0.00 ⇒ free
-        max_digits=7, decimal_places=2, default=0
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.50"))],
     )
     rating = models.DecimalField(  # NEW: matches serializer / seed
         max_digits=3, decimal_places=1, default=0,
@@ -254,6 +257,13 @@ class Booking(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     paid = models.BooleanField(default=False)
     payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Booking price at time of reservation",
+    )
     pax = models.PositiveSmallIntegerField(
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(20)],

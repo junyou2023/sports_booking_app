@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
+import '../utils/image_resolver.dart';
+
 class ActivityCard extends StatelessWidget {
   final String title;
   final String location;
@@ -29,22 +31,8 @@ class ActivityCard extends StatelessWidget {
 
   // ----- Private: build image widget, automatically choose network/local ------
   Widget _buildHeroImage() {
-    final path = asset.isNotEmpty ? asset : 'assets/images/default.jpg';
-    if (path.startsWith('http')) {
-      return Image.network(
-        path,
-        height: 140,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/default.jpg',
-          height: 140,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    return Image.asset(
+    var path = asset.isNotEmpty ? asset : 'assets/images/default.jpg';
+    return appImage(
       path,
       height: 140,
       width: double.infinity,

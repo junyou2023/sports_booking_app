@@ -6,7 +6,6 @@ import '../providers/favorite_provider.dart';
 import '../services/favorite_service.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/auth_sheet.dart';
-import '../utils/snackbar.dart';
 import 'home_page.dart';
 import 'activity_detail_page.dart';
 
@@ -22,6 +21,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   int _page = 1;
   bool _hasNext = true;
   bool _loadingMore = false;
+  
 
   Future<void> _refresh() async {
     final page = await favoriteService.listFavorites();
@@ -51,6 +51,13 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<Set<int>>(favoriteIdsProvider, (prev, next) {
+      if (prev == next) return;
+      _page = 1;
+      _hasNext = true;
+      _items.clear();
+      ref.refresh(favoritesPageProvider(1));
+    });
     final pageAsync = ref.watch(favoritesPageProvider(1));
     final favIds = ref.watch(favoriteIdsProvider);
     return Scaffold(

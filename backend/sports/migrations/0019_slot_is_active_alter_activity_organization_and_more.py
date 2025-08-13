@@ -55,11 +55,9 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='slot',
             index=models.Index(fields=['activity', 'begins_at'], name='sports_slot_activit_44ef9d_idx'),
-            if_not_exists=True,
         ),
         migrations.AddIndex(
             model_name='slot',
             index=models.Index(fields=['activity', 'ends_at'], name='sports_slot_activit_c49aca_idx'),
-            if_not_exists=True,
         ),
     ]

@@ -7,6 +7,7 @@ import '../providers/review_provider.dart';
 import '../providers.dart';
 import '../widgets/auth_sheet.dart';
 import 'activity_booking_page.dart';
+import '../utils/image_resolver.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
   final Activity activity;
@@ -30,7 +31,7 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final image = widget.activity.imageUrl ?? widget.activity.image;
+    final image = widget.activity.imageUrl ?? widget.activity.image ?? '';
     final reviewsAsync = ref.watch(reviewsProvider(widget.activity.id));
     final authStatus = ref.watch(authNotifierProvider);
     return Scaffold(
@@ -43,19 +44,12 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
             if (image.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: image.startsWith('http')
-                    ? Image.network(
-                        image,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.asset(
-                        image,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                child: appImage(
+                  image,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
             const SizedBox(height: 16),
             Text(

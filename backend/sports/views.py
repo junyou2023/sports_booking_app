@@ -284,10 +284,13 @@ class BookingViewSet(viewsets.ModelViewSet):
         # BUG: selecting the facility loads GeoDjango PointField which requires
         # the GDAL/SpatiaLite stack. Missing libs caused the server to drop the
         # connection when listing bookings (My Bookings → "connection closed").
-        # FIX: only join the Slot; facility id is enough for clients
-        # (covers: My Bookings list).
+        # FIX: only join the Slot; facility id is enough for clients (covers:
+        # My Bookings list).
+        #
+        # Also: hide unpaid/pending bookings so that opening a checkout session
+        # without completing payment doesn't show up as an active booking.
         return (
-            Booking.objects.filter(user=self.request.user)
+            Booking.objects.filter(user=self.request.user, paid=True)
             .select_related("slot")
         )
 
@@ -315,6 +318,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             pax=pax,
             status="pending",
             paid=False,
+            price=slot.price * pax,
         )
         slot.current_participants += pax
         slot.save(update_fields=["current_participants"])

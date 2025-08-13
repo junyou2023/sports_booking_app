@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import '../models/slot.dart';
 
+import '../utils/image_resolver.dart';
+
 class SlotCard extends StatelessWidget {
   const SlotCard({
     super.key,
@@ -74,20 +76,13 @@ class _SmartImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      // Use placeholder if empty (defensive)
-    final path = url.isNotEmpty ? url : 'assets/images/hiking.jpg';
-    final isRemote = path.startsWith('http');
-
+    var path = url.isNotEmpty ? url : 'assets/images/hiking.jpg';
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: isRemote
-          ? Image.network(
+      child: appImage(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) =>
-            Image.asset('assets/images/sailing.jpg', fit: BoxFit.cover),
-      )
-          : Image.asset(path, fit: BoxFit.cover),
+      ),
     );
   }
 }

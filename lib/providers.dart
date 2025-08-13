@@ -123,6 +123,9 @@ final wishlistProvider = StateNotifierProvider<WishlistNotifier, Set<int>>(
   (ref) => WishlistNotifier(),
 );
 
-final bookingsProvider = FutureProvider<List<Booking>>((ref) async {
+final bookingsProvider = FutureProvider.autoDispose<List<Booking>>((ref) async {
+  // Refresh bookings whenever authentication state changes so switching
+  // accounts updates the list immediately.
+  ref.watch(authNotifierProvider);
   return bookingService.fetchMine();
 });
