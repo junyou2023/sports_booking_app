@@ -23,6 +23,17 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   bool _hasNext = true;
   bool _loadingMore = false;
 
+  @override
+  void initState() {
+    super.initState();
+    ref.listen<Set<int>>(favoriteIdsProvider, (_, __) {
+      _page = 1;
+      _hasNext = true;
+      _items.clear();
+      ref.refresh(favoritesPageProvider(1));
+    });
+  }
+
   Future<void> _refresh() async {
     final page = await favoriteService.listFavorites();
     setState(() {
