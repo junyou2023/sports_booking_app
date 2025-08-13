@@ -1,6 +1,8 @@
 // lib/screens/provider_dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../utils/image_resolver.dart';
 import 'package:dio/dio.dart';
 
 import '../models/activity.dart';
@@ -466,7 +468,12 @@ class _ActivityThumb extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Image.network(imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+      child: Image.network(
+        resolveImageUrl(imageUrl),
+        width: 50,
+        height: 50,
+        fit: BoxFit.cover,
+      ),
     );
   }
 }

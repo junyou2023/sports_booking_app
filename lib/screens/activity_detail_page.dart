@@ -7,6 +7,7 @@ import '../providers/review_provider.dart';
 import '../providers.dart';
 import '../widgets/auth_sheet.dart';
 import 'activity_booking_page.dart';
+import '../utils/image_resolver.dart';
 
 class ActivityDetailPage extends ConsumerStatefulWidget {
   final Activity activity;
@@ -30,7 +31,8 @@ class _ActivityDetailPageState extends ConsumerState<ActivityDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final image = widget.activity.imageUrl ?? widget.activity.image;
+    final image = resolveImageUrl(
+        widget.activity.imageUrl ?? widget.activity.image);
     final reviewsAsync = ref.watch(reviewsProvider(widget.activity.id));
     final authStatus = ref.watch(authNotifierProvider);
     return Scaffold(

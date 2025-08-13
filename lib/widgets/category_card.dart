@@ -1,6 +1,8 @@
 // ========== lib/widgets/category_card.dart ==========
 import 'package:flutter/material.dart';
 
+import '../utils/image_resolver.dart';
+
 class CategoryCard extends StatelessWidget {
   final String title;
   final String asset;
@@ -26,13 +28,25 @@ class CategoryCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? Image.network(imageUrl!,
-                      width: 96, height: 96, fit: BoxFit.cover)
+                  ? Image.network(
+                      resolveImageUrl(imageUrl!),
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.cover,
+                    )
                   : asset.startsWith('http')
-                      ? Image.network(asset,
-                          width: 96, height: 96, fit: BoxFit.cover)
-                      : Image.asset(asset,
-                          width: 96, height: 96, fit: BoxFit.cover),
+                      ? Image.network(
+                          resolveImageUrl(asset),
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.asset(
+                          asset,
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                        ),
             ),
             const SizedBox(height: 8),
             Text(

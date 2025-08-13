@@ -14,6 +14,7 @@ import '../services/activity_service.dart';
 import '../services/sports_service.dart';
 import 'provider_registration_page.dart';
 import '../utils/snackbar.dart';
+import '../utils/image_resolver.dart';
 
 class AddActivityPage extends ConsumerStatefulWidget {
   final Activity? activity;
@@ -444,8 +445,12 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
     if (_existingImage != null && _existingImage!.isNotEmpty) {
       return ClipRRect(
         borderRadius: radius,
-        child: Image.network(_existingImage!,
-            width: size, height: size, fit: BoxFit.cover),
+        child: Image.network(
+          resolveImageUrl(_existingImage!),
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
       );
     }
     return Container(
