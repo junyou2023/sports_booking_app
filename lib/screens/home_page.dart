@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';        // new
 import 'package:sports_booking_app/screens/slots_page.dart';
 import '../services/activity_service.dart';
+import '../utils/image_resolver.dart';
 import 'package:dio/dio.dart';
 import '../utils/theme.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -92,7 +93,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   builder: (_) => const CategoriesPage(),
                                 ),
                               ),
-                              child: Image.network(f.image, fit: BoxFit.cover),
+                              child: appImage(
+                                f.image,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         if (featuredActsAsync.hasValue)
@@ -108,7 +112,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                 );
                               },
-                              child: Image.network(f.image, fit: BoxFit.cover),
+                              child: appImage(
+                                f.image,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         if (!featuredCatsAsync.hasValue && !featuredActsAsync.hasValue) ...[

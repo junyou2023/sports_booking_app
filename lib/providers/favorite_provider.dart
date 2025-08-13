@@ -54,6 +54,8 @@ class FavoriteIdsNotifier extends StateNotifier<Set<int>> {
     } on DioException catch (e) {
       state = wasFav ? {...state, id} : (Set<int>.from(state)..remove(id));
       if (context.mounted) showApiError(context, e, 'Favorite');
+    } finally {
+      ref.invalidate(favoritesPageProvider);
     }
   }
 }
@@ -67,7 +69,9 @@ final favoriteCountProvider = Provider<int>((ref) {
   return ref.watch(favoriteIdsProvider).length;
 });
 
-final favoritesPageProvider =
-    FutureProvider.family<Paginated<Activity>, int>((ref, page) async {
+final favoritesPageProvider = FutureProvider.autoDispose
+    .family<Paginated<Activity>, int>((ref, page) async {
+  ref.watch(authNotifierProvider);
+  ref.watch(favoriteIdsProvider);
   return favoriteService.listFavorites(page: page);
 });

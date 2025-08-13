@@ -1,6 +1,8 @@
 // ========== lib/widgets/project_card.dart ==========
 import 'package:flutter/material.dart';
 
+import '../utils/image_resolver.dart';
+
 class ProjectCard extends StatelessWidget {
   final String title;
   final String imageUrl;
@@ -16,14 +18,10 @@ class ProjectCard extends StatelessWidget {
   });
 
   Widget _buildImage() {
-    if (imageUrl.startsWith('http')) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black12),
-      );
-    }
-    return Image.asset(imageUrl, fit: BoxFit.cover);
+    return appImage(
+      imageUrl,
+      fit: BoxFit.cover,
+    );
   }
 
   @override

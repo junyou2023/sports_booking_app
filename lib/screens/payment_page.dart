@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/slot.dart';
-import '../services/booking_service.dart';
 import '../services/payment_service.dart';
 import '../services/slot_service.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -43,6 +42,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bookingsAsync = ref.watch(bookingsProvider);
+    final alreadyBooked = bookingsAsync.maybeWhen(
+      data: (list) => list.any((b) => b.slot.id == widget.slot.id),
+      orElse: () => false,
+    );
+    final slotFull = widget.slot.seatsLeft <= 0;
     return Scaffold(
       appBar: AppBar(title: const Text('Payment')),
       body: Padding(
@@ -52,17 +57,20 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           children: [
             Text(widget.slot.title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 20),
-            if (_checking)
+            if (_checking || bookingsAsync.isLoading)
               const CircularProgressIndicator()
             else ...[
               if (_isMySlot)
                 const Text('You cannot book your own slot.')
               else
                 ElevatedButton(
-                  onPressed: loading ? null : _pay,
+                  onPressed:
+                      loading || alreadyBooked || slotFull ? null : _pay,
                   child: loading
                       ? const CircularProgressIndicator()
-                      : const Text('Pay & Book'),
+                      : alreadyBooked || slotFull
+                          ? const Text('Already booked')
+                          : const Text('Pay & Book'),
                 ),
             ],
           ],
