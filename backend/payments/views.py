@@ -63,6 +63,22 @@ class StripeCheckoutView(APIView):
         except IntegrityError:
             booking = Booking.objects.filter(slot=slot, user=request.user).first()
 
+        if booking is None:
+            try:
+                booking = Booking.objects.create(
+                    slot=slot,
+                    user=request.user,
+                    activity=slot.activity,
+                    status="pending",
+                    paid=False,
+                )
+            except Exception as e:
+                logger.exception("Booking creation failed")
+                return Response(
+                    {"detail": "booking_create_failed", "error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
         # 4) 复用旧 intent；若失效则自愈重建
         intent = None
         if booking.payment_intent_id:
