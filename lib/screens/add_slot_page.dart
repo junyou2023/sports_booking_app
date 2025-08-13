@@ -194,17 +194,34 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               location: locationCtrl.text,
                             );
                           }
-                          if (context.mounted) Navigator.pop(context, true);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(widget.slot == null
+                                    ? 'Slot created successfully'
+                                    : 'Slot updated successfully')));
+                            Navigator.pop(context, true);
+                          }
                         } on DioException catch (e) {
                           if (e.error is Map<String, List<String>>) {
                             final map = e.error as Map<String, List<String>>;
+                            final general = map['non_field_errors'];
                             setState(() {
                               _errors =
                                   map.map((k, v) => MapEntry(k, v.join(', ')));
+                              _errors.remove('non_field_errors');
                             });
+                            if (general != null && general.isNotEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(general.join(', '))));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Failed to save slot')));
+                            }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to save slot')));
+                                const SnackBar(
+                                    content: Text('Failed to save slot')));
                           }
                         } finally {
                           if (mounted) setState(() => _submitting = false);
