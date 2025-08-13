@@ -84,6 +84,26 @@ class StripeCheckoutView(APIView):
         if booking.payment_intent_id:
             try:
                 intent = stripe.PaymentIntent.retrieve(booking.payment_intent_id)
+                if intent.status == "succeeded":
+                    if not booking.paid:
+                        booking.paid = True
+                        booking.status = "confirmed"
+                        booking.save(update_fields=["paid", "status"])
+                    return Response(
+                        {
+                            "detail": "already_paid",
+                            "payment_intent_id": intent.id,
+                            "booking_id": booking.id,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # 旧 intent 不可复用的场景：金额/币种变动或已关闭
+                if (
+                    intent.amount != amount_cents
+                    or intent.currency != "usd"
+                    or intent.status == "canceled"
+                ):
+                    intent = None
             except Exception:
                 intent = None  # 自愈：后面重建
 
