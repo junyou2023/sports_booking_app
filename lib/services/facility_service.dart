@@ -11,7 +11,7 @@ class FacilityService {
       if (lat != 0 || lng != 0) 'near': '$lat,$lng',
       if (mine) 'mine': '1',
     };
-    final res = await apiClient.get('/facilities/', queryParameters: params);
+    final res = await apiClient.get('facilities/', queryParameters: params);
 
     dynamic data = res.data;
     if (data is Map) {
@@ -40,7 +40,7 @@ class FacilityService {
     if (lat == null || lng == null) {
       throw ArgumentError('lat/lng required');
     }
-    await apiClient.post('/facilities/', data: {
+    await apiClient.post('facilities/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
@@ -56,7 +56,7 @@ class FacilityService {
   Future<void> updateFacility(
       int id, String name, double lat, double lng, List<int> categories,
       {double radius = 1000}) async {
-    await apiClient.patch('/facilities/$id/', data: {
+    await apiClient.patch('facilities/$id/', data: {
       'name': name,
       'lat': lat,
       'lng': lng,
@@ -66,11 +66,11 @@ class FacilityService {
   }
 
   Future<void> deleteFacility(int id) async {
-    await apiClient.delete('/facilities/$id/');
+    await apiClient.delete('facilities/$id/');
   }
 
   Future<List<Facility>> searchFacilities({required String query, int page = 1}) async {
-    final res = await apiClient.get('/facilities/', queryParameters: {
+    final res = await apiClient.get('facilities/', queryParameters: {
       'q': query,
       'page': page,
     });
