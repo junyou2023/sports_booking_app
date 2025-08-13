@@ -84,7 +84,6 @@ class _AddSlotPageState extends State<AddSlotPage> {
                     .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _facilityId = v),
-                validator: (v) => v == null ? 'Required' : null,
               ),
               TextFormField(
                 controller: capacityCtrl,
@@ -159,7 +158,12 @@ class _AddSlotPageState extends State<AddSlotPage> {
                     : () async {
                         setState(() => _errors.clear());
                         if (!_formKey.currentState!.validate()) return;
-                        if (start == null || end == null) return;
+                        if (start == null || end == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Start and end times required')));
+                          return;
+                        }
                         if (!end!.isAfter(start!)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('End must be after start')));
@@ -176,7 +180,7 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               double.parse(priceCtrl.text),
                               titleCtrl.text,
                               locationCtrl.text,
-                              facilityId: _facilityId!,
+                              facilityId: _facilityId,
                             );
                           } else {
                             await slotService.updateMerchantSlot(

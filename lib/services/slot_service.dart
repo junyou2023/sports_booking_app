@@ -89,18 +89,19 @@ class SlotService {
   }
 
   Future<void> createSlot(
-      int activityId,
-      DateTime start,
-      DateTime end,
-      int capacity,
-      double price,
-      String title,
-      String location,
-      {required int facilityId}) async {
+    int activityId,
+    DateTime start,
+    DateTime end,
+    int capacity,
+    double price,
+    String title,
+    String location, {
+    int? facilityId,
+  }) async {
     try {
       await apiClient.post('/merchant/slots/', data: {
         'activity': activityId,
-        'facility': facilityId,
+        if (facilityId != null) 'facility': facilityId,
         // Ensure timezone aware datetimes for Django
         'begins_at': _iso(start),
         'ends_at': _iso(end),
