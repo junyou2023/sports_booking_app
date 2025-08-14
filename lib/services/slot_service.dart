@@ -89,18 +89,19 @@ class SlotService {
   }
 
   Future<void> createSlot(
-      int activityId,
-      DateTime start,
-      DateTime end,
-      int capacity,
-      double price,
-      String title,
-      String location,
-      {required int facilityId}) async {
+    int activityId,
+    DateTime start,
+    DateTime end,
+    int capacity,
+    double price,
+    String title,
+    String location, {
+    int? facilityId,
+  }) async {
     try {
       await apiClient.post('/merchant/slots/', data: {
         'activity': activityId,
-        'facility': facilityId,
+        if (facilityId != null) 'facility': facilityId,
         // Ensure timezone aware datetimes for Django
         'begins_at': _iso(start),
         'ends_at': _iso(end),
@@ -153,8 +154,30 @@ class SlotService {
     if (price != null) patch['price'] = price;
     if (title != null) patch['title'] = title;
     if (location != null) patch['location'] = location;
-
-    await apiClient.patch('/merchant/slots/$id/', data: patch);
+    try {
+      await apiClient.patch('/merchant/slots/$id/', data: patch);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+          final map = <String, List<String>>{};
+          data.forEach((key, value) {
+            if (value is List) {
+              map[key] = value.map((v) => v.toString()).toList();
+            } else {
+              map[key] = [value.toString()];
+            }
+          });
+          throw DioException(
+            requestOptions: e.requestOptions,
+            response: e.response,
+            type: e.type,
+            error: map,
+          );
+        }
+      }
+      throw e;
+    }
   }
   
   Future<Paginated<Slot>> fetchMine({int page = 1}) async {

@@ -84,7 +84,6 @@ class _AddSlotPageState extends State<AddSlotPage> {
                     .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _facilityId = v),
-                validator: (v) => v == null ? 'Required' : null,
               ),
               TextFormField(
                 controller: capacityCtrl,
@@ -159,7 +158,12 @@ class _AddSlotPageState extends State<AddSlotPage> {
                     : () async {
                         setState(() => _errors.clear());
                         if (!_formKey.currentState!.validate()) return;
-                        if (start == null || end == null) return;
+                        if (start == null || end == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Start and end times required')));
+                          return;
+                        }
                         if (!end!.isAfter(start!)) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('End must be after start')));
@@ -176,7 +180,7 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               double.parse(priceCtrl.text),
                               titleCtrl.text,
                               locationCtrl.text,
-                              facilityId: _facilityId!,
+                              facilityId: _facilityId,
                             );
                           } else {
                             await slotService.updateMerchantSlot(
@@ -190,18 +194,53 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               location: locationCtrl.text,
                             );
                           }
-                          if (context.mounted) Navigator.pop(context, true);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(widget.slot == null
+                                    ? 'Slot created successfully'
+                                    : 'Slot updated successfully')));
+                            Navigator.pop(context, true);
+                          }
                         } on DioException catch (e) {
+                          String message = 'Failed to save slot';
                           if (e.error is Map<String, List<String>>) {
                             final map = e.error as Map<String, List<String>>;
+                            final general = map['non_field_errors'];
                             setState(() {
                               _errors =
                                   map.map((k, v) => MapEntry(k, v.join(', ')));
+                              _errors.remove('non_field_errors');
                             });
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to save slot')));
+                            final fieldMessages = map.entries
+                                .where((entry) =>
+                                    entry.key != 'non_field_errors')
+                                .expand((entry) => entry.value)
+                                .toList();
+                            if (general != null && general.isNotEmpty) {
+                              message = general.join(', ');
+                            } else if (fieldMessages.isNotEmpty) {
+                              message = fieldMessages.first;
+                            }
+                          } else if (e.type == DioExceptionType.connectionError) {
+                            message =
+                                'Unable to connect. Please check your internet connection.';
+                          } else if (e.type == DioExceptionType.connectionTimeout ||
+                              e.type == DioExceptionType.receiveTimeout ||
+                              e.type == DioExceptionType.sendTimeout) {
+                            message = 'Connection timed out. Please try again.';
+                          } else if (e.response?.data is Map &&
+                              (e.response!.data as Map)['detail'] != null) {
+                            message =
+                                (e.response!.data as Map)['detail'].toString();
+                          } else if (e.response?.statusCode != null &&
+                              e.response!.statusCode! >= 500) {
+                            message =
+                                'Server error (${e.response!.statusCode}). Please try again later.';
+                          } else if (e.message != null) {
+                            message = e.message!;
                           }
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(content: Text(message)));
                         } finally {
                           if (mounted) setState(() => _submitting = false);
                         }
