@@ -10,7 +10,7 @@ django.setup()
 pytestmark = pytest.mark.django_db
 
 
-def test_registration_creates_profiles():
+def test_registration_creates_customer_profile_only():
     client = APIClient()
     client.defaults["HTTP_HOST"] = "localhost"
     resp = client.post(
@@ -24,7 +24,7 @@ def test_registration_creates_profiles():
     )
     assert resp.status_code == 201
     user = User.objects.get(email="demo_auth@example.com")
-    assert VendorProfile.objects.filter(user=user).exists()
+    assert not VendorProfile.objects.filter(user=user).exists()
     assert CustomerProfile.objects.filter(user=user).exists()
     assert "access" in resp.data and "refresh" in resp.data
 
@@ -36,8 +36,7 @@ def test_profile_endpoint(client):
         password="Pass12345",
     )
     # profiles automatically created via signal
-    user.vendorprofile.company_name = "ACME"
-    user.vendorprofile.save()
+    VendorProfile.objects.create(user=user, company_name="ACME")
     user.customerprofile.phone = "123456"
     user.customerprofile.save()
     client.force_authenticate(user)
@@ -93,8 +92,7 @@ def test_vendor_permission(client):
         email="v1@e.com",
         password="Pass12345",
     )
-    user.vendorprofile.company_name = "ACME"
-    user.vendorprofile.save()
+    VendorProfile.objects.create(user=user, company_name="ACME")
     client.force_authenticate(user)
     resp = client.get("/api/vendor-area/")
     assert resp.status_code == 200
@@ -105,8 +103,6 @@ def test_vendor_permission(client):
         email="c1@e.com",
         password="Pass12345",
     )
-    user2.vendorprofile.delete()
-    user2 = User.objects.get(pk=user2.pk)
     client.force_authenticate(user2)
     resp2 = client.get("/api/vendor-area/")
     assert resp2.status_code == 403

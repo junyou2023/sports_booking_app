@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import VendorProfile
+from .models import VendorProfile, CustomerProfile
 
 
 class ProfileSerializer(serializers.Serializer):
@@ -44,17 +44,23 @@ class ProfileSerializer(serializers.Serializer):
         }
 
     def update(self, instance: User, validated_data):
-        vendor_data = validated_data.get("vendorprofile", {})
-        vendor, _ = VendorProfile.objects.get_or_create(user=instance)
-        customer, _ = CustomerProfile.objects.get_or_create(user=instance)
-        vendor.company_name = vendor_data.get(
-            "company_name", vendor.company_name
-        )
-        customer.phone = vendor_data.get("phone", customer.phone)
-        vendor.address = vendor_data.get("address", vendor.address)
-        vendor.logo = vendor_data.get("logo", vendor.logo)
-        vendor.save()
-        customer.save()
+        vendor_data = validated_data.get("vendorprofile")
+        customer_data = validated_data.get("customerprofile")
+
+        if vendor_data:
+            vendor, _ = VendorProfile.objects.get_or_create(user=instance)
+            vendor.company_name = vendor_data.get(
+                "company_name", vendor.company_name
+            )
+            vendor.address = vendor_data.get("address", vendor.address)
+            vendor.logo = vendor_data.get("logo", vendor.logo)
+            vendor.save()
+
+        if customer_data:
+            customer, _ = CustomerProfile.objects.get_or_create(user=instance)
+            customer.phone = customer_data.get("phone", customer.phone)
+            customer.save()
+
         return instance
 
 
