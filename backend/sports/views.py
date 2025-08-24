@@ -1,8 +1,11 @@
 # sports/views.py
 from django.db import transaction
 from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q
+from django.contrib.gis.db.models.functions import Distance, Transform
+from django.contrib.gis.measure import D
+from django.db.models import Q, F, Value, Min, IntegerField
+from django.db.models.functions import Cast
+from django.conf import settings
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
 from accounts.permissions import IsVendor
@@ -11,7 +14,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiResponse,
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 
 from .models import (
     Sport,
@@ -45,6 +54,48 @@ from .serializers import (
     SlotCreateSerializer,
     FavoriteSerializer,
 )
+
+
+# ---------------------------------------------------------------------------
+# Helpers for optional location-based filtering
+# ---------------------------------------------------------------------------
+def _parse_radius(value, default=settings.NEARBY_DEFAULT_RADIUS_M, lo=100, hi=30000):
+    """Return a sanitized radius in meters."""
+    try:
+        v = int(value) if value is not None else default
+        return max(lo, min(hi, v))
+    except Exception:
+        return default
+
+
+def _apply_near_filter(qs, field_name, latlng, radius_m, aggregate=False):
+    """Filter and annotate queryset by distance to a point.
+
+    Returns (queryset, used) where used indicates whether the filter was
+    applied. Any errors (invalid input or missing GIS stack) fall back to the
+    unmodified queryset.
+    """
+
+    if not latlng:
+        return qs, False
+    try:
+        lat, lng = [float(x) for x in latlng.split(",")]
+        p4326 = Point(lng, lat, srid=4326)
+        filter_kwargs = {f"{field_name}__distance_lte": (p4326, D(m=radius_m))}
+        distance = Distance(
+            Transform(F(field_name), 3857),
+            Transform(Value(p4326), 3857),
+        )
+        if aggregate:
+            distance = Min(distance)
+        qs = (
+            qs.filter(**filter_kwargs)
+            .annotate(distance_m=Cast(distance, IntegerField()))
+            .order_by("distance_m")
+        )
+        return qs, True
+    except Exception:
+        return qs, False
 
 
 class DefaultPagination(PageNumberPagination):
@@ -150,6 +201,14 @@ class ActivityViewSet(viewsets.ModelViewSet):
         nearby = self.request.query_params.get("nearby")
         if nearby == "1":
             qs = qs.filter(is_nearby=True)
+        else:
+            near = self.request.query_params.get("near")
+            radius = _parse_radius(self.request.query_params.get("radius"))
+            qs, used = _apply_near_filter(
+                qs, "slots__facility__location", near, radius, aggregate=True
+            )
+            if used:
+                qs = qs.distinct()
         category = self.request.query_params.get("category")
         if category:
             try:
@@ -171,6 +230,23 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
         return qs
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="near",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Distance search using facility location. Ignored if nearby=1.",
+                examples=[OpenApiExample("Example", value="51.5072,-0.1276")],
+            ),
+            OpenApiParameter(
+                name="radius",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Search radius in meters (default 5000, min 100, max 30000)",
+            ),
+        ]
+    )
     def list(self, request, *args, **kwargs):
         if request.query_params.get("no_page") == "1":
             self.pagination_class = None
@@ -222,24 +298,33 @@ class FacilityViewSet(viewsets.ModelViewSet):
             qs = qs.filter(
                 Q(name__icontains=query) | Q(categories__name__icontains=query)
             ).distinct()
-
         near = self.request.query_params.get("near")
-        if near:
-            try:
-                lat, lng = map(float, near.split(","))
-                radius = float(self.request.query_params.get("radius", 5000))
-                point = Point(lng, lat, srid=4326)
-                qs = (
-                    qs.filter(location__distance_lte=(point, radius))
-                    .annotate(distance=Distance("location", point))
-                    .order_by("distance")
-                )
-            except ValueError:
-                pass
+        radius = _parse_radius(self.request.query_params.get("radius"))
+        qs, _ = _apply_near_filter(qs, "location", near, radius)
         return qs
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="near",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description='Filter by distance to "lat,lng"',
+                examples=[OpenApiExample("Example", value="51.5072,-0.1276")],
+            ),
+            OpenApiParameter(
+                name="radius",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Search radius in meters (default 5000, min 100, max 30000)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):

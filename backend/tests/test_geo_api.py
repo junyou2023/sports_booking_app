@@ -15,7 +15,7 @@ django.setup()  # noqa: E402
 from django.contrib.gis.geos import Point  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
-from sports.models import Category, Facility, Slot  # noqa: E402
+from sports.models import Category, Facility, Slot, Activity, Sport  # noqa: E402
 
 pytestmark = [pytest.mark.django_db]
 
@@ -100,3 +100,81 @@ def test_create_facility(django_user_model):
     from sports.models import Facility
     facility = Facility.objects.get(name="New")
     assert facility.owner == user
+
+
+# ---------------------------------------------------------------------------
+# New tests for location-based search
+# ---------------------------------------------------------------------------
+
+
+def _seed_facilities():
+    f1 = Facility.objects.create(name="A", location=Point(0, 0))
+    f2 = Facility.objects.create(name="B", location=Point(0.02, 0))
+    f3 = Facility.objects.create(name="C", location=Point(1, 1))
+    return f1, f2, f3
+
+
+def test_facilities_near_filter_ordering():
+    f1, f2, f3 = _seed_facilities()
+    resp = APIClient().get("/api/facilities/", {"near": "0,0", "radius": 3000})
+    ids = [row["id"] for row in resp.data]
+    assert ids == [f1.id, f2.id]
+    dists = [row["properties"]["distance_m"] for row in resp.data]
+    assert dists == sorted(dists)
+    assert all(isinstance(d, int) for d in dists)
+
+
+def test_facilities_distance_field_absent_without_near():
+    _seed_facilities()
+    resp = APIClient().get("/api/facilities/")
+    assert "distance_m" not in resp.data[0]["properties"]
+
+
+def test_facilities_invalid_near_graceful():
+    _seed_facilities()
+    resp = APIClient().get("/api/facilities/", {"near": "abc"})
+    assert len(resp.data) == 3
+    assert "distance_m" not in resp.data[0]["properties"]
+
+
+def test_activities_near_and_nearby_priority():
+    sport = Sport.objects.create(name="Tennis")
+    cat = Category.objects.create(name="Court")
+    f1, f2, f3 = _seed_facilities()
+    act_near = Activity.objects.create(sport=sport, discipline=cat, title="Near")
+    act_far = Activity.objects.create(
+        sport=sport, discipline=cat, title="Far", is_nearby=True
+    )
+    Slot.objects.create(
+        facility=f1,
+        activity=act_near,
+        title="S1",
+        location="loc",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=5,
+        price=1,
+    )
+    Slot.objects.create(
+        facility=f3,
+        activity=act_far,
+        title="S2",
+        location="loc",
+        begins_at=timezone.now(),
+        ends_at=timezone.now() + timezone.timedelta(hours=1),
+        capacity=5,
+        price=1,
+    )
+
+    client = APIClient()
+    resp = client.get("/api/activities/", {"near": "0,0", "radius": 3000})
+    ids = [row["id"] for row in resp.data]
+    assert ids == [act_near.id]
+    assert isinstance(resp.data[0]["distance_m"], int)
+
+    resp = client.get(
+        "/api/activities/", {"near": "0,0", "nearby": 1}
+    )
+    ids = [row["id"] for row in resp.data]
+    assert ids == [act_far.id]
+    assert "distance_m" not in resp.data[0]

@@ -156,6 +156,7 @@ class VariantSerializer(serializers.ModelSerializer):
 class ActivitySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     organization = serializers.PrimaryKeyRelatedField(read_only=True)
+    distance_m = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Activity
@@ -173,6 +174,7 @@ class ActivitySerializer(serializers.ModelSerializer):
             "duration",
             "base_price",
             "is_nearby",
+            "distance_m",
         )
         read_only_fields = ("id", "organization")
 
@@ -200,6 +202,12 @@ class ActivitySerializer(serializers.ModelSerializer):
         if len(desc) > 500:
             raise serializers.ValidationError({"description": "Max 500 characters"})
         return attrs
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data.get("distance_m") in (None, ""):
+            data.pop("distance_m", None)
+        return data
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -243,6 +251,7 @@ class FeaturedActivitySerializer(serializers.ModelSerializer):
 
 class FacilitySerializer(GeoFeatureModelSerializer):
     owner = serializers.SerializerMethodField()
+    distance_m = serializers.IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Facility
@@ -254,10 +263,18 @@ class FacilitySerializer(GeoFeatureModelSerializer):
             "location",
             "categories",
             "owner",
+            "distance_m",
         )
 
     def get_owner(self, obj):
         return getattr(obj.owner, "email", "")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        props = data.get("properties", data)
+        if props.get("distance_m") in (None, ""):
+            props.pop("distance_m", None)
+        return data
 
 
 class FacilityCreateSerializer(serializers.ModelSerializer):
