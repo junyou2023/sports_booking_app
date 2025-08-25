@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from .models import OrganizationMember
+from .models import OrganizationMember, VendorProfile
 
 
 class IsVendor(BasePermission):
@@ -8,7 +8,10 @@ class IsVendor(BasePermission):
     message = "You need a provider account to create facilities."
 
     def has_permission(self, request, view):
-        return request.user and hasattr(request.user, "vendorprofile")
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        return OrganizationMember.objects.filter(user=user).exists()
 
 
 class IsOrgMember(BasePermission):

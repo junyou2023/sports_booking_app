@@ -1,6 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from uuid import uuid4
+
+
+class VendorProfileManager(models.Manager):
+    def get_or_create(self, **kwargs):
+        obj, created = super().get_or_create(**kwargs)
+        from .models import Organization, OrganizationMember
+        if not OrganizationMember.objects.filter(user=obj.user).exists():
+            org = Organization.objects.create(
+                name=f"Org-{uuid4().hex[:6]}", slug=f"org-{uuid4().hex[:6]}"
+            )
+            OrganizationMember.objects.create(
+                organization=org, user=obj.user, role="owner"
+            )
+        return obj, created
 
 
 class VendorProfile(models.Model):
@@ -9,6 +24,8 @@ class VendorProfile(models.Model):
     logo = models.URLField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=200, blank=True)
+
+    objects = VendorProfileManager()
 
     class Meta:
         app_label = "accounts"
@@ -30,7 +47,7 @@ class CustomerProfile(models.Model):
 
 # expose a convenience property on Django's User
 def _user_is_provider(self) -> bool:
-    return hasattr(self, "vendorprofile")
+    return OrganizationMember.objects.filter(user=self).exists()
 
 
 User.add_to_class("is_provider", property(_user_is_provider))

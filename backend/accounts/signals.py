@@ -11,4 +11,4 @@ def create_user_profile(sender, instance, created, **kwargs):
         return
     # normal users get a CustomerProfile by default
     CustomerProfile.objects.get_or_create(user=instance)
-    VendorProfile.objects.get_or_create(user=instance)
+    VendorProfile.objects.create(user=instance)
