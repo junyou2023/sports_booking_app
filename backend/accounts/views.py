@@ -6,14 +6,25 @@ from django.shortcuts import get_object_or_404
 from .permissions import IsVendor, IsOrgMember, IsOrgOwner
 from rest_framework.response import Response
 
-from .serializers import ProfileSerializer, ProviderRegisterSerializer
+from .serializers import (
+    ProfileSerializer,
+    ProviderRegisterSerializer,
+    EmailOrUsernameTokenObtainPairSerializer,
+)
 from .models import Organization, OrganizationMember
 from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
+
+
+class EmailOrUsernameTokenObtainPairView(TokenObtainPairView):
+    """JWT token view accepting either email or username."""
+
+    serializer_class = EmailOrUsernameTokenObtainPairSerializer
 
 
 class ProfileView(APIView):

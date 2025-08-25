@@ -52,5 +52,13 @@ def test_slots_filter_by_activity_and_after_utc():
     ts = (before + timezone.timedelta(minutes=30)).isoformat()
     resp = client.get("/api/slots/", {"activity": act.id, "after": ts})
     assert resp.status_code == 200
-    assert len(resp.data) == 1
-    assert resp.data[0]["id"] == later_slot.id
+    items = resp.data.get("results", resp.data)
+    if isinstance(items, dict) and "features" in items:
+        items = items["features"]
+    assert len(items) == 1
+    first = items[0]
+    if isinstance(first, dict) and "id" in first:
+        first_id = first["id"]
+    else:
+        first_id = first.get("id")
+    assert first_id == later_slot.id

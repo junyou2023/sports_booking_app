@@ -59,7 +59,10 @@ def test_categories_list():
     Category.objects.bulk_create([Category(name=str(i)) for i in range(24)])
     resp = APIClient().get("/api/categories/")
     assert resp.status_code == 200
-    assert len(resp.data) == 24
+    items = resp.data.get("results", resp.data)
+    if isinstance(items, dict) and "features" in items:
+        items = items["features"]
+    assert len(items) == 24
 
 
 def test_facilities_filter_near_categories():
@@ -83,7 +86,15 @@ def test_slots_by_facility():
     slot = f1.slots.first()
     resp = APIClient().get("/api/slots/", {"facility_id": f1.id})
     assert resp.status_code == 200
-    assert resp.data[0]["id"] == slot.id
+    items = resp.data.get("results", resp.data)
+    if isinstance(items, dict) and "features" in items:
+        items = items["features"]
+    first = items[0]
+    if isinstance(first, dict) and "id" in first:
+        first_id = first["id"]
+    else:
+        first_id = first.get("id")
+    assert first_id == slot.id
 
 
 def test_create_facility(django_user_model):
@@ -184,13 +195,19 @@ def test_activities_near_and_nearby_priority():
 
     client = APIClient()
     resp = client.get("/api/activities/", {"near": "0,0", "radius": 3000})
-    ids = [row["id"] for row in resp.data]
+    items = resp.data.get("results", resp.data)
+    if isinstance(items, dict) and "features" in items:
+        items = items["features"]
+    ids = [row["id"] for row in items]
     assert ids == [act_near.id]
-    assert isinstance(resp.data[0]["distance_m"], int)
+    assert isinstance(items[0]["distance_m"], int)
 
     resp = client.get(
         "/api/activities/", {"near": "0,0", "nearby": 1}
     )
-    ids = [row["id"] for row in resp.data]
+    items = resp.data.get("results", resp.data)
+    if isinstance(items, dict) and "features" in items:
+        items = items["features"]
+    ids = [row["id"] for row in items]
     assert ids == [act_far.id]
-    assert "distance_m" not in resp.data[0]
+    assert "distance_m" not in items[0]

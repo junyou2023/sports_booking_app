@@ -22,14 +22,29 @@ def sport(db):
 
 @pytest.fixture
 def slot(db, sport):
-    from sports.models import Slot
+    from sports.models import Slot, Activity, Category
+    from accounts.models import Organization
+    from uuid import uuid4
+
+    cat = Category.objects.create(name="Gen")
+    org = Organization.objects.create(name="Org", slug=f"org-{uuid4().hex[:8]}")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=cat,
+        title="Act",
+        duration=60,
+        base_price=0,
+        organization=org,
+    )
     return Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Morning session",
         location="Court 1",
         begins_at=timezone.now() + timezone.timedelta(hours=1),
         ends_at=timezone.now() + timezone.timedelta(hours=2),
         capacity=4,
+        price=0,
     )
 
 

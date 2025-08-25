@@ -72,7 +72,9 @@ def test_bulk_slot_create(auth_client):
             "interval": 60,
         },
     )
-    assert resp.status_code in (200, 405)
+    assert resp.status_code == 201
+    assert "created" in resp.data and len(resp.data["created"]) > 0
+    assert Slot.objects.count() == len(resp.data["created"])
 
 
 def test_filter_activities_by_category(client):

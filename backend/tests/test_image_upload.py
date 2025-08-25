@@ -37,4 +37,7 @@ def test_api_nearby_filter(client):
     Activity.objects.create(sport=sport, discipline=cat, title='Y', is_nearby=False, organization=org)
     resp = client.get('/api/activities/', {'nearby': '1', 'no_page': '1'})
     assert resp.status_code == 200
-    assert len(resp.data) == 1
+    items = resp.data.get('results', resp.data)
+    if isinstance(items, dict) and 'features' in items:
+        items = items['features']
+    assert len(items) == 1
