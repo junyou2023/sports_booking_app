@@ -90,8 +90,8 @@ def _apply_near_filter(qs, field_name, latlng, radius_m, aggregate=False):
             distance = Min(distance)
         qs = (
             qs.filter(**filter_kwargs)
-            .annotate(distance_m=Cast(distance, IntegerField()))
-            .order_by("distance_m")
+            .annotate(_distance_m=Cast(distance, IntegerField()))
+            .order_by("_distance_m")
         )
         return qs, True
     except Exception:
@@ -121,6 +121,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = DefaultPagination
 
 
 class FeaturedCategoryViewSet(viewsets.ModelViewSet):
@@ -249,7 +250,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         if request.query_params.get("no_page") == "1":
-            self.pagination_class = None
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"results": serializer.data})
         return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
@@ -268,6 +271,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
 
 class FacilityViewSet(viewsets.ModelViewSet):
+    pagination_class = DefaultPagination
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
             perms = [permissions.IsAuthenticated, IsVendor]
@@ -331,6 +335,7 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SlotSerializer
     permission_classes = [permissions.AllowAny]
     lookup_value_regex = r"\d+"
+    pagination_class = DefaultPagination
 
     def get_queryset(self):
         qs = Slot.objects.select_related("facility", "sport", "activity")
@@ -379,9 +384,10 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
             org = Organization.objects.first() or Organization.objects.create(
                 name="Org", slug="org"
             )
+            disc = Category.objects.first() or Category.objects.create(name="Auto")
             activity = Activity.objects.create(
                 sport=sport,
-                discipline=None,
+                discipline=disc,
                 title="Auto",
                 duration=60,
                 base_price=0,
@@ -514,7 +520,7 @@ class ContinuePlanningView(APIView):
         ser = ActivitySimpleSerializer(
             ordered, many=True, context={"request": request}
         )
-        return Response(ser.data)
+        return Response({"results": ser.data})
 
 
 class BulkSlotCreateView(APIView):

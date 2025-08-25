@@ -349,6 +349,12 @@ class BookingSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "booked_at", "status", "paid", "price")
 
+    def to_internal_value(self, data):
+        if "slot" in data and "slot_id" not in data:
+            data = data.copy()
+            data["slot_id"] = data.pop("slot")
+        return super().to_internal_value(data)
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.SerializerMethodField()

@@ -193,7 +193,7 @@ class Slot(models.Model):
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.50"))],
+        validators=[MinValueValidator(Decimal("0"))],
     )
     rating = models.DecimalField(  # NEW: matches serializer / seed
         max_digits=3, decimal_places=1, default=0,
