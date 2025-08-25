@@ -1,0 +1,10 @@
+-r requirements.txt
+pytest
+pytest-django
+freezegun
+requests-mock
+coverage
+psycopg2-binary
+django-environ
+django-filter
+djangorestframework-gis
