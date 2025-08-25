@@ -110,6 +110,10 @@ class MerchantSlotSerializer(serializers.ModelSerializer):
                 errors["ends_at"] = ["Must not cross days"]
             if begins < now:
                 errors["begins_at"] = ["Must be in the future"]
+            if ends <= begins:
+                errors.setdefault("ends_at", []).append("Must be after start")
+            elif (ends - begins).total_seconds() < 30 * 60:
+                errors.setdefault("ends_at", []).append("Must be at least 30 minutes")
 
         if activity and begins and ends:
             qs = Slot.objects.filter(activity=activity, is_active=True)
