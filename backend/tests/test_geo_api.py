@@ -78,7 +78,9 @@ def test_create_facility(django_user_model):
         "m@example.com", "m@example.com", "pass"
     )
     from accounts.models import VendorProfile
-    VendorProfile.objects.create(user=user)
+    # Signal creates VendorProfile automatically; ensure one exists without
+    # violating the one-to-one constraint.
+    VendorProfile.objects.get_or_create(user=user)
     client = APIClient()
     token_res = client.post(
         "/api/token/", {"email": "m@example.com", "password": "pass"}
