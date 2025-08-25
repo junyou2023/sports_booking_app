@@ -11,23 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL(
-                    sql=(
-                        "ALTER TABLE sports_slot "
-                        "ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE"
-                    ),
-                    reverse_sql="ALTER TABLE sports_slot DROP COLUMN IF EXISTS is_active",
-                ),
-            ],
-            state_operations=[
-                migrations.AddField(
-                    model_name='slot',
-                    name='is_active',
-                    field=models.BooleanField(default=True),
-                ),
-            ],
+        migrations.AddField(
+            model_name='slot',
+            name='is_active',
+            field=models.BooleanField(default=True),
         ),
         migrations.AlterField(
             model_name='activity',

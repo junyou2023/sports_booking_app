@@ -17,10 +17,20 @@ def user_factory(**kw):
 
 def vendor_factory(**kw):
     user = user_factory(**kw)
-    VendorProfile.objects.create(user=user)
-    org = Organization.objects.create(name=f"Org-{uuid4().hex[:6]}", slug=f"org-{uuid4().hex[:6]}")
+    # ``VendorProfile`` is created automatically via signals when the user is
+    # created.  Creating it again would violate the one-to-one constraint and
+    # cause many tests to fail with ``IntegrityError``.  Simply ensure the
+    # profile exists by touching ``user.vendorprofile``.
+    user.vendorprofile  # noqa: B018 - accessed for side effect
+
+    org = Organization.objects.create(
+        name=f"Org-{uuid4().hex[:6]}", slug=f"org-{uuid4().hex[:6]}"
+    )
     OrganizationMember.objects.create(organization=org, user=user, role="owner")
-    class V: pass
+
+    class V:
+        pass
+
     v = V()
     v.user = user
     v.org = org

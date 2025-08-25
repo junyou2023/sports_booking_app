@@ -1,4 +1,5 @@
-from django.test import TestCase, Client
+from django.test import TestCase
+from rest_framework.test import APIClient
 from django.utils import timezone
 from freezegun import freeze_time
 from backend.tests.utils.factories import (
@@ -10,7 +11,7 @@ from backend.tests.utils.factories import (
 
 class AuthAndPermTests(TestCase):
     def setUp(self):
-        self.client = Client()
+        self.client = APIClient()
         self.vendor = vendor_factory()
         self.user = user_factory()
         self.activity = activity_factory(organization=self.vendor.org)

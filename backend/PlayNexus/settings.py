@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -19,7 +20,11 @@ from datetime import timedelta
 # ──────────────────────────────
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 # Load environment variables for local runs (project root .env)
-load_dotenv(BASE_DIR.parent / '.env')
+# Skip when running tests so pytest can configure its own environment without
+# inadvertently pulling in the project's development settings (which point to
+# external services like Postgres).
+if "pytest" not in sys.modules:
+    load_dotenv(BASE_DIR.parent / '.env')
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")

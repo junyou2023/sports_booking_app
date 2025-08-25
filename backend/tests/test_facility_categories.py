@@ -6,8 +6,11 @@ from sports.models import Category
 
 @pytest.fixture
 def vendor_client(django_user_model):
-    user = django_user_model.objects.create_user('v@example.com', 'v@example.com', 'pass')
-    VendorProfile.objects.create(user=user)
+    user = django_user_model.objects.create_user(
+        'v@example.com', 'v@example.com', 'pass'
+    )
+    # ``VendorProfile`` may already exist via signals; create it only if needed.
+    VendorProfile.objects.get_or_create(user=user)
     client = APIClient()
     token = client.post('/api/token/', {'email': 'v@example.com', 'password': 'pass'})
     access = token.data['access']

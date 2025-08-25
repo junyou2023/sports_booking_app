@@ -19,7 +19,8 @@ def test_nearby_radius_and_ordering():
     client = APIClient()
     resp = client.get("/api/facilities/", {"near": "0,0", "radius": 6000})
     assert resp.status_code == 200
-    ids = [row["id"] for row in resp.json()]
+    features = resp.json()["features"]
+    ids = [row["id"] for row in features]
     assert f1.id in ids and f2.id not in ids
-    dists = [row["properties"]["distance_m"] for row in resp.json()]
+    dists = [row["properties"]["distance_m"] for row in features]
     assert dists == sorted(dists)

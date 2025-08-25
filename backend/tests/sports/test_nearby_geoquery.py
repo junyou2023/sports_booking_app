@@ -11,6 +11,7 @@ class NearbyQueryTests(TestCase):
         url = '/api/facilities/'
         response = self.client.get(f'{url}?near=55.8721,-4.2890&radius=10000')
         self.assertEqual(response.status_code, 200)
-        ids = [f['id'] for f in response.json()]
+        features = response.json()['features']
+        ids = [f['id'] for f in features]
         self.assertIn(self.near.id, ids)
         self.assertNotIn(self.far.id, ids)

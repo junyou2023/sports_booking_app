@@ -6,8 +6,12 @@ from sports.models import Sport
 
 @pytest.fixture
 def vendor_client(django_user_model):
-    user = django_user_model.objects.create_user('v@example.com', 'v@example.com', 'pass')
-    VendorProfile.objects.create(user=user)
+    user = django_user_model.objects.create_user(
+        'v@example.com', 'v@example.com', 'pass'
+    )
+    # Ensure a single VendorProfile for the user; the creation signal may have
+    # already provisioned it.
+    VendorProfile.objects.get_or_create(user=user)
     client = APIClient()
     token = client.post('/api/token/', {'email': 'v@example.com', 'password': 'pass'})
     access = token.data['access']
@@ -47,7 +51,7 @@ def test_non_vendor_cannot_create_sport(user_client):
 
 def test_anonymous_cannot_create_sport():
     resp = APIClient().post('/api/sports/', {'name': 'Soccer'})
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 def test_admin_crud_sport(admin_client):

@@ -22,6 +22,19 @@ coverage report -m
 coverage html -d reports\coverage_html
 ```
 
+## Docker Environment
+
+Run the tests inside the Docker container after the services are up. The
+following commands are executed from your host terminal at the project root:
+
+```cmd
+docker compose up -d --build                             # build and start containers
+docker compose exec web python -m pip install -r requirements-dev.txt  # install deps
+docker compose exec web sh -lc "mkdir -p /app/reports"   # create report folder
+docker compose exec web sh -lc "cd backend && coverage run -m pytest -q"  # run tests
+docker compose exec web sh -lc "coverage report -m"       # show coverage summary
+```
+
 ## Performance & Webhook Utilities
 
 ```cmd

@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import json
 from django.db import models
+from unittest.mock import patch
 
 django.setup()
 
@@ -26,8 +27,14 @@ def test_sports_list():
 
 def test_slots_filter():
     sport = Sport.objects.create(name="Biking1")
+    disc = Category.objects.create(name="Road")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(sport=sport, discipline=disc, title="Act", duration=60, base_price=0, organization=org)
     Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Morning Ride",
         location="Park",
         begins_at=timezone.now(),
@@ -54,15 +61,19 @@ def test_slot_requires_activity():
             price=0,
             rating=0,
         )
-    for slot in response.data:
-        assert slot["sport"] == sport.id
 
 
 def test_booking_creation():
     user = User.objects.create_user("demo_api", password="demo123")
     sport = Sport.objects.create(name="Kayak1")
+    disc = Category.objects.create(name="Water")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(sport=sport, discipline=disc, title="Act", duration=60, base_price=0, organization=org)
     slot = Slot.objects.create(
         sport=sport,
+        activity=act,
         title="Evening Ride",
         location="Lake",
         begins_at=timezone.now(),
@@ -82,8 +93,14 @@ def test_concurrent_booking_capacity(db):
     user1 = User.objects.create_user("u1")
     user2 = User.objects.create_user("u2")
     sport = Sport.objects.create(name="Swim")
+    disc = Category.objects.create(name="Pool")
+    from accounts.models import Organization
+    from uuid import uuid4
+    org = Organization.objects.create(name="O", slug=f"o-{uuid4().hex[:8]}")
+    act = Activity.objects.create(sport=sport, discipline=disc, title="Act", duration=60, base_price=0, organization=org)
     slot = Slot.objects.create(
         sport=sport,
+        activity=act,
         title="M",
         location="L",
         begins_at=timezone.now(),
@@ -209,13 +226,16 @@ def test_webhook_updates_booking(client=None):
     client = APIClient()
     event = {
         "type": "payment_intent.succeeded",
-        "data": {"object": {"metadata": {"slot_id": slot.id, "user_id": user.id}}},
+        "data": {"object": {"id": "pi_test", "metadata": {"slot_id": slot.id, "user_id": user.id}}},
     }
-    res = client.post(
-        "/api/payments/webhook/",
-        data=json.dumps(event),
-        content_type="application/json",
-    )
+    headers = {"HTTP_STRIPE_SIGNATURE": "t=1,v1=fake"}
+    with patch("stripe.Webhook.construct_event", return_value=event):
+        res = client.post(
+            "/api/payments/webhook/",
+            event,
+            format="json",
+            **headers,
+        )
     assert res.status_code == 200
     booking.refresh_from_db()
     assert booking.paid

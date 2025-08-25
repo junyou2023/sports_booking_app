@@ -1,4 +1,5 @@
-from django.test import TestCase, Client
+from django.test import TestCase
+from rest_framework.test import APIClient
 from django.utils import timezone
 from backend.tests.utils.factories import (
     vendor_factory,
@@ -12,7 +13,7 @@ from sports.models import Booking
 class SlotRulesTests(TestCase):
     def setUp(self):
         self.vendor = vendor_factory()
-        self.client = Client()
+        self.client = APIClient()
         self.client.force_login(self.vendor.user)
         self.activity = activity_factory(organization=self.vendor.org)
         self.facility = facility_factory(owner=self.vendor.user)
@@ -40,8 +41,8 @@ class SlotRulesTests(TestCase):
         slot = slot_factory(activity=self.activity, capacity=1)
         user1 = user_factory()
         user2 = user_factory()
-        c1 = Client(); c1.force_login(user1)
-        c2 = Client(); c2.force_login(user2)
+        c1 = APIClient(); c1.force_login(user1)
+        c2 = APIClient(); c2.force_login(user2)
         data = {'slot': slot.id, 'pax': 1}
         r1 = c1.post('/api/bookings/', data, content_type='application/json')
         r2 = c2.post('/api/bookings/', data, content_type='application/json')

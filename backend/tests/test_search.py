@@ -105,12 +105,14 @@ def test_facility_search_by_name(client):
     create_data()
     res = client.get("/api/facilities/", {"q": "Bike"})
     assert res.status_code == 200
-    assert len(res.data) == 1 or res.data["count"] == 1
+    features = res.data["features"]
+    assert len(features) == 1
 
 
 def test_facility_search_by_category(client):
     create_data()
     res = client.get("/api/facilities/", {"q": "Land"})
-    assert len(res.data) == 1 or res.data["count"] == 1
+    features = res.data["features"]
+    assert len(features) == 1
 
 

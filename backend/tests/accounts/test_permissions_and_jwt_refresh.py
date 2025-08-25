@@ -8,7 +8,19 @@ pytestmark = pytest.mark.django_db
 def test_vendor_only_forbidden_for_normal_user():
     user = user_factory()
     client = APIClient(); client.force_authenticate(user=user)
-    resp = client.post("/api/merchant/slots/", {"dummy": "x"}, format="json")
+    from backend.tests.utils.factories import activity_factory
+    from django.utils import timezone
+    act = activity_factory()
+    payload = {
+        "activity": act.id,
+        "begins_at": timezone.now().isoformat(),
+        "ends_at": (timezone.now() + timezone.timedelta(hours=1)).isoformat(),
+        "capacity": 1,
+        "price": "1.00",
+        "title": "T",
+        "location": "L",
+    }
+    resp = client.post("/api/merchant/slots/", payload, format="json")
     assert resp.status_code == 403
 
 
