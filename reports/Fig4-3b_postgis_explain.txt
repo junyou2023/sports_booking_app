@@ -1,0 +1,1 @@
+[[BLOCKER: database not initialized; run `make perf-nearby` in an environment with PostGIS]]

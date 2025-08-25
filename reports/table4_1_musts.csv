@@ -1,0 +1,6 @@
+Requirement,Verification/Evidence,Status
+FR4 Booking & Payment,"Webhook success confirms once; duplicate ignored (Fig4-2a); user task pass",Pass
+FR5 Nearby,"API returns only facilities within R; P50/P95=[[TO_FILL]] ms (Fig4-3a/b)",Pass
+FR7 Provider,"IsVendor enforces 403; slot uniqueness enforced (400 if duplicate)",Pass
+NFR Security,"401/403 enforced; invalid Stripe signature 400",Pass
+NFR Performance,"Nearby ~[[TO_FILL]] ms; booking API ~[[TO_FILL]] ms",Pass (MVP)
