@@ -120,6 +120,44 @@ def test_create_past_or_cross_day_400(auth_client, activity):
     assert resp2.status_code == 400
 
 
+def test_end_before_start_400(auth_client, activity):
+    begins = timezone.now() + timezone.timedelta(hours=1)
+    ends = begins - timezone.timedelta(minutes=10)
+    resp = auth_client.post(
+        "/api/merchant/slots/",
+        {
+            "activity": activity.id,
+            "begins_at": begins.isoformat(),
+            "ends_at": ends.isoformat(),
+            "capacity": 5,
+            "price": "0",
+            "title": "Inv",
+            "location": "Loc",
+        },
+        format="json",
+    )
+    assert resp.status_code == 400
+
+
+def test_duration_too_short_400(auth_client, activity):
+    begins = timezone.now() + timezone.timedelta(hours=1)
+    ends = begins + timezone.timedelta(minutes=20)
+    resp = auth_client.post(
+        "/api/merchant/slots/",
+        {
+            "activity": activity.id,
+            "begins_at": begins.isoformat(),
+            "ends_at": ends.isoformat(),
+            "capacity": 5,
+            "price": "0",
+            "title": "Short",
+            "location": "Loc",
+        },
+        format="json",
+    )
+    assert resp.status_code == 400
+
+
 def test_bulk_delete_soft(auth_client, activity):
     begins = timezone.now() + timezone.timedelta(hours=1)
     ends = begins + timezone.timedelta(hours=1)

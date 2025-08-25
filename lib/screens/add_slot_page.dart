@@ -169,6 +169,18 @@ class _AddSlotPageState extends State<AddSlotPage> {
                               const SnackBar(content: Text('End must be after start')));
                           return;
                         }
+                        if (start!.year != end!.year ||
+                            start!.month != end!.month ||
+                            start!.day != end!.day) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Slot must not cross days')));
+                          return;
+                        }
+                        if (end!.difference(start!).inMinutes < 30) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('Duration must be at least 30 minutes')));
+                          return;
+                        }
                         setState(() => _submitting = true);
                         try {
                           if (widget.slot == null) {
