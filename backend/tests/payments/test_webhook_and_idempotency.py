@@ -31,14 +31,14 @@ class StripeWebhookTests(TestCase):
             'type': event_type,
             'data': {'object': {'id': 'pi_test', 'metadata': {'slot_id': self.slot.id, 'user_id': self.user.id}}},
         }
-        headers = {'HTTP_STRIPE_SIGNATURE': 't=1,v1=fake', 'CONTENT_TYPE': 'application/json'}
-        return headers, json.dumps(payload)
+        headers = {'HTTP_STRIPE_SIGNATURE': 't=1,v1=fake'}
+        return headers, payload
 
     @patch('stripe.Webhook.construct_event')
     def test_success_confirms_once_and_duplicate_ignored(self, mock_construct):
         headers, payload = self._event('payment_intent.succeeded')
-        mock_construct.return_value = json.loads(payload)
-        r1 = self.client.post('/api/payments/webhook/', data=payload, **headers)
+        mock_construct.return_value = payload
+        r1 = self.client.post('/api/payments/webhook/', payload, format='json', **headers)
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, 'confirmed')
         r2 = self.client.post('/api/payments/webhook/', data=payload, **headers)
@@ -49,8 +49,8 @@ class StripeWebhookTests(TestCase):
     @patch('stripe.Webhook.construct_event')
     def test_decline_stays_pending(self, mock_construct):
         headers, payload = self._event('payment_intent.payment_failed')
-        mock_construct.return_value = json.loads(payload)
-        r = self.client.post('/api/payments/webhook/', data=payload, **headers)
+        mock_construct.return_value = payload
+        r = self.client.post('/api/payments/webhook/', payload, format='json', **headers)
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, 'pending')
         self.assertEqual(r.status_code, 200)
@@ -58,5 +58,5 @@ class StripeWebhookTests(TestCase):
     @patch('stripe.Webhook.construct_event', side_effect=stripe.error.SignatureVerificationError('bad', 'sig'))
     def test_invalid_signature_400(self, mock_construct):
         headers, payload = self._event('payment_intent.succeeded')
-        r = self.client.post('/api/payments/webhook/', data=payload, **headers)
+        r = self.client.post('/api/payments/webhook/', payload, format='json', **headers)
         self.assertEqual(r.status_code, 400)

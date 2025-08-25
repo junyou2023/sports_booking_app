@@ -51,7 +51,7 @@ def test_non_vendor_cannot_create_sport(user_client):
 
 def test_anonymous_cannot_create_sport():
     resp = APIClient().post('/api/sports/', {'name': 'Soccer'})
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 def test_admin_crud_sport(admin_client):

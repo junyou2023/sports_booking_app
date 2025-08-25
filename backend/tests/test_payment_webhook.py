@@ -4,6 +4,7 @@ import pytest
 from rest_framework.test import APIClient
 from django.utils import timezone
 from sports.models import Sport, Category, Activity, Slot, Booking
+from unittest.mock import patch
 
 django.setup()
 pytestmark = pytest.mark.django_db
@@ -36,22 +37,27 @@ def test_payment_webhook_updates_booking():
         price=10,
         rating=0,
     )
-    user_id = 1
-    booking = Booking.objects.create(slot=slot, activity=act, user_id=user_id)
+    from django.contrib.auth.models import User
+    user = User.objects.create_user("webhook")
+    booking = Booking.objects.create(slot=slot, activity=act, user=user)
     client = APIClient()
     event = {
         "type": "payment_intent.succeeded",
         "data": {
             "object": {
-                "metadata": {"slot_id": slot.id, "user_id": user_id}
+                "id": "pi_test",
+                "metadata": {"slot_id": slot.id, "user_id": user.id}
             }
         },
     }
-    res = client.post(
-        "/api/payments/webhook/",
-        data=json.dumps(event),
-        content_type="application/json",
-    )
+    headers = {"HTTP_STRIPE_SIGNATURE": "t=1,v1=fake"}
+    with patch("stripe.Webhook.construct_event", return_value=event):
+        res = client.post(
+            "/api/payments/webhook/",
+            event,
+            format="json",
+            **headers,
+        )
     assert res.status_code == 200
     booking.refresh_from_db()
     assert booking.paid

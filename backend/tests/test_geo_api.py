@@ -31,13 +31,26 @@ def setup_data():
         radius=1000,
     )
     f2.categories.add(c1)
+    sport = Sport.objects.create(name="Surf")
+    act = Activity.objects.create(
+        sport=sport,
+        discipline=c1,
+        title="Act",
+        description="",
+        difficulty=1,
+        duration=60,
+        base_price=0,
+        organization=None,
+    )
     Slot.objects.create(
         facility=f1,
+        activity=act,
         title="Morning",
         location="loc",
         begins_at=timezone.now(),
         ends_at=timezone.now() + timezone.timedelta(hours=1),
         capacity=5,
+        price=0,
     )
     return c1, c2, f1, f2
 
@@ -61,7 +74,7 @@ def test_facilities_filter_near_categories():
         },
     )
     assert resp.status_code == 200
-    ids = [row["id"] for row in resp.data]
+    ids = [row["id"] for row in resp.data["features"]]
     assert ids == [f1.id]
 
 
@@ -119,9 +132,10 @@ def _seed_facilities():
 def test_facilities_near_filter_ordering():
     f1, f2, f3 = _seed_facilities()
     resp = APIClient().get("/api/facilities/", {"near": "0,0", "radius": 3000})
-    ids = [row["id"] for row in resp.data]
+    features = resp.data["features"]
+    ids = [row["id"] for row in features]
     assert ids == [f1.id, f2.id]
-    dists = [row["properties"]["distance_m"] for row in resp.data]
+    dists = [row["properties"]["distance_m"] for row in features]
     assert dists == sorted(dists)
     assert all(isinstance(d, int) for d in dists)
 
@@ -129,14 +143,14 @@ def test_facilities_near_filter_ordering():
 def test_facilities_distance_field_absent_without_near():
     _seed_facilities()
     resp = APIClient().get("/api/facilities/")
-    assert "distance_m" not in resp.data[0]["properties"]
+    assert "distance_m" not in resp.data["features"][0]["properties"]
 
 
 def test_facilities_invalid_near_graceful():
     _seed_facilities()
     resp = APIClient().get("/api/facilities/", {"near": "abc"})
-    assert len(resp.data) == 3
-    assert "distance_m" not in resp.data[0]["properties"]
+    assert len(resp.data["features"]) == 3
+    assert "distance_m" not in resp.data["features"][0]["properties"]
 
 
 def test_activities_near_and_nearby_priority():

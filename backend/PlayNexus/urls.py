@@ -17,10 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+from accounts.jwt import EmailTokenObtainPairView
 
 # reuse a single refresh view so both endpoints behave identically
 refresh_view = TokenRefreshView.as_view()
@@ -43,7 +41,7 @@ urlpatterns = [
     ),
     path(
         "api/token/",
-        TokenObtainPairView.as_view(),
+        EmailTokenObtainPairView.as_view(),
         name="token_obtain_pair",
     ),
     path(

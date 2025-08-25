@@ -251,7 +251,7 @@ class FeaturedActivitySerializer(serializers.ModelSerializer):
 
 class FacilitySerializer(GeoFeatureModelSerializer):
     owner = serializers.SerializerMethodField()
-    distance_m = serializers.IntegerField(read_only=True, required=False)
+    distance_m = serializers.SerializerMethodField()
 
     class Meta:
         model = Facility
@@ -268,6 +268,9 @@ class FacilitySerializer(GeoFeatureModelSerializer):
 
     def get_owner(self, obj):
         return getattr(obj.owner, "email", "")
+
+    def get_distance_m(self, obj):
+        return getattr(obj, "distance_m", None)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

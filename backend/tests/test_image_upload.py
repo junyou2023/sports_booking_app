@@ -35,6 +35,6 @@ def test_api_nearby_filter(client):
     org = Organization.objects.create(name='O', slug=f'o-{uuid4().hex[:8]}')
     Activity.objects.create(sport=sport, discipline=cat, title='X', is_nearby=True, organization=org)
     Activity.objects.create(sport=sport, discipline=cat, title='Y', is_nearby=False, organization=org)
-    resp = client.get('/api/activities/', {'nearby': '1'})
+    resp = client.get('/api/activities/', {'nearby': '1', 'no_page': '1'})
     assert resp.status_code == 200
     assert len(resp.data) == 1
