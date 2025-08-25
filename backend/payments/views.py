@@ -31,7 +31,7 @@ class StripeCheckoutView(APIView):
     def _post_impl(self, request):
         # 0) Key 预检
         if not stripe.api_key or stripe.api_key.endswith("xxx"):
-            return Response({"detail": "Stripe secret key is not configured"}, status=500)
+            return Response({"detail": "Stripe secret key is misconfigured"}, status=500)
 
         # 1) 取 slot 并校验
         slot_id = request.data.get("slot")
@@ -124,8 +124,8 @@ class StripeCheckoutView(APIView):
         # 5) 成功返回
         return Response(
             {
+                "intent_id": intent.id,
                 "client_secret": intent.client_secret,
-                "payment_intent_id": intent.id,
                 "booking_id": booking.id,
             },
             status=200,

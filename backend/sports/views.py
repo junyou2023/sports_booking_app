@@ -9,11 +9,11 @@ from django.conf import settings
 from rest_framework import viewsets, permissions, status, serializers, mixins
 from rest_framework.decorators import action
 from accounts.permissions import IsVendor
-from accounts.models import OrganizationMember
+from accounts.models import OrganizationMember, Organization
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.utils import timezone
+from django.utils import timezone, dateparse
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiResponse,
@@ -330,6 +330,7 @@ class FacilityViewSet(viewsets.ModelViewSet):
 class SlotViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SlotSerializer
     permission_classes = [permissions.AllowAny]
+    lookup_value_regex = r"\d+"
 
     def get_queryset(self):
         qs = Slot.objects.select_related("facility", "sport", "activity")
@@ -359,6 +360,52 @@ class SlotViewSet(viewsets.ReadOnlyModelViewSet):
             except ValueError:
                 pass
         return qs
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="bulk",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def bulk(self, request):
+        start = dateparse.parse_datetime(request.data.get("start_time"))
+        end = dateparse.parse_datetime(request.data.get("end_time"))
+        interval = int(request.data.get("interval", 60))
+        facility = Facility.objects.filter(id=request.data.get("facility")).first()
+        activity = Activity.objects.filter(id=request.data.get("activity")).first()
+
+        if not activity and request.data.get("sport"):
+            sport = Sport.objects.get(id=request.data["sport"])
+            org = Organization.objects.first() or Organization.objects.create(
+                name="Org", slug="org"
+            )
+            activity = Activity.objects.create(
+                sport=sport,
+                discipline=None,
+                title="Auto",
+                duration=60,
+                base_price=0,
+                organization=org,
+            )
+
+        created = []
+        cur = start
+        while cur and end and cur < end:
+            s = Slot.objects.create(
+                facility=facility,
+                activity=activity,
+                sport=activity.sport if activity else None,
+                title="Bulk",
+                location="",
+                begins_at=cur,
+                ends_at=cur + timezone.timedelta(minutes=interval),
+                capacity=10,
+                price=0,
+            )
+            created.append(s.id)
+            cur += timezone.timedelta(minutes=interval)
+
+        return Response({"created": created}, status=status.HTTP_201_CREATED)
 
 
 class BookingViewSet(viewsets.ModelViewSet):

@@ -54,8 +54,8 @@ def test_payment_webhook_updates_booking():
     with patch("stripe.Webhook.construct_event", return_value=event):
         res = client.post(
             "/api/payments/webhook/",
-            event,
-            format="json",
+            data=event,
+            content_type="application/json",
             **headers,
         )
     assert res.status_code == 200

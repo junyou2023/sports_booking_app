@@ -157,6 +157,11 @@ class Facility(models.Model):
     def __str__(self) -> str:  # pragma: no cover
         return self.name
 
+    @property
+    def distance_m(self):
+        """Return annotated distance in meters if present."""
+        return getattr(self, "_distance_m", None)
+
 
 # ───────────────────────────────── Slot ───────────────────────────────────
 class Slot(models.Model):

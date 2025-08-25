@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import VendorProfile
 
 
@@ -97,3 +99,26 @@ class ProviderRegisterSerializer(serializers.Serializer):
             organization=org, user=user, role="owner"
         )
         return user
+
+
+class EmailOrUsernameTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Allow authentication via either email or username."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # allow username to be optional when email is provided
+        self.fields[self.username_field].required = False
+        self.fields['email'] = serializers.EmailField(required=False)
+
+    def validate(self, attrs):
+        if attrs.get('email') and not attrs.get(self.username_field):
+            User = get_user_model()
+            try:
+                user = User.objects.get(email=attrs['email'])
+                attrs[self.username_field] = getattr(
+                    user, User.USERNAME_FIELD, user.username
+                )
+            except User.DoesNotExist:
+                # fall back to allow default 401 behavior
+                attrs[self.username_field] = attrs['email']
+        return super().validate(attrs)
